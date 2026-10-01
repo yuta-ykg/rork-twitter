@@ -12,7 +12,7 @@ struct PostDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 HStack(spacing: 12) {
-                    AvatarView(initial: post.initial, index: post.avatarIndex)
+                    AvatarView(initial: post.initial, index: post.avatarIndex, url: post.avatarUrl)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(post.authorName)
                             .font(.system(size: 17, weight: .semibold))
@@ -21,6 +21,13 @@ struct PostDetailView: View {
                             .font(.system(size: 15))
                             .foregroundStyle(Color.irukaSecondary)
                     }
+                }
+
+                if let userId = post.userId {
+                    NavigationLink("プロフィールを見る") {
+                        ProfileView(profileId: userId, store: store)
+                    }
+                    .foregroundStyle(Color.irukaBlue)
                 }
 
                 Text(post.body)
