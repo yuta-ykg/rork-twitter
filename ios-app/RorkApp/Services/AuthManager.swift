@@ -4,7 +4,6 @@ import SwiftUI
 
 @Observable
 class AuthManager {
-    var canSkipLogin: Bool { DevelopmentData.enabled }
     var user: User?
     var isLoading = true
     var isSigningIn = false
@@ -115,7 +114,6 @@ class AuthManager {
     @MainActor
     func checkAuth() async {
         defer { isLoading = false }
-        if DevelopmentData.isActive { user = DevelopmentData.user; return }
         if let accessToken = KeychainHelper.get("access_token"),
            let user = userFromToken(accessToken) {
             self.user = user
@@ -126,18 +124,10 @@ class AuthManager {
         }
     }
 
-    @MainActor
-    func skipLogin() {
-        guard canSkipLogin else { return }
-        DevelopmentData.start()
-        user = DevelopmentData.user
-        isLoading = false
-        showError = false
-    }
+
 
     @MainActor
     func signIn(provider: String) async {
-        DevelopmentData.end()
         isSigningIn = true
         defer { isSigningIn = false }
         do {
@@ -312,7 +302,6 @@ class AuthManager {
 
     @MainActor
     func signOut() async {
-        DevelopmentData.end()
         KeychainHelper.delete("access_token")
         KeychainHelper.delete("refresh_token")
         UserDefaults.standard.removeObject(forKey: "RORK_AUTH_REFRESH_TOKEN")
