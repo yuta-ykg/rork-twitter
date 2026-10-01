@@ -5,12 +5,13 @@ struct ContentView: View {
     @Environment(\.irukaPalette) private var palette
     @Environment(AuthManager.self) private var auth
     @State private var store = PostStore()
+    @State private var bookmarks = BookmarkStore()
     @State private var showsComposer = false
     @State private var showsSignIn = false
     @State private var selectedTab: MainTab = .home
     @State private var composeAfterLogin = false
 
-    private enum MainTab: Hashable { case home, compose, mine, settings }
+    private enum MainTab: Hashable { case home, compose, mine, bookmarks, settings }
 
     var body: some View {
         TabView(selection: Binding(
@@ -43,6 +44,14 @@ struct ContentView: View {
                         }
                 }
             }
+            Tab(L("ブックマーク"), systemImage: "bookmark.fill", value: MainTab.bookmarks) {
+                NavigationStack {
+                    BookmarksView(store: store)
+                        .navigationDestination(for: Post.self) { post in
+                            PostDetailView(initialPost: post, store: store)
+                        }
+                }
+            }
             Tab(L("設定"), systemImage: "gearshape", value: MainTab.settings) {
                 NavigationStack { SettingsView() }
             }
@@ -50,6 +59,7 @@ struct ContentView: View {
         .toolbarBackground(palette.background, for: .tabBar)
         .tint(palette.blue)
         .task(id: auth.user?.id) {
+            bookmarks.configure(userId: auth.user?.id)
             if let user = auth.user {
                 await store.syncProfile(user)
             }
@@ -90,7 +100,15 @@ struct ContentView: View {
         } message: {
             Text(L(store.likeError ?? ""))
         }
+        .alert(L("ブックマーク"), isPresented: Binding(
+            get: { bookmarks.error != nil },
+            set: { if !$0 { bookmarks.error = nil } }
+        )) {
+            Button("OK") { bookmarks.error = nil }
+        } message: { Text(L(bookmarks.error ?? "")) }
+        .environment(bookmarks)
         .onChange(of: auth.user?.id) { _, newValue in
+            bookmarks.configure(userId: newValue)
             if newValue != nil {
                 showsSignIn = false
             }

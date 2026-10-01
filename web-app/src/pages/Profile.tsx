@@ -1,3 +1,4 @@
+import { BookmarkButton } from "@/components/BookmarkButton";
 import { t, useLanguage } from "@/lib/language";
 import { LikeIconGlyph } from "@/hooks/useLikeIcon";
 import { useEffect, useRef, useState, type FormEvent } from "react";
@@ -91,7 +92,7 @@ export default function ProfilePage() {
           <button type="button" disabled={saving} onClick={() => { setEditing(false); setError(""); }} className="min-h-11 px-3">{t("キャンセル")}</button></div>
       </form> : null}
       <section className="pt-5"><h2 className="mb-2 text-lg font-semibold">{t("投稿")}</h2>
-        {posts.length ? posts.map((post) => <Link key={post.id} to={`/post/${post.id}`} className="block border-b border-border py-4"><p className="break-words">{post.body}</p><p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground"><LikeIconGlyph className="h-4 w-4" liked={Boolean(post.isLiked)} /><span aria-label={t("いいね数")}>{post.likeCount ?? 0}</span></p></Link>) : <p className="py-6 text-muted-foreground">{t("まだ投稿がありません。")}</p>}
+        {posts.length ? posts.map((post) => <div key={post.id} className="border-b border-border py-2"><Link to={`/post/${post.id}`} className="block py-2"><p className="break-words">{post.body}</p><p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground"><LikeIconGlyph className="h-4 w-4" liked={Boolean(post.isLiked)} /><span aria-label={t("いいね数")}>{post.likeCount ?? 0}</span></p></Link><BookmarkButton postId={post.id} /></div>) : <p className="py-6 text-muted-foreground">{t("まだ投稿がありません。")}</p>}
       </section>
     </>}
   </div>;

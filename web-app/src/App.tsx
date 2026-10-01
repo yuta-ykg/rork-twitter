@@ -9,7 +9,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 
 import ProfilePage from "./pages/Profile";
 import AuthCallback from "./pages/AuthCallback";
-import { HomePage, MinePage, PostPage } from "./pages/Index";
+import { BookmarksPage, HomePage, MinePage, PostPage } from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +26,7 @@ const App = () => (
           <Route path="/" element={<HomePage />} />
           <Route path="/profile/:id" element={<ProfilePage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/bookmarks" element={<BookmarksPage />} />
           <Route path="/mine" element={<MinePage />} />
           <Route path="/post/:id" element={<PostPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

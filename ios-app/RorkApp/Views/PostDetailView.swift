@@ -37,7 +37,10 @@ struct PostDetailView: View {
                     .foregroundStyle(palette.ink)
                     .fixedSize(horizontal: false, vertical: true)
 
-                LikeButton(post: post) { store.toggleLike(id: post.id) }
+                HStack(spacing: 8) {
+                    LikeButton(post: post) { store.toggleLike(id: post.id) }
+                    BookmarkButton(postId: post.id)
+                }
 
                 Divider()
 
