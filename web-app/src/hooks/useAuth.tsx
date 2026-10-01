@@ -1,3 +1,4 @@
+import { canSkipLogin, developerUser, isDevelopmentSession, startDevelopmentSession, endDevelopmentSession } from "@/lib/development";
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 
 const AUTH_URL = import.meta.env.EXPO_PUBLIC_RORK_AUTH_URL as string;
@@ -65,6 +66,8 @@ interface AuthContextType {
   signIn: (provider: "google" | "apple") => Promise<void>;
   signOut: () => void;
   clearError: () => void;
+  canSkipLogin: boolean;
+  skipLogin: () => void;
   exchangeCode: (code: string) => Promise<void>;
 }
 
@@ -94,6 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function checkAuth() {
     try {
+      if (isDevelopmentSession()) { setUser(developerUser); return; }
       const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
       if (accessToken) {
         const decoded = userFromToken(accessToken);
@@ -137,9 +141,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(userData);
   }
 
-
+  function skipLogin() {
+    if (!canSkipLogin) return;
+    startDevelopmentSession();
+    setUser(developerUser);
+    setError(null);
+    setIsLoading(false);
+  }
 
   async function signIn(provider: "google" | "apple") {
+    endDevelopmentSession();
     setIsSigningIn(true);
     setError(null);
     try {
@@ -229,6 +240,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   function signOut() {
+    endDevelopmentSession();
     localStorage.removeItem(ACCESS_TOKEN_KEY);
     localStorage.removeItem(REFRESH_TOKEN_KEY);
     localStorage.removeItem(CODE_VERIFIER_KEY);
@@ -236,7 +248,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, isSigningIn, error, signIn, signOut, clearError, exchangeCode }}>
+    <AuthContext.Provider value={{ user, isLoading, isSigningIn, error, signIn, signOut, clearError, exchangeCode, canSkipLogin, skipLogin }}>
       {children}
     </AuthContext.Provider>
   );
