@@ -1,3 +1,4 @@
+import { developerUser, isDevelopmentSession, readDevelopmentPosts, writeDevelopmentPosts, readDevelopmentProfile } from "@/lib/development";
 import { ensureProfile, fetchProfile, fetchProfiles } from "@/lib/profiles";
 import { supabase } from "@/lib/supabase";
 
@@ -56,7 +57,12 @@ function toPost(row: Row, userId?: string | null): Post {
 const postColumns = "id, author_name, handle, initial, body, created_at, avatar_index, user_id";
 
 export async function fetchPosts(userId?: string | null): Promise<Post[]> {
-
+  if (isDevelopmentSession()) {
+    const profile = readDevelopmentProfile();
+    return sortTimeline(readDevelopmentPosts()).map((post) => ({
+      ...post, authorName: profile.name, handle: `@${profile.handle}`, initial: Array.from(profile.name)[0] ?? "開",
+    }));
+  }
   const { data, error } = await supabase.from("posts").select(postColumns).order("created_at", { ascending: false });
   if (error) throw error;
   const posts = (data ?? []).map((row) => toPost(row, userId));
@@ -84,7 +90,16 @@ export async function syncProfile(author: Author): Promise<void> {
 }
 
 export async function insertPost(body: string, author: Author): Promise<Post> {
-
+  if (isDevelopmentSession()) {
+    const trimmed = body.trim();
+    if (!trimmed || Array.from(trimmed).length > MAX_CHARACTERS) throw new Error("投稿は1〜70文字で入力してください。");
+    const profile = readDevelopmentProfile();
+    const post: Post = { id: crypto.randomUUID(), userId: developerUser.id, authorName: profile.name,
+      handle: `@${profile.handle}`, initial: Array.from(profile.name)[0] ?? "開", body: trimmed,
+      createdAt: new Date().toISOString(), isMine: true, avatarIndex: 0, isLiked: false, likeCount: 0 };
+    writeDevelopmentPosts([post, ...readDevelopmentPosts()]);
+    return post;
+  }
   const trimmed = body.trim();
   await syncProfile(author);
   const profile = await fetchProfile(author.id);
@@ -134,7 +149,15 @@ export function timeLabel(iso: string): string {
 }
 
 export async function setPostLike(id: string, liked: boolean, userId: string) {
-
+  if (isDevelopmentSession()) {
+    if (userId !== developerUser.id) throw new Error("開発ユーザーが一致しません。");
+    const posts = readDevelopmentPosts();
+    const post = posts.find((item) => item.id === id);
+    if (!post) throw new Error("投稿が見つかりません。");
+    const state = { isLiked: liked, likeCount: liked ? 1 : 0 };
+    writeDevelopmentPosts(posts.map((item) => item.id === id ? { ...item, ...state } : item));
+    return state;
+  }
   if (!userId) throw new Error("いいねするにはログインしてください。");
   const { data, error } = await supabase.rpc("set_post_like", {
     target_post_id: id, liked, expected_user_id: userId,
