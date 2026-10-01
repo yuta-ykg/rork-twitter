@@ -20,8 +20,12 @@ struct HomeView: View {
             }
 
             ForEach(store.timeline) { post in
-                NavigationLink(value: post) {
-                    PostRowView(post: post)
+                VStack(alignment: .leading, spacing: 0) {
+                    NavigationLink(value: post) {
+                        PostRowView(post: post)
+                    }
+                    LikeButton(post: post) { store.toggleLike(id: post.id) }
+                        .padding(.leading, 58)
                 }
                 .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
             }
@@ -80,8 +84,12 @@ struct MineView: View {
                     .listRowSeparator(.hidden)
             } else {
                 ForEach(store.mine) { post in
-                    NavigationLink(value: post) {
-                        PostRowView(post: post, showsAuthor: false)
+                    VStack(alignment: .leading, spacing: 0) {
+                        NavigationLink(value: post) {
+                            PostRowView(post: post, showsAuthor: false)
+                        }
+                        LikeButton(post: post) { store.toggleLike(id: post.id) }
+                            .padding(.leading, 58)
                     }
                     .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
                 }
