@@ -38,3 +38,20 @@ struct AvatarView: View {
             .accessibilityHidden(true)
     }
 }
+
+struct LikeButton: View {
+    let post: Post
+    let onLike: () -> Void
+
+    var body: some View {
+        Button(action: onLike) {
+            Label("\(post.likeCount)", systemImage: post.isLiked ? "heart.fill" : "heart")
+                .font(.system(size: 15))
+                .frame(minWidth: 44, minHeight: 44)
+        }
+        .buttonStyle(.borderless)
+        .foregroundStyle(post.isLiked ? Color.pink : Color.irukaSecondary)
+        .accessibilityLabel(post.isLiked ? "いいねを取り消す" : "いいね")
+        .accessibilityValue("\(post.likeCount)件")
+    }
+}
