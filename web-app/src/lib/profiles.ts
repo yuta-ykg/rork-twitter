@@ -1,3 +1,4 @@
+import { developerUser, isDevelopmentSession, readDevelopmentProfile, writeDevelopmentProfile } from "@/lib/development";
 import { supabase } from "@/lib/supabase";
 
 export type Profile = {
@@ -5,6 +6,7 @@ export type Profile = {
   avatar_url: string | null; created_at: string | null; post_count: number;
 };
 export async function fetchProfiles(ids: string[]): Promise<Profile[]> {
+  if (isDevelopmentSession()) return ids.includes(developerUser.id) ? [readDevelopmentProfile()] : [];
   if (!ids.length) return [];
   const { data, error } = await supabase.rpc("get_public_profiles", { profile_ids: [...new Set(ids)] });
   if (error) throw error;
@@ -14,6 +16,7 @@ export async function fetchProfile(id: string): Promise<Profile | null> {
   return (await fetchProfiles([id]))[0] ?? null;
 }
 export async function ensureProfile(author: { id: string; email: string; name?: string; picture?: string }) {
+  if (isDevelopmentSession()) return;
   const { error } = await supabase.rpc("ensure_profile", {
     expected_user_id: author.id, profile_email: author.email,
     profile_name: author.name ?? "ユーザー", profile_avatar: author.picture ?? "",
@@ -33,7 +36,11 @@ export function validateProfile(name: string, handle: string, bio: string, avata
 export async function saveProfile(id: string, name: string, handle: string, bio: string, avatar: string): Promise<Profile> {
   const message = validateProfile(name, handle, bio, avatar);
   if (message) throw new Error(message);
-
+  if (isDevelopmentSession()) {
+    const profile = { ...readDevelopmentProfile(), id, name: name.trim(), handle, bio, avatar_url: avatar || null };
+    writeDevelopmentProfile(profile);
+    return profile;
+  }
   const { data, error } = await supabase.rpc("save_profile", {
     expected_user_id: id, profile_name: name.trim(), profile_handle: handle,
     profile_bio: bio, profile_avatar: avatar,
