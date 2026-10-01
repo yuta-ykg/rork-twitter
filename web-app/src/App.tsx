@@ -1,3 +1,4 @@
+import { LikeIconProvider } from "@/hooks/useLikeIcon";
 import { ThemeProvider } from "@/hooks/useTheme";
 import SettingsPage from "./pages/Settings";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -15,6 +16,7 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <ThemeProvider>
+  <LikeIconProvider>
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
@@ -32,6 +34,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
+  </LikeIconProvider>
   </ThemeProvider>
 );
 
