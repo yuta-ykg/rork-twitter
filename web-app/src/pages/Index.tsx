@@ -38,7 +38,7 @@ function Wordmark() {
   useLanguage();
   return (
     <span className="inline-flex items-center gap-1.5 text-xl font-bold text-foreground">
-      <Fish className="h-[18px] w-[18px] text-[#1D9BF0]" aria-hidden />
+      <Fish className="h-[18px] w-[18px] text-[hsl(var(--brand))]" aria-hidden />
       {t("イルカ")}</span>
   );
 }
@@ -50,7 +50,7 @@ function PostButton({ label, disabled, onClick }: { label: string; disabled?: bo
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="h-[52px] w-full rounded-full bg-[#1D9BF0] text-[17px] font-semibold text-white transition active:scale-[0.98] disabled:opacity-40"
+      className="h-[52px] w-full rounded-full bg-[hsl(var(--brand))] text-[17px] font-semibold text-white transition active:scale-[0.98] disabled:opacity-40"
     >
       {label}
     </button>
@@ -190,14 +190,14 @@ function Shell({
       <main className="flex-1 px-5 pb-24">{children}</main>
       <div className="fixed bottom-0 left-1/2 z-20 w-full max-w-[430px] -translate-x-1/2">
         <nav aria-label={t("メインナビゲーション")} className="grid grid-cols-3 border-t border-border/60 bg-background/70 px-6 pb-[max(8px,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl">
-          <Link to="/" className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "home" ? "text-[#1D9BF0]" : "text-muted-foreground"}`}>
+          <Link to="/" className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "home" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
             <House className="h-5 w-5" />
             {t("ホーム")}</Link>
           <button type="button" onClick={compose} aria-label={t("投稿を作成")}
-            className="flex min-h-11 flex-col items-center justify-center gap-0.5 text-sm text-[#1D9BF0]">
+            className="flex min-h-11 flex-col items-center justify-center gap-0.5 text-sm text-[hsl(var(--brand))]">
             <SquarePen className="h-5 w-5" aria-hidden />
             {t("投稿")}</button>
-          <Link to="/mine" className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "mine" ? "text-[#1D9BF0]" : "text-muted-foreground"}`}>
+          <Link to="/mine" className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "mine" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
             <UserRound className="h-5 w-5" />
             {t("自分")}</Link>
         </nav>
@@ -217,7 +217,7 @@ function Row({ post, showAuthor, onLike }: { post: Post; showAuthor: boolean; on
         <span className="block text-base leading-snug">{post.body}</span>
       </span>
     </Link>
-    {post.userId ? <Link to={`/profile/${encodeURIComponent(post.userId)}`} className="ml-[58px] inline-flex min-h-11 items-center text-sm text-[#1D9BF0]">{t("プロフィール")}</Link> : null}
+    {post.userId ? <Link to={`/profile/${encodeURIComponent(post.userId)}`} className="ml-[58px] inline-flex min-h-11 items-center text-sm text-[hsl(var(--brand))]">{t("プロフィール")}</Link> : null}
     <div className="ml-[58px]"><LikeButton post={post} onClick={onLike} /></div>
     </div>
   );
@@ -227,13 +227,14 @@ function LikeButton({ post, onClick }: { post: Post; onClick: () => void | Promi
   useLanguage();
   const [pending, setPending] = useState(false);
   const { likeIcon } = useLikeIcon();
+  const selectedColor = { heart: "text-pink-500", star: "text-amber-500", "thumbs-up": "text-blue-500", upvote: "text-orange-500" }[likeIcon];
   return <button type="button" disabled={pending} aria-busy={pending} onClick={async () => {
     if (pending) return;
     setPending(true);
     try { await onClick(); } finally { setPending(false); }
   }} aria-pressed={Boolean(post.isLiked)}
     aria-label={post.isLiked ? t("いいねを取り消す") : t("いいね")}
-    className={`inline-flex min-h-11 min-w-11 items-center gap-2 rounded-full px-2 transition ${post.isLiked ? (likeIcon === "star" ? "text-amber-500" : "text-pink-500") : "text-muted-foreground"} hover:bg-muted`}>
+    className={`inline-flex min-h-11 min-w-11 items-center gap-2 rounded-full px-2 transition ${post.isLiked ? selectedColor : "text-muted-foreground"} hover:bg-muted`}>
     <LikeIconGlyph className="h-5 w-5" liked={Boolean(post.isLiked)} />
     <span>{post.likeCount ?? 0}</span>
   </button>;
@@ -349,8 +350,8 @@ export function MinePage() {
         {user ? (
           <>
             <div className="flex items-center justify-between pt-4">
-              <Link to={`/profile/${encodeURIComponent(user.id)}`} className="text-base font-semibold text-[#1D9BF0]">{t("プロフィールを見る・編集")}</Link>
-              <button type="button" onClick={signOut} className="h-11 text-[#1D9BF0]">
+              <Link to={`/profile/${encodeURIComponent(user.id)}`} className="text-base font-semibold text-[hsl(var(--brand))]">{t("プロフィールを見る・編集")}</Link>
+              <button type="button" onClick={signOut} className="h-11 text-[hsl(var(--brand))]">
                 {t("ログアウト")}</button>
             </div>
             <div className="py-6 text-center">
@@ -417,7 +418,7 @@ export function PostPage() {
   if (!post) {
     return (
       <div className="mx-auto flex min-h-dvh max-w-[430px] flex-col bg-background px-5 pt-6">
-        <button type="button" onClick={() => navigate(-1)} className="mb-6 h-11 text-left text-[#1D9BF0]">
+        <button type="button" onClick={() => navigate(-1)} className="mb-6 h-11 text-left text-[hsl(var(--brand))]">
           {t("戻る")}</button>
         <p className="text-muted-foreground">{t("投稿が見つかりません。")}</p>
       </div>
@@ -427,14 +428,14 @@ export function PostPage() {
   return (
     <div className="mx-auto min-h-dvh w-full max-w-[430px] bg-background px-5 pb-10 text-foreground">
       <header className="sticky top-0 flex h-14 items-center bg-background/75 backdrop-blur-xl">
-        <button type="button" onClick={() => navigate(-1)} className="h-11 pr-4 text-[#1D9BF0]">
+        <button type="button" onClick={() => navigate(-1)} className="h-11 pr-4 text-[hsl(var(--brand))]">
           {t("戻る")}</button>
         <span className="text-[17px] font-semibold">{t("投稿")}</span>
       </header>
       <div className="mt-2 flex items-center gap-3">
         <Avatar initial={post.initial} index={post.avatarIndex} />
         <div>
-          {post.userId ? <Link to={`/profile/${encodeURIComponent(post.userId)}`} className="text-[17px] font-semibold text-[#1D9BF0]">{post.authorName}</Link> : <p className="text-[17px] font-semibold">{post.authorName}</p>}
+          {post.userId ? <Link to={`/profile/${encodeURIComponent(post.userId)}`} className="text-[17px] font-semibold text-[hsl(var(--brand))]">{post.authorName}</Link> : <p className="text-[17px] font-semibold">{post.authorName}</p>}
           <p className="text-[15px] text-muted-foreground">{post.handle}</p>
         </div>
       </div>
