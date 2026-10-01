@@ -1,4 +1,4 @@
-import { Fish, House, UserRound, X } from "lucide-react";
+import { Fish, Heart, House, UserRound, X } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
@@ -10,6 +10,7 @@ import {
   sortTimeline,
   thisWeekCount,
   timeLabel,
+  toggleLike,
   type Post,
 } from "@/lib/posts";
 
@@ -146,22 +147,40 @@ function Shell({
   );
 }
 
-function Row({ post, showAuthor }: { post: Post; showAuthor: boolean }) {
+function Row({ post, showAuthor, onLike }: { post: Post; showAuthor: boolean; onLike: () => void }) {
   return (
-    <Link to={`/post/${post.id}`} className="flex gap-3 border-b border-[#ECF0F2] py-3">
+    <div className="border-b border-[#ECF0F2] py-3">
+    <Link to={`/post/${post.id}`} className="flex gap-3">
       <Avatar initial={post.initial} index={post.avatarIndex} />
       <span className="min-w-0 pt-0.5">
         {showAuthor ? <span className="block text-base font-semibold">{post.authorName}</span> : null}
         <span className="block text-base leading-snug">{post.body}</span>
       </span>
     </Link>
+    <div className="ml-[58px]"><LikeButton post={post} onClick={onLike} /></div>
+    </div>
   );
+}
+
+function LikeButton({ post, onClick }: { post: Post; onClick: () => void }) {
+  return <button type="button" onClick={onClick} aria-pressed={Boolean(post.isLiked)}
+    aria-label={post.isLiked ? "いいねを取り消す" : "いいね"}
+    className={`inline-flex min-h-11 min-w-11 items-center gap-2 rounded-full px-2 transition ${post.isLiked ? "text-pink-500" : "text-[#536471]"} hover:bg-pink-50`}>
+    <Heart className="h-5 w-5" fill={post.isLiked ? "currentColor" : "none"} aria-hidden />
+    <span>{post.likeCount ?? 0}</span>
+  </button>;
 }
 
 export function HomePage() {
   const [posts, setPosts] = useState<Post[]>(() => loadPosts());
   const [open, setOpen] = useState(false);
   const timeline = useMemo(() => sortTimeline(posts), [posts]);
+
+  function like(id: string) {
+    const updated = toggleLike(posts, id);
+    savePosts(updated);
+    setPosts(updated);
+  }
 
   function add(body: string) {
     const next: Post = {
@@ -185,7 +204,7 @@ export function HomePage() {
         <h1 className="pt-4 text-[28px] font-bold leading-tight">いま、みんなが書いている</h1>
         <p className="mb-2 mt-1 text-base text-[#536471]">70字までの短い投稿</p>
         {timeline.map((post) => (
-          <Row key={post.id} post={post} showAuthor />
+          <Row key={post.id} post={post} showAuthor onLike={() => like(post.id)} />
         ))}
       </Shell>
       {open ? <ComposeSheet onClose={() => setOpen(false)} onPost={add} /> : null}
@@ -198,6 +217,12 @@ export function MinePage() {
   const [open, setOpen] = useState(false);
   const mine = useMemo(() => sortTimeline(posts).filter((post) => post.isMine), [posts]);
   const count = thisWeekCount(posts);
+
+  function like(id: string) {
+    const updated = toggleLike(posts, id);
+    savePosts(updated);
+    setPosts(updated);
+  }
 
   function add(body: string) {
     const next: Post = {
@@ -225,7 +250,7 @@ export function MinePage() {
         {mine.length === 0 ? (
           <p className="py-10 text-center text-[#536471]">まだ投稿がありません</p>
         ) : (
-          mine.map((post) => <Row key={post.id} post={post} showAuthor={false} />)
+          mine.map((post) => <Row key={post.id} post={post} showAuthor={false} onLike={() => like(post.id)} />)
         )}
       </Shell>
       {open ? <ComposeSheet onClose={() => setOpen(false)} onPost={add} /> : null}
@@ -236,7 +261,14 @@ export function MinePage() {
 export function PostPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const post = useMemo(() => loadPosts().find((item) => item.id === id), [id]);
+  const [posts, setPosts] = useState<Post[]>(() => loadPosts());
+  const post = posts.find((item) => item.id === id);
+  function like() {
+    if (!id) return;
+    const updated = toggleLike(posts, id);
+    savePosts(updated);
+    setPosts(updated);
+  }
 
   if (!post) {
     return (
@@ -265,6 +297,7 @@ export function PostPage() {
         </div>
       </div>
       <p className="mt-5 text-2xl font-semibold leading-snug">{post.body}</p>
+      <div className="mt-3"><LikeButton post={post} onClick={like} /></div>
       <div className="mt-6 grid grid-cols-2 border-t border-[#ECF0F2] pt-4">
         <div>
           <p className="text-[13px] text-[#536471]">投稿時刻</p>
