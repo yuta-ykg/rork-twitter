@@ -2,12 +2,16 @@
   "$schema": "https://rork.com/schema/rork.json",
   "apps": [
     {
-      "name": "イルカ",
+      "name": "iOS",
       "path": "ios-app",
-      "framework": "swift"
+      "framework": "swift",
+      "settings": {
+        "displayName": "yytblue",
+        "iosBundleId": "app.rork.yytblue"
+      }
     },
     {
-      "name": "イルカ",
+      "name": "Web",
       "path": "web-app",
       "framework": "web"
     },

@@ -1,13 +1,13 @@
 //
-//  RorkAppUITests.swift
-//  RorkAppUITests
+//  YytblueUITests.swift
+//  YytblueUITests
 //
 //  Created by Rork on October 1, 2026.
 //
 
 import XCTest
 
-final class RorkAppUITests: XCTestCase {
+final class YytblueUITests: XCTestCase {
 
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.

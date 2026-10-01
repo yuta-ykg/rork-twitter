@@ -1,13 +1,13 @@
 //
-//  RorkAppUITestsLaunchTests.swift
-//  RorkAppUITests
+//  YytblueUITestsLaunchTests.swift
+//  YytblueUITests
 //
 //  Created by Rork on October 1, 2026.
 //
 
 import XCTest
 
-final class RorkAppUITestsLaunchTests: XCTestCase {
+final class YytblueUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true

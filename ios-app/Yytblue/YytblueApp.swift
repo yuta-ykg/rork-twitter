@@ -1,6 +1,6 @@
 //
-//  RorkAppApp.swift
-//  RorkApp
+//  YytblueApp.swift
+//  Yytblue
 //
 //  Created by Rork on October 1, 2026.
 //
@@ -8,7 +8,7 @@
 import SwiftUI
 
 @main
-struct RorkAppApp: App {
+struct YytblueApp: App {
     @State private var authManager = AuthManager()
 
     var body: some Scene {

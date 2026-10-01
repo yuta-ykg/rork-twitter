@@ -16,37 +16,37 @@
 			containerPortal = 105FC5722E9EAD3100EA8BCF /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 105FC5792E9EAD3100EA8BCF;
-			remoteInfo = RorkApp;
+			remoteInfo = Yytblue;
 		};
 		105FC5942E9EAD3200EA8BCF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 105FC5722E9EAD3100EA8BCF /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 105FC5792E9EAD3100EA8BCF;
-			remoteInfo = RorkApp;
+			remoteInfo = Yytblue;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		105FC57A2E9EAD3100EA8BCF /* RorkApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RorkApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		105FC5892E9EAD3200EA8BCF /* RorkAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RorkAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		105FC5932E9EAD3200EA8BCF /* RorkAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RorkAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		105FC57A2E9EAD3100EA8BCF /* Yytblue.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Yytblue.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		105FC5892E9EAD3200EA8BCF /* YytblueTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = YytblueTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		105FC5932E9EAD3200EA8BCF /* YytblueUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = YytblueUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		105FC57C2E9EAD3100EA8BCF /* RorkApp */ = {
+		105FC57C2E9EAD3100EA8BCF /* Yytblue */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = RorkApp;
+			path = Yytblue;
 			sourceTree = "<group>";
 		};
-		105FC58C2E9EAD3200EA8BCF /* RorkAppTests */ = {
+		105FC58C2E9EAD3200EA8BCF /* YytblueTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = RorkAppTests;
+			path = YytblueTests;
 			sourceTree = "<group>";
 		};
-		105FC5962E9EAD3200EA8BCF /* RorkAppUITests */ = {
+		105FC5962E9EAD3200EA8BCF /* YytblueUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = RorkAppUITests;
+			path = YytblueUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -80,9 +80,9 @@
 		105FC5712E9EAD3100EA8BCF = {
 			isa = PBXGroup;
 			children = (
-				105FC57C2E9EAD3100EA8BCF /* RorkApp */,
-				105FC58C2E9EAD3200EA8BCF /* RorkAppTests */,
-				105FC5962E9EAD3200EA8BCF /* RorkAppUITests */,
+				105FC57C2E9EAD3100EA8BCF /* Yytblue */,
+				105FC58C2E9EAD3200EA8BCF /* YytblueTests */,
+				105FC5962E9EAD3200EA8BCF /* YytblueUITests */,
 				105FC57B2E9EAD3100EA8BCF /* Products */,
 			);
 			sourceTree = "<group>";
@@ -90,9 +90,9 @@
 		105FC57B2E9EAD3100EA8BCF /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				105FC57A2E9EAD3100EA8BCF /* RorkApp.app */,
-				105FC5892E9EAD3200EA8BCF /* RorkAppTests.xctest */,
-				105FC5932E9EAD3200EA8BCF /* RorkAppUITests.xctest */,
+				105FC57A2E9EAD3100EA8BCF /* Yytblue.app */,
+				105FC5892E9EAD3200EA8BCF /* YytblueTests.xctest */,
+				105FC5932E9EAD3200EA8BCF /* YytblueUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -100,9 +100,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		105FC5792E9EAD3100EA8BCF /* RorkApp */ = {
+		105FC5792E9EAD3100EA8BCF /* Yytblue */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 105FC59D2E9EAD3200EA8BCF /* Build configuration list for PBXNativeTarget "RorkApp" */;
+			buildConfigurationList = 105FC59D2E9EAD3200EA8BCF /* Build configuration list for PBXNativeTarget "Yytblue" */;
 			buildPhases = (
 				105FC5762E9EAD3100EA8BCF /* Sources */,
 				105FC5772E9EAD3100EA8BCF /* Frameworks */,
@@ -113,19 +113,19 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				105FC57C2E9EAD3100EA8BCF /* RorkApp */,
+				105FC57C2E9EAD3100EA8BCF /* Yytblue */,
 			);
-			name = RorkApp;
+			name = Yytblue;
 			packageProductDependencies = (
 				XX17F496E7391AF4178246XX /* Supabase */,
 			);
-			productName = RorkApp;
-			productReference = 105FC57A2E9EAD3100EA8BCF /* RorkApp.app */;
+			productName = Yytblue;
+			productReference = 105FC57A2E9EAD3100EA8BCF /* Yytblue.app */;
 			productType = "com.apple.product-type.application";
 		};
-		105FC5882E9EAD3200EA8BCF /* RorkAppTests */ = {
+		105FC5882E9EAD3200EA8BCF /* YytblueTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 105FC5A02E9EAD3200EA8BCF /* Build configuration list for PBXNativeTarget "RorkAppTests" */;
+			buildConfigurationList = 105FC5A02E9EAD3200EA8BCF /* Build configuration list for PBXNativeTarget "YytblueTests" */;
 			buildPhases = (
 				105FC5852E9EAD3200EA8BCF /* Sources */,
 				105FC5862E9EAD3200EA8BCF /* Frameworks */,
@@ -137,18 +137,18 @@
 				105FC58B2E9EAD3200EA8BCF /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				105FC58C2E9EAD3200EA8BCF /* RorkAppTests */,
+				105FC58C2E9EAD3200EA8BCF /* YytblueTests */,
 			);
-			name = RorkAppTests;
+			name = YytblueTests;
 			packageProductDependencies = (
 			);
-			productName = RorkAppTests;
-			productReference = 105FC5892E9EAD3200EA8BCF /* RorkAppTests.xctest */;
+			productName = YytblueTests;
+			productReference = 105FC5892E9EAD3200EA8BCF /* YytblueTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		105FC5922E9EAD3200EA8BCF /* RorkAppUITests */ = {
+		105FC5922E9EAD3200EA8BCF /* YytblueUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 105FC5A32E9EAD3200EA8BCF /* Build configuration list for PBXNativeTarget "RorkAppUITests" */;
+			buildConfigurationList = 105FC5A32E9EAD3200EA8BCF /* Build configuration list for PBXNativeTarget "YytblueUITests" */;
 			buildPhases = (
 				105FC58F2E9EAD3200EA8BCF /* Sources */,
 				105FC5902E9EAD3200EA8BCF /* Frameworks */,
@@ -160,13 +160,13 @@
 				105FC5952E9EAD3200EA8BCF /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				105FC5962E9EAD3200EA8BCF /* RorkAppUITests */,
+				105FC5962E9EAD3200EA8BCF /* YytblueUITests */,
 			);
-			name = RorkAppUITests;
+			name = YytblueUITests;
 			packageProductDependencies = (
 			);
-			productName = RorkAppUITests;
-			productReference = 105FC5932E9EAD3200EA8BCF /* RorkAppUITests.xctest */;
+			productName = YytblueUITests;
+			productReference = 105FC5932E9EAD3200EA8BCF /* YytblueUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -192,7 +192,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 105FC5752E9EAD3100EA8BCF /* Build configuration list for PBXProject "RorkApp" */;
+			buildConfigurationList = 105FC5752E9EAD3100EA8BCF /* Build configuration list for PBXProject "Yytblue" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -206,9 +206,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				105FC5792E9EAD3100EA8BCF /* RorkApp */,
-				105FC5882E9EAD3200EA8BCF /* RorkAppTests */,
-				105FC5922E9EAD3200EA8BCF /* RorkAppUITests */,
+				105FC5792E9EAD3100EA8BCF /* Yytblue */,
+				105FC5882E9EAD3200EA8BCF /* YytblueTests */,
+				105FC5922E9EAD3200EA8BCF /* YytblueUITests */,
 			);
 			packageReferences = (
 				XXA26CCC1C14E04A80BED3XX /* XCRemoteSwiftPackageReference "supabase-swift" */,
@@ -267,12 +267,12 @@
 /* Begin PBXTargetDependency section */
 		105FC58B2E9EAD3200EA8BCF /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 105FC5792E9EAD3100EA8BCF /* RorkApp */;
+			target = 105FC5792E9EAD3100EA8BCF /* Yytblue */;
 			targetProxy = 105FC58A2E9EAD3200EA8BCF /* PBXContainerItemProxy */;
 		};
 		105FC5952E9EAD3200EA8BCF /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 105FC5792E9EAD3100EA8BCF /* RorkApp */;
+			target = 105FC5792E9EAD3100EA8BCF /* Yytblue */;
 			targetProxy = 105FC5942E9EAD3200EA8BCF /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -420,8 +420,8 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0.0;
-				CODE_SIGN_ENTITLEMENTS = RorkApp/RorkApp.entitlements;
-				PRODUCT_BUNDLE_IDENTIFIER = app.rork.q6hjwy107zi05vp2r6a3m;
+				CODE_SIGN_ENTITLEMENTS = Yytblue/Yytblue.entitlements;
+				PRODUCT_BUNDLE_IDENTIFIER = app.rork.yytblue;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -430,6 +430,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				INFOPLIST_KEY_CFBundleDisplayName = yytblue;
 			};
 			name = Debug;
 		};
@@ -454,8 +455,8 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0.0;
-				CODE_SIGN_ENTITLEMENTS = RorkApp/RorkApp.entitlements;
-				PRODUCT_BUNDLE_IDENTIFIER = app.rork.q6hjwy107zi05vp2r6a3m;
+				CODE_SIGN_ENTITLEMENTS = Yytblue/Yytblue.entitlements;
+				PRODUCT_BUNDLE_IDENTIFIER = app.rork.yytblue;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -464,6 +465,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				INFOPLIST_KEY_CFBundleDisplayName = yytblue;
 			};
 			name = Release;
 		};
@@ -477,7 +479,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = app.rork.q6hjwy107zi05vp2r6a3m.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = app.rork.yytblue.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -485,7 +487,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/RorkApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/RorkApp";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Yytblue.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Yytblue";
 			};
 			name = Debug;
 		};
@@ -499,7 +501,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = app.rork.q6hjwy107zi05vp2r6a3m.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = app.rork.yytblue.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -507,7 +509,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/RorkApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/RorkApp";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Yytblue.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Yytblue";
 			};
 			name = Release;
 		};
@@ -519,7 +521,7 @@
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = app.rork.q6hjwy107zi05vp2r6a3m.uitests;
+				PRODUCT_BUNDLE_IDENTIFIER = app.rork.yytblue.uitests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -527,7 +529,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = RorkApp;
+				TEST_TARGET_NAME = Yytblue;
 			};
 			name = Debug;
 		};
@@ -539,7 +541,7 @@
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = app.rork.q6hjwy107zi05vp2r6a3m.uitests;
+				PRODUCT_BUNDLE_IDENTIFIER = app.rork.yytblue.uitests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -547,14 +549,14 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = RorkApp;
+				TEST_TARGET_NAME = Yytblue;
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		105FC5752E9EAD3100EA8BCF /* Build configuration list for PBXProject "RorkApp" */ = {
+		105FC5752E9EAD3100EA8BCF /* Build configuration list for PBXProject "Yytblue" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				105FC59B2E9EAD3200EA8BCF /* Debug */,
@@ -563,7 +565,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		105FC59D2E9EAD3200EA8BCF /* Build configuration list for PBXNativeTarget "RorkApp" */ = {
+		105FC59D2E9EAD3200EA8BCF /* Build configuration list for PBXNativeTarget "Yytblue" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				105FC59E2E9EAD3200EA8BCF /* Debug */,
@@ -572,7 +574,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		105FC5A02E9EAD3200EA8BCF /* Build configuration list for PBXNativeTarget "RorkAppTests" */ = {
+		105FC5A02E9EAD3200EA8BCF /* Build configuration list for PBXNativeTarget "YytblueTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				105FC5A12E9EAD3200EA8BCF /* Debug */,
@@ -581,7 +583,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		105FC5A32E9EAD3200EA8BCF /* Build configuration list for PBXNativeTarget "RorkAppUITests" */ = {
+		105FC5A32E9EAD3200EA8BCF /* Build configuration list for PBXNativeTarget "YytblueUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				105FC5A42E9EAD3200EA8BCF /* Debug */,
