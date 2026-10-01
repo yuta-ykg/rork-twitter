@@ -2,6 +2,7 @@ import { createContext, useContext, useLayoutEffect, useState, type ReactNode } 
 
 export const themeOptions = [
   { value: "light", label: "ライト" },
+  { value: "mint", label: "ミント" },
   { value: "dark", label: "ダーク" },
   { value: "dark-blue", label: "ダークブルー" },
   { value: "system", label: "システム" },
@@ -25,8 +26,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     function apply() {
       const resolved = resolveTheme(theme, media.matches);
       document.documentElement.dataset.theme = resolved;
-      document.documentElement.classList.toggle("dark", resolved !== "light");
-      document.documentElement.style.colorScheme = resolved === "light" ? "light" : "dark";
+      const isDark = resolved === "dark" || resolved === "dark-blue";
+      document.documentElement.classList.toggle("dark", isDark);
+      document.documentElement.style.colorScheme = isDark ? "dark" : "light";
     }
     apply();
     media.addEventListener("change", apply);

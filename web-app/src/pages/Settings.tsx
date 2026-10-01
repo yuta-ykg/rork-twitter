@@ -8,7 +8,7 @@ export default function SettingsPage() {
   const { likeIcon, setLikeIcon } = useLikeIcon();
   return <main className="mx-auto min-h-dvh w-full max-w-[430px] bg-background px-5 pb-10 text-foreground">
     <header className="flex min-h-14 items-center gap-5 border-b border-border">
-      <Link to="/" className="flex min-h-11 items-center text-[#1D9BF0]">ホーム</Link>
+      <Link to="/" className="flex min-h-11 items-center text-[hsl(var(--brand))]">ホーム</Link>
       <h1 className="text-lg font-semibold">設定</h1>
     </header>
     <section className="py-6">

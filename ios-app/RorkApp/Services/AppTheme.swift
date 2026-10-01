@@ -1,18 +1,19 @@
 import SwiftUI
 
 enum AppTheme: String, CaseIterable, Identifiable {
-    case light, dark, darkBlue = "dark-blue", system
+    case light, mint, dark, darkBlue = "dark-blue", system
     var id: String { rawValue }
     var title: String {
         switch self {
         case .light: "ライト"
+        case .mint: "ミント"
         case .dark: "ダーク"
         case .darkBlue: "ダークブルー"
         case .system: "システム"
         }
     }
     var scheme: ColorScheme? {
-        switch self { case .light: .light; case .dark, .darkBlue: .dark; case .system: nil }
+        switch self { case .light, .mint: .light; case .dark, .darkBlue: .dark; case .system: nil }
     }
 }
 
@@ -27,6 +28,17 @@ struct IrukaPalette {
 
     static func make(theme: AppTheme, system: ColorScheme) -> IrukaPalette {
         let dark = theme == .dark || theme == .darkBlue || (theme == .system && system == .dark)
+        if theme == .mint {
+            return IrukaPalette(
+                background: Color(hex: "#F0F9F4"),
+                surface: Color(hex: "#FBFDFC"),
+                ink: Color(hex: "#122B24"),
+                secondary: Color(hex: "#45685F"),
+                hairline: Color(hex: "#B9D5C8"),
+                field: Color(hex: "#DDEFE7"),
+                blue: Color(hex: "#15755B")
+            )
+        }
         let navy = theme == .darkBlue
         return IrukaPalette(
             background: Color(hex: navy ? "#15202B" : dark ? "#080808" : "#FFFFFF"),

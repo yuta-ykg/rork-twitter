@@ -60,14 +60,14 @@ export default function ProfilePage() {
   const inputClass = "mt-1 w-full rounded-xl border border-input bg-background p-3 text-base";
   return <div className="mx-auto min-h-dvh w-full max-w-[430px] bg-background px-5 pb-10 text-foreground">
     <header className="flex min-h-14 items-center justify-between border-b border-border">
-      <Link to="/" className="flex min-h-11 items-center text-[#1D9BF0]">ホーム</Link>
+      <Link to="/" className="flex min-h-11 items-center text-[hsl(var(--brand))]">ホーム</Link>
       <h1 className="text-lg font-semibold">プロフィール</h1>
-      <Link to="/mine" className="flex min-h-11 items-center text-[#1D9BF0]">自分</Link>
+      <Link to="/mine" className="flex min-h-11 items-center text-[hsl(var(--brand))]">自分</Link>
     </header>
-    <Link to="/settings" className="mt-2 inline-flex min-h-11 items-center text-[#1D9BF0]">設定</Link>
+    <Link to="/settings" className="mt-2 inline-flex min-h-11 items-center text-[hsl(var(--brand))]">設定</Link>
     {error ? <p role="alert" className="my-4 text-red-600">{error}</p> : null}
     {loading ? <p role="status" className="py-10 text-muted-foreground">読み込み中…</p> : !profile ? <div className="py-10">
-      <p>プロフィールが見つかりません。</p><button onClick={() => setRetry((value) => value + 1)} className="mt-3 min-h-11 text-[#1D9BF0]">再読み込み</button>
+      <p>プロフィールが見つかりません。</p><button onClick={() => setRetry((value) => value + 1)} className="mt-3 min-h-11 text-[hsl(var(--brand))]">再読み込み</button>
     </div> : <>
       <section className="border-b border-border py-6">
         <div className="flex items-start justify-between gap-4">
@@ -85,7 +85,7 @@ export default function ProfilePage() {
         <label>ユーザー名<input value={handle} onChange={(event) => setHandle(event.target.value.toLowerCase())} required pattern="[a-z0-9_]{3,25}" className={inputClass} /><span className="text-sm text-muted-foreground">小文字の英数字と_、3〜25文字</span></label>
         <label>自己紹介<textarea value={bio} onChange={(event) => setBio(event.target.value)} rows={4} className={inputClass} /><span className="text-sm text-muted-foreground">{Array.from(bio).length} / 160文字</span></label>
         <label>プロフィール画像URL<input type="url" value={avatar} onChange={(event) => setAvatar(event.target.value)} placeholder="https://" className={inputClass} /><span className="text-sm text-muted-foreground">HTTPSの画像URL。空欄にすると画像を解除します。</span></label>
-        <div className="flex gap-3"><button type="submit" disabled={saving} className="min-h-11 rounded-full bg-[#1D9BF0] px-6 font-semibold text-white disabled:opacity-50">{saving ? "保存中…" : "保存する"}</button>
+        <div className="flex gap-3"><button type="submit" disabled={saving} className="min-h-11 rounded-full bg-[hsl(var(--brand))] px-6 font-semibold text-white disabled:opacity-50">{saving ? "保存中…" : "保存する"}</button>
           <button type="button" disabled={saving} onClick={() => { setEditing(false); setError(""); }} className="min-h-11 px-3">キャンセル</button></div>
       </form> : null}
       <section className="pt-5"><h2 className="mb-2 text-lg font-semibold">投稿</h2>
