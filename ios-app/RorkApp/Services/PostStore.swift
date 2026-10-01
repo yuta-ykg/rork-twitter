@@ -79,19 +79,23 @@ final class PostStore {
                     .rpc("get_post_likes", params: LikeStatsParams(post_ids: rows.map(\.id)))
                     .execute().value
             }
+            let profiles = try await ProfileService.fetch(ids: rows.compactMap(\.userId))
             guard currentUserId == userId else { return }
+            let profileById = Dictionary(uniqueKeysWithValues: profiles.map { ($0.id, $0) })
             let likes = Dictionary(uniqueKeysWithValues: stats.map { ($0.postId, $0) })
             posts = rows.map { row in
+                let profile = row.userId.flatMap { profileById[$0] }
                 var post = Post(
                     id: row.id,
-                    authorName: row.authorName,
-                    handle: row.handle,
-                    initial: row.initial,
+                    authorName: profile?.name ?? row.authorName,
+                    handle: profile?.handle.map { "@" + $0 } ?? row.handle,
+                    initial: profile.map { String($0.name.prefix(1)) } ?? row.initial,
                     body: row.body,
                     createdAt: row.createdAt,
                     isMine: userId != nil && row.userId == userId,
                     avatarIndex: row.avatarIndex,
-                    userId: row.userId
+                    userId: row.userId,
+                    avatarUrl: profile?.avatarUrl
                 )
                 if let like = likes[row.id] {
                     post.likedByMe = userId != nil && like.isLiked
@@ -106,16 +110,16 @@ final class PostStore {
     }
 
     func syncProfile(_ user: AuthManager.User) async {
-        let payload = ProfileUpsert(id: user.id, email: user.email, name: user.name, avatarUrl: user.picture)
-        try? await IrukaDatabase.client.from("profiles").upsert(payload).execute()
+        try? await ProfileService.ensure(user)
     }
 
     private func insert(_ body: String, user: AuthManager.User) async {
         await syncProfile(user)
+        let profile = try? await ProfileService.fetch(ids: [user.id]).first
         let payload = PostInsert(
-            authorName: String(user.displayName.prefix(40)),
-            handle: String(user.handle.prefix(40)),
-            initial: user.initial,
+            authorName: profile?.name ?? String(user.displayName.prefix(40)),
+            handle: profile?.handle.map { "@" + $0 } ?? String(user.handle.prefix(40)),
+            initial: profile.map { String($0.name.prefix(1)) } ?? user.initial,
             body: body,
             isMine: true,
             avatarIndex: 0,
