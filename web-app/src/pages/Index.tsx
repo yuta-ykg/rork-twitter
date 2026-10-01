@@ -1,12 +1,12 @@
 import { Fish, Heart, House, UserRound, X } from "lucide-react";
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import {
   MAX_CHARACTERS,
   avatarFills,
-  loadPosts,
-  savePosts,
+  fetchPosts,
+  insertPost,
   sortTimeline,
   thisWeekCount,
   timeLabel,
@@ -172,30 +172,27 @@ function LikeButton({ post, onClick }: { post: Post; onClick: () => void }) {
 }
 
 export function HomePage() {
-  const [posts, setPosts] = useState<Post[]>(() => loadPosts());
+  const [posts, setPosts] = useState<Post[]>([]);
   const [open, setOpen] = useState(false);
+  const [error, setError] = useState("");
   const timeline = useMemo(() => sortTimeline(posts), [posts]);
 
+  useEffect(() => {
+    fetchPosts().then(setPosts).catch(() => setError("タイムラインを読み込めませんでした。"));
+  }, []);
+
   function like(id: string) {
-    const updated = toggleLike(posts, id);
-    savePosts(updated);
-    setPosts(updated);
+    setPosts(toggleLike(posts, id));
   }
 
-  function add(body: string) {
-    const next: Post = {
-      id: crypto.randomUUID(),
-      authorName: "あなた",
-      handle: "@you",
-      initial: "あ",
-      body: body.trim(),
-      createdAt: new Date().toISOString(),
-      isMine: true,
-      avatarIndex: 0,
-    };
-    const updated = [next, ...posts];
-    setPosts(updated);
-    savePosts(updated);
+  async function add(body: string) {
+    try {
+      const next = await insertPost(body);
+      setPosts((current) => [next, ...current]);
+      setError("");
+    } catch {
+      setError("投稿できませんでした。もう一度試してください。");
+    }
   }
 
   return (
@@ -203,6 +200,7 @@ export function HomePage() {
       <Shell tab="home" actionLabel="投稿する" onCompose={() => setOpen(true)}>
         <h1 className="pt-4 text-[28px] font-bold leading-tight">いま、みんなが書いている</h1>
         <p className="mb-2 mt-1 text-base text-[#536471]">70字までの短い投稿</p>
+        {error ? <p className="mb-2 text-sm text-red-500">{error}</p> : null}
         {timeline.map((post) => (
           <Row key={post.id} post={post} showAuthor onLike={() => like(post.id)} />
         ))}
@@ -213,31 +211,22 @@ export function HomePage() {
 }
 
 export function MinePage() {
-  const [posts, setPosts] = useState<Post[]>(() => loadPosts());
+  const [posts, setPosts] = useState<Post[]>([]);
   const [open, setOpen] = useState(false);
   const mine = useMemo(() => sortTimeline(posts).filter((post) => post.isMine), [posts]);
   const count = thisWeekCount(posts);
 
+  useEffect(() => {
+    fetchPosts().then(setPosts).catch(() => undefined);
+  }, []);
+
   function like(id: string) {
-    const updated = toggleLike(posts, id);
-    savePosts(updated);
-    setPosts(updated);
+    setPosts(toggleLike(posts, id));
   }
 
-  function add(body: string) {
-    const next: Post = {
-      id: crypto.randomUUID(),
-      authorName: "あなた",
-      handle: "@you",
-      initial: "あ",
-      body: body.trim(),
-      createdAt: new Date().toISOString(),
-      isMine: true,
-      avatarIndex: 0,
-    };
-    const updated = [next, ...posts];
-    setPosts(updated);
-    savePosts(updated);
+  async function add(body: string) {
+    const next = await insertPost(body);
+    setPosts((current) => [next, ...current]);
   }
 
   return (
@@ -261,13 +250,22 @@ export function MinePage() {
 export function PostPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [posts, setPosts] = useState<Post[]>(() => loadPosts());
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [ready, setReady] = useState(false);
   const post = posts.find((item) => item.id === id);
+  useEffect(() => {
+    fetchPosts()
+      .then(setPosts)
+      .catch(() => undefined)
+      .finally(() => setReady(true));
+  }, []);
   function like() {
     if (!id) return;
-    const updated = toggleLike(posts, id);
-    savePosts(updated);
-    setPosts(updated);
+    setPosts(toggleLike(posts, id));
+  }
+
+  if (!ready) {
+    return <div className="mx-auto min-h-dvh max-w-[430px] bg-white" />;
   }
 
   if (!post) {

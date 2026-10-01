@@ -10,6 +10,11 @@
       "name": "イルカ",
       "path": "web-app",
       "framework": "web"
+    },
+    {
+      "name": "Backend",
+      "path": "backend",
+      "framework": "supabase"
     }
   ]
 }

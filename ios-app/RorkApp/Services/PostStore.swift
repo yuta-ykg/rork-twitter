@@ -1,17 +1,17 @@
 import Foundation
 import Observation
+import PostgREST
+import Supabase
 
 @MainActor
 @Observable
 final class PostStore {
     private(set) var posts: [Post] = []
-    private let fileURL: URL
+    private let mineKey = "iruka-mine-ids"
+    private let likesKey = "iruka-likes"
 
     init() {
-        let directory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
-            ?? URL(fileURLWithPath: NSTemporaryDirectory())
-        fileURL = directory.appendingPathComponent("iruka-posts.json")
-        load()
+        Task { await refresh() }
     }
 
     var timeline: [Post] {
@@ -33,18 +33,7 @@ final class PostStore {
     func add(body: String) {
         let trimmed = body.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, trimmed.count <= PostLimits.maxCharacters else { return }
-        let post = Post(
-            id: UUID(),
-            authorName: "あなた",
-            handle: "@you",
-            initial: "あ",
-            body: trimmed,
-            createdAt: Date(),
-            isMine: true,
-            avatarIndex: 0
-        )
-        posts.insert(post, at: 0)
-        save()
+        Task { await insert(trimmed) }
     }
 
     func toggleLike(id: UUID) {
@@ -52,45 +41,92 @@ final class PostStore {
         let wasLiked = posts[index].isLiked
         posts[index].storedLikeCount = max(0, posts[index].likeCount + (wasLiked ? -1 : 1))
         posts[index].likedByMe = !wasLiked
-        save()
+        saveLikes()
     }
 
-    private func load() {
-        guard let data = try? Data(contentsOf: fileURL),
-              let decoded = try? JSONDecoder().decode([Post].self, from: data),
-              !decoded.isEmpty else {
-            posts = Self.seed
-            save()
+    func refresh() async {
+        do {
+            let rows: [PostRow] = try await IrukaDatabase.client
+                .from("posts")
+                .select("id, author_name, handle, initial, body, created_at, avatar_index")
+                .order("created_at", ascending: false)
+                .execute()
+                .value
+            let mine = mineIDs()
+            let likes = likeMap()
+            posts = rows.map { row in
+                var post = Post(
+                    id: row.id,
+                    authorName: row.authorName,
+                    handle: row.handle,
+                    initial: row.initial,
+                    body: row.body,
+                    createdAt: row.createdAt,
+                    isMine: mine.contains(row.id),
+                    avatarIndex: row.avatarIndex
+                )
+                if let like = likes[row.id.uuidString] {
+                    post.likedByMe = like.liked
+                    post.storedLikeCount = like.count
+                }
+                return post
+            }
+        } catch {
+            posts = []
+        }
+    }
+
+    private func insert(_ body: String) async {
+        let payload = PostInsert(
+            authorName: "あなた",
+            handle: "@you",
+            initial: "あ",
+            body: body,
+            isMine: false,
+            avatarIndex: 0
+        )
+        do {
+            let row: PostRow = try await IrukaDatabase.client
+                .from("posts")
+                .insert(payload)
+                .select("id, author_name, handle, initial, body, created_at, avatar_index")
+                .single()
+                .execute()
+                .value
+            var ids = mineIDs()
+            ids.insert(row.id)
+            UserDefaults.standard.set(ids.map(\.uuidString), forKey: mineKey)
+            await refresh()
+        } catch {
             return
         }
-        posts = decoded
     }
 
-    private func save() {
-        guard let data = try? JSONEncoder().encode(posts) else { return }
-        try? data.write(to: fileURL, options: .atomic)
+    private func mineIDs() -> Set<UUID> {
+        let raw = UserDefaults.standard.stringArray(forKey: mineKey) ?? []
+        return Set(raw.compactMap(UUID.init(uuidString:)))
     }
 
-    private static var seed: [Post] {
-        let calendar = Calendar.current
-        let now = Date()
-        func at(hour: Int, minute: Int, daysAgo: Int = 0) -> Date {
-            var components = calendar.dateComponents([.year, .month, .day], from: now)
-            components.hour = hour
-            components.minute = minute
-            let base = calendar.date(from: components) ?? now
-            return calendar.date(byAdding: .day, value: -daysAgo, to: base) ?? base
+    private struct LikeRecord: Codable {
+        var liked: Bool
+        var count: Int
+    }
+
+    private func likeMap() -> [String: LikeRecord] {
+        guard let data = UserDefaults.standard.data(forKey: likesKey),
+              let decoded = try? JSONDecoder().decode([String: LikeRecord].self, from: data) else {
+            return [:]
         }
-        return [
-            Post(id: UUID(), authorName: "海野ミナ", handle: "@mina", initial: "海", body: "朝の波が静かで、コーヒーがうまい。", createdAt: at(hour: 7, minute: 42), isMine: false, avatarIndex: 0),
-            Post(id: UUID(), authorName: "青木レン", handle: "@ren", initial: "青", body: "今日の一言。深呼吸してから出る。", createdAt: at(hour: 8, minute: 5), isMine: false, avatarIndex: 1),
-            Post(id: UUID(), authorName: "ナミ", handle: "@nami", initial: "ナ", body: "電車で見た空が、思ったより青かった。", createdAt: at(hour: 8, minute: 31), isMine: false, avatarIndex: 2),
-            Post(id: UUID(), authorName: "カイ", handle: "@kai", initial: "カ", body: "昼休みに一杯。それだけで十分。", createdAt: at(hour: 12, minute: 8), isMine: false, avatarIndex: 3),
-            Post(id: UUID(), authorName: "ソラ", handle: "@sora", initial: "ソ", body: "70字で足りることは、思ったより多い。", createdAt: at(hour: 13, minute: 16), isMine: false, avatarIndex: 4),
-            Post(id: UUID(), authorName: "あなた", handle: "@you", initial: "海", body: "今日は波の音を聞きながら書く。", createdAt: at(hour: 9, minute: 12), isMine: true, avatarIndex: 0),
-            Post(id: UUID(), authorName: "あなた", handle: "@you", initial: "海", body: "短くても、残る。", createdAt: at(hour: 21, minute: 4, daysAgo: 1), isMine: true, avatarIndex: 1),
-            Post(id: UUID(), authorName: "あなた", handle: "@you", initial: "海", body: "コーヒーのにおいが少し強い。", createdAt: at(hour: 8, minute: 40, daysAgo: 2), isMine: true, avatarIndex: 2),
-            Post(id: UUID(), authorName: "あなた", handle: "@you", initial: "海", body: "明日も一言だけ書こう。", createdAt: at(hour: 22, minute: 18, daysAgo: 3), isMine: true, avatarIndex: 3)
-        ]
+        return decoded
+    }
+
+    private func saveLikes() {
+        var map = likeMap()
+        for post in posts {
+            map[post.id.uuidString] = LikeRecord(liked: post.isLiked, count: post.likeCount)
+        }
+        if let data = try? JSONEncoder().encode(map) {
+            UserDefaults.standard.set(data, forKey: likesKey)
+        }
     }
 }

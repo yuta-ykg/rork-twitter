@@ -1,3 +1,5 @@
+import { supabase } from "@/lib/supabase";
+
 export const MAX_CHARACTERS = 70;
 
 export const avatarFills = ["#8ECAE6", "#CDB4DB", "#F4A6A6", "#95D5B2", "#E9C46A"] as const;
@@ -15,46 +17,92 @@ export type Post = {
   likeCount?: number;
 };
 
-const STORAGE_KEY = "iruka-posts";
+const MINE_KEY = "iruka-mine-ids";
+const LIKES_KEY = "iruka-likes";
 
-function at(hour: number, minute: number, daysAgo: number = 0): string {
-  const date = new Date();
-  date.setDate(date.getDate() - daysAgo);
-  date.setHours(hour, minute, 0, 0);
-  return date.toISOString();
-}
+type LikeState = { liked: boolean; count: number };
 
-function seed(): Post[] {
-  return [
-    { id: crypto.randomUUID(), authorName: "海野ミナ", handle: "@mina", initial: "海", body: "朝の波が静かで、コーヒーがうまい。", createdAt: at(7, 42), isMine: false, avatarIndex: 0 },
-    { id: crypto.randomUUID(), authorName: "青木レン", handle: "@ren", initial: "青", body: "今日の一言。深呼吸してから出る。", createdAt: at(8, 5), isMine: false, avatarIndex: 1 },
-    { id: crypto.randomUUID(), authorName: "ナミ", handle: "@nami", initial: "ナ", body: "電車で見た空が、思ったより青かった。", createdAt: at(8, 31), isMine: false, avatarIndex: 2 },
-    { id: crypto.randomUUID(), authorName: "カイ", handle: "@kai", initial: "カ", body: "昼休みに一杯。それだけで十分。", createdAt: at(12, 8), isMine: false, avatarIndex: 3 },
-    { id: crypto.randomUUID(), authorName: "ソラ", handle: "@sora", initial: "ソ", body: "70字で足りることは、思ったより多い。", createdAt: at(13, 16), isMine: false, avatarIndex: 4 },
-    { id: crypto.randomUUID(), authorName: "あなた", handle: "@you", initial: "あ", body: "今日は波の音を聞きながら書く。", createdAt: at(9, 12), isMine: true, avatarIndex: 0 },
-    { id: crypto.randomUUID(), authorName: "あなた", handle: "@you", initial: "あ", body: "短くても、残る。", createdAt: at(21, 4, 1), isMine: true, avatarIndex: 1 },
-    { id: crypto.randomUUID(), authorName: "あなた", handle: "@you", initial: "あ", body: "コーヒーのにおいが少し強い。", createdAt: at(8, 40, 2), isMine: true, avatarIndex: 2 },
-    { id: crypto.randomUUID(), authorName: "あなた", handle: "@you", initial: "あ", body: "明日も一言だけ書こう。", createdAt: at(22, 18, 3), isMine: true, avatarIndex: 3 },
-  ];
-}
-
-export function loadPosts(): Post[] {
+function readIds(): string[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      const initial = seed();
-      savePosts(initial);
-      return initial;
-    }
-    const parsed = JSON.parse(raw) as Post[];
-    return parsed.length > 0 ? parsed : seed();
+    const raw = localStorage.getItem(MINE_KEY);
+    return raw ? (JSON.parse(raw) as string[]) : [];
   } catch {
-    return seed();
+    return [];
   }
 }
 
-export function savePosts(posts: Post[]): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(posts));
+function readLikes(): Record<string, LikeState> {
+  try {
+    const raw = localStorage.getItem(LIKES_KEY);
+    return raw ? (JSON.parse(raw) as Record<string, LikeState>) : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeLikes(likes: Record<string, LikeState>): void {
+  localStorage.setItem(LIKES_KEY, JSON.stringify(likes));
+}
+
+function rememberMine(id: string): void {
+  const ids = new Set(readIds());
+  ids.add(id);
+  localStorage.setItem(MINE_KEY, JSON.stringify([...ids]));
+}
+
+type Row = {
+  id: string;
+  author_name: string;
+  handle: string;
+  initial: string;
+  body: string;
+  created_at: string;
+  avatar_index: number;
+};
+
+function toPost(row: Row): Post {
+  const likes = readLikes();
+  const like = likes[row.id];
+  return {
+    id: row.id,
+    authorName: row.author_name,
+    handle: row.handle,
+    initial: row.initial,
+    body: row.body,
+    createdAt: row.created_at,
+    isMine: readIds().includes(row.id),
+    avatarIndex: row.avatar_index,
+    isLiked: like?.liked ?? false,
+    likeCount: like?.count ?? 0,
+  };
+}
+
+export async function fetchPosts(): Promise<Post[]> {
+  const { data, error } = await supabase
+    .from("posts")
+    .select("id, author_name, handle, initial, body, created_at, avatar_index")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map(toPost);
+}
+
+export async function insertPost(body: string): Promise<Post> {
+  const trimmed = body.trim();
+  const { data, error } = await supabase
+    .from("posts")
+    .insert({
+      author_name: "あなた",
+      handle: "@you",
+      initial: "あ",
+      body: trimmed,
+      is_mine: false,
+      avatar_index: 0,
+    })
+    .select("id, author_name, handle, initial, body, created_at, avatar_index")
+    .single();
+  if (error || !data) throw error ?? new Error("投稿できませんでした");
+  rememberMine(data.id);
+  return toPost(data);
 }
 
 export function sortTimeline(posts: Post[]): Post[] {
@@ -83,9 +131,14 @@ export function timeLabel(iso: string): string {
 }
 
 export function toggleLike(posts: Post[], id: string): Post[] {
-  return posts.map((post) => post.id === id ? {
-    ...post,
-    isLiked: !post.isLiked,
-    likeCount: Math.max(0, (post.likeCount ?? 0) + (post.isLiked ? -1 : 1)),
-  } : post);
+  const likes = readLikes();
+  const next = posts.map((post) => {
+    if (post.id !== id) return post;
+    const liked = !post.isLiked;
+    const count = Math.max(0, (post.likeCount ?? 0) + (post.isLiked ? -1 : 1));
+    likes[id] = { liked, count };
+    return { ...post, isLiked: liked, likeCount: count };
+  });
+  writeLikes(likes);
+  return next;
 }
