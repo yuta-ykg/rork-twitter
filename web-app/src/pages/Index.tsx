@@ -1,3 +1,5 @@
+import { NotificationBell } from "@/components/NotificationBell";
+import { useNotifications } from "@/hooks/useNotifications";
 import { DesktopSidebar } from "@/components/DesktopSidebar";
 import { useDesktopNavigation } from "@/hooks/useDesktopNavigation";
 import { useBottomBarLabels } from "@/hooks/useBottomBarLabels";
@@ -24,7 +26,7 @@ import {
   type Post,
 } from "@/lib/posts";
 
-type Tab = "home" | "mine" | "bookmarks";
+type Tab = "home" | "mine" | "bookmarks" | "notifications";
 
 function Avatar({ initial, index }: { initial: string; index: number }) {
   useLanguage();
@@ -205,7 +207,7 @@ function Shell({
       </header>
       <main className={`flex-1 px-5 pb-24 ${useDesktopBottomBar ? "" : "lg:pb-8"}`}>{children}</main>
       <div className={`fixed bottom-0 left-1/2 z-20 w-full max-w-[430px] -translate-x-1/2 ${useDesktopBottomBar ? "" : "lg:hidden"}`}>
-        <nav aria-label={t("メインナビゲーション")} className="grid grid-cols-4 border-t border-border/60 bg-background/70 px-6 pb-[max(8px,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl">
+        <nav aria-label={t("メインナビゲーション")} className="grid grid-cols-5 border-t border-border/60 bg-background/70 px-3 pb-[max(8px,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl">
           <Link to="/" aria-label={t("ホーム")} className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "home" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
             <House className="h-5 w-5" aria-hidden />
             {showBottomBarLabels && <span>{t("ホーム")}</span>}</Link>
@@ -216,6 +218,10 @@ function Shell({
           <Link to="/bookmarks" aria-label={t("ブックマーク")} className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "bookmarks" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
             <Bookmark className="h-5 w-5" aria-hidden />
             {showBottomBarLabels && <span>{t("ブックマーク")}</span>}
+          </Link>
+          <Link to="/notifications" className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "notifications" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
+            <span className="sr-only">{t("通知")}</span><NotificationBell />
+            {showBottomBarLabels && <span aria-hidden>{t("通知")}</span>}
           </Link>
           <Link to="/mine" aria-label={t("自分")} className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "mine" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
             <UserRound className="h-5 w-5" aria-hidden />
@@ -525,6 +531,55 @@ export function BookmarksPage() {
         error || bookmarkError ? <div className="py-6"><p role="alert">{t(error || bookmarkError)}</p><button type="button" onClick={() => { setRetry((value) => value + 1); void refreshBookmarks().catch(() => {}); }} className="min-h-11 text-[hsl(var(--brand))]">{t("再読み込み")}</button></div> :
         savedPosts.length ? savedPosts.map((post) => <Row key={post.id} post={post} showAuthor onLike={() => like(post)} />) :
         <p className="py-10 text-center text-muted-foreground">{t("まだブックマークがありません。")}</p>}
+    </Shell>
+    {open && user ? <ComposeSheet onClose={() => setOpen(false)} onPost={add}
+      authorName={displayName(user)} handle={userHandle(user)} initial={displayName(user).slice(0, 1)} /> : null}
+  </>;
+}
+
+export function NotificationsPage() {
+  useLanguage();
+  const { user } = useAuth();
+  const notifications = useNotifications();
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  async function add(body: string) {
+    if (!user) return;
+    try { const post = await insertPost(body, user); navigate(`/post/${post.id}`); }
+    catch { toast.error(t("投稿できませんでした。もう一度試してください。")); }
+  }
+  async function openNotification(id: string, postId: string) {
+    try { await notifications.markRead(id); navigate(`/post/${postId}`); }
+    catch { toast.error(t("通知を既読にできませんでした。")); }
+  }
+  return <>
+    <Shell tab="notifications" onCompose={() => setOpen(true)}>
+      <div className="flex items-center justify-between gap-3 pt-4">
+        <h1 className="text-[28px] font-bold">{t("通知")}</h1>
+        {notifications.unreadCount > 0 && <button type="button" disabled={notifications.marking}
+          onClick={() => void notifications.markAllRead().catch(() => toast.error(t("通知を既読にできませんでした。")))}
+          className="min-h-11 text-sm text-[hsl(var(--brand))] disabled:opacity-50">{t("すべて既読にする")}</button>}
+      </div>
+      <p className="mb-4 mt-2 text-base text-muted-foreground">{t("自分の投稿へのいいねをお知らせします。")}</p>
+      {!user ? <SignInPanel title={t("通知")} message={t("通知を見るにはログインしてください。")} /> :
+        isDevelopmentSession() ? <p className="py-10 text-muted-foreground">{t("開発モードでは通知は届きません。")}</p> :
+        notifications.loading ? <p role="status" className="py-10 text-muted-foreground">{t("読み込み中…")}</p> :
+        notifications.error ? <div className="py-6"><p role="alert">{t("通知を読み込めませんでした。")}</p><button type="button" onClick={() => void notifications.refresh()} className="min-h-11 text-[hsl(var(--brand))]">{t("再読み込み")}</button></div> :
+        notifications.rows.length ? <>
+          {notifications.rows.map((item) => <button type="button" key={item.id} disabled={notifications.marking}
+            onClick={() => void openNotification(item.id, item.post_id)}
+            className={`flex min-h-20 w-full gap-3 border-b border-border px-3 py-4 text-left disabled:opacity-50 ${item.read_at ? "" : "bg-muted/60"}`}>
+            <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[hsl(var(--brand))]" style={{ opacity: item.read_at ? 0 : 1 }} aria-hidden />
+            <span className="min-w-0">
+              {!item.read_at && <span className="sr-only">{t("未読の通知")}: </span>}
+              <span className="block font-medium">{item.actor_name} {t("さんがあなたの投稿にいいねしました。")}</span>
+              <span className="mt-1 block break-words text-sm text-muted-foreground">{item.post_body}</span>
+              <time dateTime={item.created_at} className="mt-2 block text-xs text-muted-foreground">{timeLabel(item.created_at)}</time>
+            </span>
+          </button>)}
+          {notifications.hasMore && <button type="button" disabled={notifications.loadingMore} onClick={() => void notifications.loadMore()}
+            className="min-h-11 w-full text-[hsl(var(--brand))]">{t("もっと見る")}</button>}
+        </> : <p className="py-10 text-center text-muted-foreground">{t("まだ通知がありません。")}</p>}
     </Shell>
     {open && user ? <ComposeSheet onClose={() => setOpen(false)} onPost={add}
       authorName={displayName(user)} handle={userHandle(user)} initial={displayName(user).slice(0, 1)} /> : null}

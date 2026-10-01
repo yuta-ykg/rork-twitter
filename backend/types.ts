@@ -18,6 +18,12 @@ export type Database = {
   }
   public: {
     Tables: {
+      notifications: {
+        Row: { id: string; recipient_id: string; actor_id: string; post_id: string; created_at: string; read_at: string | null }
+        Insert: { id?: string; recipient_id: string; actor_id: string; post_id: string; created_at?: string; read_at?: string | null }
+        Update: { id?: string; recipient_id?: string; actor_id?: string; post_id?: string; created_at?: string; read_at?: string | null }
+        Relationships: [{ foreignKeyName: "notifications_post_id_fkey"; columns: ["post_id"]; isOneToOne: false; referencedRelation: "posts"; referencedColumns: ["id"] }]
+      }
       post_bookmarks: {
         Row: { created_at: string; post_id: string; user_id: string }
         Insert: { created_at?: string; post_id: string; user_id: string }
@@ -124,6 +130,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_notifications: {
+        Args: { expected_user_id: string; before_created_at?: string; before_id?: string }
+        Returns: { id: string; post_id: string; actor_id: string; actor_name: string; post_body: string; created_at: string; read_at: string | null; unread_count: number }[]
+      }
+      mark_notifications_read: { Args: { notification_ids: string[]; expected_user_id: string }; Returns: undefined }
+      mark_all_notifications_read: { Args: { before_time: string; expected_user_id: string }; Returns: undefined }
       get_post_bookmarks: {
         Args: { expected_user_id: string }
         Returns: { post_id: string; created_at: string }[]

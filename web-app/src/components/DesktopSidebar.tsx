@@ -1,8 +1,9 @@
+import { NotificationBell } from "@/components/NotificationBell";
 import { Bookmark, Fish, House, Settings, SquarePen, UserRound } from "lucide-react";
 import { Link } from "react-router-dom";
 import { t, useLanguage } from "@/lib/language";
 
-export function DesktopSidebar({ tab, onCompose }: { tab: "home" | "mine" | "bookmarks" | "settings"; onCompose: () => void }) {
+export function DesktopSidebar({ tab, onCompose }: { tab: "home" | "mine" | "bookmarks" | "settings" | "notifications"; onCompose: () => void }) {
   useLanguage();
   return (
     <aside className="fixed bottom-0 left-[calc(50%-380px)] top-0 hidden w-[220px] border-r border-border bg-background px-4 py-6 lg:block">
@@ -19,6 +20,9 @@ export function DesktopSidebar({ tab, onCompose }: { tab: "home" | "mine" | "boo
           </Link>
           <Link to="/mine" aria-current={tab === "mine" ? "page" : undefined} className={`flex min-h-12 items-center gap-3 rounded-xl px-3 ${tab === "mine" ? "bg-muted text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
             <UserRound className="h-5 w-5" aria-hidden />{t("自分")}
+          </Link>
+          <Link to="/notifications" aria-current={tab === "notifications" ? "page" : undefined} className={`flex min-h-12 items-center gap-3 rounded-xl px-3 ${tab === "notifications" ? "bg-muted text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
+            <NotificationBell />{t("通知")}
           </Link>
           <Link to="/settings" aria-current={tab === "settings" ? "page" : undefined} className={`flex min-h-12 items-center gap-3 rounded-xl px-3 ${tab === "settings" ? "bg-muted text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
             <Settings className="h-5 w-5" aria-hidden />{t("設定")}
