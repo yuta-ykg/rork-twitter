@@ -47,30 +47,9 @@ struct HomeView: View {
                 Wordmark()
             }
         }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            Button {
-                openComposer()
-            } label: {
-                Text("投稿する")
-                    .font(.system(size: 17, weight: .semibold))
-                    .frame(maxWidth: .infinity)
-                    .frame(minHeight: 52)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(Color.irukaBlue)
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
-            .padding(.bottom, 8)
-        }
+
     }
 
-    private func openComposer() {
-        if auth.user == nil {
-            showsSignIn = true
-        } else {
-            showsComposer = true
-        }
-    }
 }
 
 struct MineView: View {
@@ -141,23 +120,6 @@ struct MineView: View {
                 }
             }
         }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            Button {
-                if auth.user == nil {
-                    showsSignIn = true
-                } else {
-                    showsComposer = true
-                }
-            } label: {
-                Text(auth.user == nil ? "ログイン" : "新しく投稿")
-                    .font(.system(size: 17, weight: .semibold))
-                    .frame(maxWidth: .infinity)
-                    .frame(minHeight: 52)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(Color.irukaBlue)
-            .padding(.horizontal, 20)
-            .padding(.vertical, 8)
-        }
+
     }
 }
