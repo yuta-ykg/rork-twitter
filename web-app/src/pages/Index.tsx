@@ -200,6 +200,7 @@ function Row({ post, showAuthor, onLike }: { post: Post; showAuthor: boolean; on
         <span className="block text-base leading-snug">{post.body}</span>
       </span>
     </Link>
+    {post.userId ? <Link to={`/profile/${encodeURIComponent(post.userId)}`} className="ml-[58px] inline-flex min-h-11 items-center text-sm text-[#1D9BF0]">プロフィール</Link> : null}
     <div className="ml-[58px]"><LikeButton post={post} onClick={onLike} /></div>
     </div>
   );
@@ -327,7 +328,7 @@ export function MinePage() {
         {user ? (
           <>
             <div className="flex items-center justify-between pt-4">
-              <p className="text-base font-semibold">{displayName(user)}</p>
+              <Link to={`/profile/${encodeURIComponent(user.id)}`} className="text-base font-semibold text-[#1D9BF0]">プロフィールを見る・編集</Link>
               <button type="button" onClick={signOut} className="h-11 text-[#1D9BF0]">
                 ログアウト
               </button>
@@ -414,7 +415,7 @@ export function PostPage() {
       <div className="mt-2 flex items-center gap-3">
         <Avatar initial={post.initial} index={post.avatarIndex} />
         <div>
-          <p className="text-[17px] font-semibold">{post.authorName}</p>
+          {post.userId ? <Link to={`/profile/${encodeURIComponent(post.userId)}`} className="text-[17px] font-semibold text-[#1D9BF0]">{post.authorName}</Link> : <p className="text-[17px] font-semibold">{post.authorName}</p>}
           <p className="text-[15px] text-[#536471]">{post.handle}</p>
         </div>
       </div>
