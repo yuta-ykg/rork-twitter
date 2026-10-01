@@ -17,19 +17,9 @@ export type Post = {
   likeCount?: number;
 };
 
-const MINE_KEY = "iruka-mine-ids";
 const LIKES_KEY = "iruka-likes";
 
 type LikeState = { liked: boolean; count: number };
-
-function readIds(): string[] {
-  try {
-    const raw = localStorage.getItem(MINE_KEY);
-    return raw ? (JSON.parse(raw) as string[]) : [];
-  } catch {
-    return [];
-  }
-}
 
 function readLikes(): Record<string, LikeState> {
   try {
@@ -44,12 +34,6 @@ function writeLikes(likes: Record<string, LikeState>): void {
   localStorage.setItem(LIKES_KEY, JSON.stringify(likes));
 }
 
-function rememberMine(id: string): void {
-  const ids = new Set(readIds());
-  ids.add(id);
-  localStorage.setItem(MINE_KEY, JSON.stringify([...ids]));
-}
-
 type Row = {
   id: string;
   author_name: string;
@@ -58,9 +42,17 @@ type Row = {
   body: string;
   created_at: string;
   avatar_index: number;
+  user_id: string | null;
 };
 
-function toPost(row: Row): Post {
+export type Author = {
+  id: string;
+  email: string;
+  name?: string;
+  picture?: string;
+};
+
+function toPost(row: Row, userId?: string | null): Post {
   const likes = readLikes();
   const like = likes[row.id];
   return {
@@ -70,39 +62,50 @@ function toPost(row: Row): Post {
     initial: row.initial,
     body: row.body,
     createdAt: row.created_at,
-    isMine: readIds().includes(row.id),
+    isMine: Boolean(userId) && row.user_id === userId,
     avatarIndex: row.avatar_index,
     isLiked: like?.liked ?? false,
     likeCount: like?.count ?? 0,
   };
 }
 
-export async function fetchPosts(): Promise<Post[]> {
-  const { data, error } = await supabase
-    .from("posts")
-    .select("id, author_name, handle, initial, body, created_at, avatar_index")
-    .order("created_at", { ascending: false });
+const postColumns = "id, author_name, handle, initial, body, created_at, avatar_index, user_id";
+
+export async function fetchPosts(userId?: string | null): Promise<Post[]> {
+  const { data, error } = await supabase.from("posts").select(postColumns).order("created_at", { ascending: false });
   if (error) throw error;
-  return (data ?? []).map(toPost);
+  return (data ?? []).map((row) => toPost(row, userId));
 }
 
-export async function insertPost(body: string): Promise<Post> {
+export async function syncProfile(author: Author): Promise<void> {
+  const { error } = await supabase.from("profiles").upsert(
+    { id: author.id, email: author.email, name: author.name ?? null, avatar_url: author.picture ?? null },
+    { onConflict: "id" },
+  );
+  if (error) throw error;
+}
+
+export async function insertPost(body: string, author: Author): Promise<Post> {
   const trimmed = body.trim();
+  const name = (author.name?.trim() || author.email || "あなた").slice(0, 40);
+  const local = (author.email.split("@")[0] ?? "you").replace(/[^A-Za-z0-9_]/g, "");
+  const handle = `@${(local || "you").slice(0, 38)}`;
+  await syncProfile(author);
   const { data, error } = await supabase
     .from("posts")
     .insert({
-      author_name: "あなた",
-      handle: "@you",
-      initial: "あ",
+      author_name: name,
+      handle,
+      initial: name.slice(0, 1),
       body: trimmed,
-      is_mine: false,
+      is_mine: true,
       avatar_index: 0,
+      user_id: author.id,
     })
-    .select("id, author_name, handle, initial, body, created_at, avatar_index")
+    .select(postColumns)
     .single();
   if (error || !data) throw error ?? new Error("投稿できませんでした");
-  rememberMine(data.id);
-  return toPost(data);
+  return toPost(data, author.id);
 }
 
 export function sortTimeline(posts: Post[]): Post[] {

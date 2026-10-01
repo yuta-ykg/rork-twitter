@@ -7,4 +7,5 @@ const supabaseAnonKey = import.meta.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: { persistSession: false },
+  accessToken: async () => localStorage.getItem("rork:access_token") ?? undefined,
 });

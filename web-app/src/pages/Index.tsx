@@ -2,6 +2,7 @@ import { Fish, Heart, House, UserRound, X } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
+import { displayName, useAuth, userHandle } from "@/hooks/useAuth";
 import {
   MAX_CHARACTERS,
   avatarFills,
@@ -50,7 +51,48 @@ function PostButton({ label, disabled, onClick }: { label: string; disabled?: bo
   );
 }
 
-function ComposeSheet({ onClose, onPost }: { onClose: () => void; onPost: (body: string) => void }) {
+function SignInPanel({ title, message }: { title: string; message: string }) {
+  const { isSigningIn, error, signIn, clearError } = useAuth();
+  return (
+    <div className="py-6">
+      <h2 className="text-[28px] font-bold leading-tight">{title}</h2>
+      <p className="mt-2 text-base text-[#536471]">{message}</p>
+      {error ? (
+        <p className="mt-3 text-sm text-red-500">
+          {error}{" "}
+          <button type="button" onClick={clearError} className="underline">
+            閉じる
+          </button>
+        </p>
+      ) : null}
+      <div className="mt-5 grid gap-3">
+        <PostButton label={isSigningIn ? "ログイン中…" : "Googleで続ける"} disabled={isSigningIn} onClick={() => void signIn("google")} />
+        <button
+          type="button"
+          disabled={isSigningIn}
+          onClick={() => void signIn("apple")}
+          className="h-[52px] w-full rounded-full bg-black text-[17px] font-semibold text-white disabled:opacity-40"
+        >
+          Appleで続ける
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ComposeSheet({
+  onClose,
+  onPost,
+  authorName,
+  handle,
+  initial,
+}: {
+  onClose: () => void;
+  onPost: (body: string) => void;
+  authorName: string;
+  handle: string;
+  initial: string;
+}) {
   const [draft, setDraft] = useState("");
   const count = draft.length;
   const canPost = draft.trim().length > 0 && count <= MAX_CHARACTERS;
@@ -73,10 +115,10 @@ function ComposeSheet({ onClose, onPost }: { onClose: () => void; onPost: (body:
           </button>
         </div>
         <div className="mb-4 flex items-center gap-3">
-          <Avatar initial="あ" index={0} />
+          <Avatar initial={initial} index={0} />
           <div>
-            <p className="text-base font-semibold text-[#0F1419]">あなた</p>
-            <p className="text-sm text-[#536471]">@you</p>
+            <p className="text-base font-semibold text-[#0F1419]">{authorName}</p>
+            <p className="text-sm text-[#536471]">{handle}</p>
           </div>
         </div>
         <div className="relative min-h-[220px] rounded-2xl bg-[#F7F9F9]">
@@ -172,22 +214,25 @@ function LikeButton({ post, onClick }: { post: Post; onClick: () => void }) {
 }
 
 export function HomePage() {
+  const { user } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [open, setOpen] = useState(false);
+  const [needsSignIn, setNeedsSignIn] = useState(false);
   const [error, setError] = useState("");
   const timeline = useMemo(() => sortTimeline(posts), [posts]);
 
   useEffect(() => {
-    fetchPosts().then(setPosts).catch(() => setError("タイムラインを読み込めませんでした。"));
-  }, []);
+    fetchPosts(user?.id).then(setPosts).catch(() => setError("タイムラインを読み込めませんでした。"));
+  }, [user?.id]);
 
   function like(id: string) {
     setPosts(toggleLike(posts, id));
   }
 
   async function add(body: string) {
+    if (!user) return;
     try {
-      const next = await insertPost(body);
+      const next = await insertPost(body, user);
       setPosts((current) => [next, ...current]);
       setError("");
     } catch {
@@ -197,52 +242,85 @@ export function HomePage() {
 
   return (
     <>
-      <Shell tab="home" actionLabel="投稿する" onCompose={() => setOpen(true)}>
+      <Shell tab="home" actionLabel="投稿する" onCompose={() => (user ? setOpen(true) : setNeedsSignIn(true))}>
         <h1 className="pt-4 text-[28px] font-bold leading-tight">いま、みんなが書いている</h1>
         <p className="mb-2 mt-1 text-base text-[#536471]">70字までの短い投稿</p>
         {error ? <p className="mb-2 text-sm text-red-500">{error}</p> : null}
+        {needsSignIn && !user ? (
+          <SignInPanel title="ログインしてはじめる" message="投稿するには、GoogleかAppleで入ってください。" />
+        ) : null}
         {timeline.map((post) => (
           <Row key={post.id} post={post} showAuthor onLike={() => like(post.id)} />
         ))}
       </Shell>
-      {open ? <ComposeSheet onClose={() => setOpen(false)} onPost={add} /> : null}
+      {open && user ? (
+        <ComposeSheet
+          onClose={() => setOpen(false)}
+          onPost={add}
+          authorName={displayName(user)}
+          handle={userHandle(user)}
+          initial={displayName(user).slice(0, 1)}
+        />
+      ) : null}
     </>
   );
 }
 
 export function MinePage() {
+  const { user, signOut } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [open, setOpen] = useState(false);
   const mine = useMemo(() => sortTimeline(posts).filter((post) => post.isMine), [posts]);
   const count = thisWeekCount(posts);
 
   useEffect(() => {
-    fetchPosts().then(setPosts).catch(() => undefined);
-  }, []);
+    fetchPosts(user?.id).then(setPosts).catch(() => undefined);
+  }, [user?.id]);
 
   function like(id: string) {
     setPosts(toggleLike(posts, id));
   }
 
   async function add(body: string) {
-    const next = await insertPost(body);
+    if (!user) return;
+    const next = await insertPost(body, user);
     setPosts((current) => [next, ...current]);
   }
 
   return (
     <>
-      <Shell tab="mine" actionLabel="新しく投稿" onCompose={() => setOpen(true)}>
-        <div className="py-6 text-center">
-          <p className="text-[56px] font-bold leading-none tabular-nums">{count}</p>
-          <p className="mt-1 text-base text-[#536471]">今週の投稿</p>
-        </div>
-        {mine.length === 0 ? (
-          <p className="py-10 text-center text-[#536471]">まだ投稿がありません</p>
+      <Shell tab="mine" actionLabel={user ? "新しく投稿" : "ログイン"} onCompose={() => (user ? setOpen(true) : undefined)}>
+        {user ? (
+          <>
+            <div className="flex items-center justify-between pt-4">
+              <p className="text-base font-semibold">{displayName(user)}</p>
+              <button type="button" onClick={signOut} className="h-11 text-[#1D9BF0]">
+                ログアウト
+              </button>
+            </div>
+            <div className="py-6 text-center">
+              <p className="text-[56px] font-bold leading-none tabular-nums">{count}</p>
+              <p className="mt-1 text-base text-[#536471]">今週の投稿</p>
+            </div>
+            {mine.length === 0 ? (
+              <p className="py-10 text-center text-[#536471]">まだ投稿がありません</p>
+            ) : (
+              mine.map((post) => <Row key={post.id} post={post} showAuthor={false} onLike={() => like(post.id)} />)
+            )}
+          </>
         ) : (
-          mine.map((post) => <Row key={post.id} post={post} showAuthor={false} onLike={() => like(post.id)} />)
+          <SignInPanel title="自分の投稿" message="ログインすると、この端末を超えて自分の投稿が見られます。" />
         )}
       </Shell>
-      {open ? <ComposeSheet onClose={() => setOpen(false)} onPost={add} /> : null}
+      {open && user ? (
+        <ComposeSheet
+          onClose={() => setOpen(false)}
+          onPost={add}
+          authorName={displayName(user)}
+          handle={userHandle(user)}
+          initial={displayName(user).slice(0, 1)}
+        />
+      ) : null}
     </>
   );
 }
@@ -253,12 +331,13 @@ export function PostPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [ready, setReady] = useState(false);
   const post = posts.find((item) => item.id === id);
+  const { user } = useAuth();
   useEffect(() => {
-    fetchPosts()
+    fetchPosts(user?.id)
       .then(setPosts)
       .catch(() => undefined)
       .finally(() => setReady(true));
-  }, []);
+  }, [user?.id]);
   function like() {
     if (!id) return;
     setPosts(toggleLike(posts, id));

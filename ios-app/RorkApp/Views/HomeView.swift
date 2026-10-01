@@ -1,8 +1,10 @@
 import SwiftUI
 
 struct HomeView: View {
+    @Environment(AuthManager.self) private var auth
     @Bindable var store: PostStore
     @Binding var showsComposer: Bool
+    @Binding var showsSignIn: Bool
 
     var body: some View {
         List {
@@ -42,7 +44,7 @@ struct HomeView: View {
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             Button {
-                showsComposer = true
+                openComposer()
             } label: {
                 Text("投稿する")
                     .font(.system(size: 17, weight: .semibold))
@@ -56,11 +58,21 @@ struct HomeView: View {
             .padding(.bottom, 8)
         }
     }
+
+    private func openComposer() {
+        if auth.user == nil {
+            showsSignIn = true
+        } else {
+            showsComposer = true
+        }
+    }
 }
 
 struct MineView: View {
+    @Environment(AuthManager.self) private var auth
     @Bindable var store: PostStore
     @Binding var showsComposer: Bool
+    @Binding var showsSignIn: Bool
 
     var body: some View {
         List {
@@ -79,7 +91,11 @@ struct MineView: View {
                 .listRowSeparator(.hidden)
             }
 
-            if store.mine.isEmpty {
+            if auth.user == nil {
+                SignInView(title: "自分の投稿", message: "ログインすると、この端末を超えて自分の投稿が見られます。")
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+            } else if store.mine.isEmpty {
                 ContentUnavailableView("まだ投稿がありません", systemImage: "fish", description: Text("70字以内で、いまの気持ちを残しましょう。"))
                     .listRowSeparator(.hidden)
             } else {
@@ -104,12 +120,23 @@ struct MineView: View {
             ToolbarItem(placement: .topBarLeading) {
                 Wordmark()
             }
+            if auth.user != nil {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("ログアウト") {
+                        Task { await auth.signOut() }
+                    }
+                }
+            }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             Button {
-                showsComposer = true
+                if auth.user == nil {
+                    showsSignIn = true
+                } else {
+                    showsComposer = true
+                }
             } label: {
-                Text("新しく投稿")
+                Text(auth.user == nil ? "ログイン" : "新しく投稿")
                     .font(.system(size: 17, weight: .semibold))
                     .frame(maxWidth: .infinity)
                     .frame(minHeight: 52)

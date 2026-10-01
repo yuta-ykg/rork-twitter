@@ -2,6 +2,9 @@ import SwiftUI
 
 struct ComposeSheet: View {
     @Environment(\.dismiss) private var dismiss
+    var authorName: String = "あなた"
+    var handle: String = "@you"
+    var initial: String = "あ"
     let onPost: (String) -> Void
 
     @State private var draft = ""
@@ -17,12 +20,12 @@ struct ComposeSheet: View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 16) {
                 HStack(spacing: 12) {
-                    AvatarView(initial: "あ", index: 0)
+                    AvatarView(initial: initial, index: 0)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("あなた")
+                        Text(authorName)
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundStyle(Color.irukaInk)
-                        Text("@you")
+                        Text(handle)
                             .font(.system(size: 14))
                             .foregroundStyle(Color.irukaSecondary)
                     }

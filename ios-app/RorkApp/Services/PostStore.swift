@@ -7,12 +7,8 @@ import Supabase
 @Observable
 final class PostStore {
     private(set) var posts: [Post] = []
-    private let mineKey = "iruka-mine-ids"
     private let likesKey = "iruka-likes"
-
-    init() {
-        Task { await refresh() }
-    }
+    private var currentUserId: String?
 
     var timeline: [Post] {
         posts.sorted { $0.createdAt > $1.createdAt }
@@ -30,10 +26,10 @@ final class PostStore {
         return mine.filter { $0.createdAt >= start }.count
     }
 
-    func add(body: String) {
+    func add(body: String, user: AuthManager.User) {
         let trimmed = body.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, trimmed.count <= PostLimits.maxCharacters else { return }
-        Task { await insert(trimmed) }
+        Task { await insert(trimmed, user: user) }
     }
 
     func toggleLike(id: UUID) {
@@ -44,15 +40,15 @@ final class PostStore {
         saveLikes()
     }
 
-    func refresh() async {
+    func refresh(userId: String?) async {
+        currentUserId = userId
         do {
             let rows: [PostRow] = try await IrukaDatabase.client
                 .from("posts")
-                .select("id, author_name, handle, initial, body, created_at, avatar_index")
+                .select("id, author_name, handle, initial, body, created_at, avatar_index, user_id")
                 .order("created_at", ascending: false)
                 .execute()
                 .value
-            let mine = mineIDs()
             let likes = likeMap()
             posts = rows.map { row in
                 var post = Post(
@@ -62,8 +58,9 @@ final class PostStore {
                     initial: row.initial,
                     body: row.body,
                     createdAt: row.createdAt,
-                    isMine: mine.contains(row.id),
-                    avatarIndex: row.avatarIndex
+                    isMine: userId != nil && row.userId == userId,
+                    avatarIndex: row.avatarIndex,
+                    userId: row.userId
                 )
                 if let like = likes[row.id.uuidString] {
                     post.likedByMe = like.liked
@@ -76,35 +73,34 @@ final class PostStore {
         }
     }
 
-    private func insert(_ body: String) async {
+    func syncProfile(_ user: AuthManager.User) async {
+        let payload = ProfileUpsert(id: user.id, email: user.email, name: user.name, avatarUrl: user.picture)
+        try? await IrukaDatabase.client.from("profiles").upsert(payload).execute()
+    }
+
+    private func insert(_ body: String, user: AuthManager.User) async {
+        await syncProfile(user)
         let payload = PostInsert(
-            authorName: "あなた",
-            handle: "@you",
-            initial: "あ",
+            authorName: String(user.displayName.prefix(40)),
+            handle: String(user.handle.prefix(40)),
+            initial: user.initial,
             body: body,
-            isMine: false,
-            avatarIndex: 0
+            isMine: true,
+            avatarIndex: 0,
+            userId: user.id
         )
         do {
-            let row: PostRow = try await IrukaDatabase.client
+            let _: PostRow = try await IrukaDatabase.client
                 .from("posts")
                 .insert(payload)
-                .select("id, author_name, handle, initial, body, created_at, avatar_index")
+                .select("id, author_name, handle, initial, body, created_at, avatar_index, user_id")
                 .single()
                 .execute()
                 .value
-            var ids = mineIDs()
-            ids.insert(row.id)
-            UserDefaults.standard.set(ids.map(\.uuidString), forKey: mineKey)
-            await refresh()
+            await refresh(userId: user.id)
         } catch {
             return
         }
-    }
-
-    private func mineIDs() -> Set<UUID> {
-        let raw = UserDefaults.standard.stringArray(forKey: mineKey) ?? []
-        return Set(raw.compactMap(UUID.init(uuidString:)))
     }
 
     private struct LikeRecord: Codable {
