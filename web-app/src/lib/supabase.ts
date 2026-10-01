@@ -1,3 +1,4 @@
+import { canSkipLogin } from "@/lib/development";
 import { createClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
@@ -5,7 +6,9 @@ import type { Database } from "@/integrations/supabase/types";
 const supabaseUrl = import.meta.env.EXPO_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient<Database>(
+  supabaseUrl || (canSkipLogin ? "https://development.invalid" : ""),
+  supabaseAnonKey || (canSkipLogin ? "development-only" : ""), {
   auth: { persistSession: false },
   accessToken: async () => localStorage.getItem("rork:access_token") ?? undefined,
 });
