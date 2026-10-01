@@ -5,10 +5,24 @@ struct ContentView: View {
     @State private var store = PostStore()
     @State private var showsComposer = false
     @State private var showsSignIn = false
+    @State private var selectedTab: MainTab = .home
+    @State private var composeAfterLogin = false
+
+    private enum MainTab: Hashable { case home, compose, mine }
 
     var body: some View {
-        TabView {
-            Tab("ホーム", systemImage: "house.fill") {
+        TabView(selection: Binding(
+            get: { selectedTab },
+            set: { tab in
+                if tab == .compose {
+                    if auth.user == nil {
+                        composeAfterLogin = true
+                        showsSignIn = true
+                    } else { showsComposer = true }
+                } else { selectedTab = tab }
+            }
+        )) {
+            Tab("ホーム", systemImage: "house.fill", value: MainTab.home) {
                 NavigationStack {
                     HomeView(store: store, showsComposer: $showsComposer, showsSignIn: $showsSignIn)
                         .navigationDestination(for: Post.self) { post in
@@ -16,7 +30,10 @@ struct ContentView: View {
                         }
                 }
             }
-            Tab("自分", systemImage: "person.fill") {
+            Tab("投稿", systemImage: "square.and.pencil", value: MainTab.compose) {
+                Color.clear
+            }
+            Tab("自分", systemImage: "person.fill", value: MainTab.mine) {
                 NavigationStack {
                     MineView(store: store, showsComposer: $showsComposer, showsSignIn: $showsSignIn)
                         .navigationDestination(for: Post.self) { post in
@@ -42,7 +59,10 @@ struct ContentView: View {
                 store.add(body: body, user: user)
             }
         }
-        .sheet(isPresented: $showsSignIn) {
+        .sheet(isPresented: $showsSignIn, onDismiss: {
+            if composeAfterLogin && auth.user != nil { showsComposer = true }
+            composeAfterLogin = false
+        }) {
             NavigationStack {
                 SignInView()
                     .navigationTitle("ログイン")
