@@ -17,23 +17,6 @@ export type Post = {
   likeCount?: number;
 };
 
-const LIKES_KEY = "iruka-likes";
-
-type LikeState = { liked: boolean; count: number };
-
-function readLikes(): Record<string, LikeState> {
-  try {
-    const raw = localStorage.getItem(LIKES_KEY);
-    return raw ? (JSON.parse(raw) as Record<string, LikeState>) : {};
-  } catch {
-    return {};
-  }
-}
-
-function writeLikes(likes: Record<string, LikeState>): void {
-  localStorage.setItem(LIKES_KEY, JSON.stringify(likes));
-}
-
 type Row = {
   id: string;
   author_name: string;
@@ -53,8 +36,6 @@ export type Author = {
 };
 
 function toPost(row: Row, userId?: string | null): Post {
-  const likes = readLikes();
-  const like = likes[row.id];
   return {
     id: row.id,
     authorName: row.author_name,
@@ -64,8 +45,8 @@ function toPost(row: Row, userId?: string | null): Post {
     createdAt: row.created_at,
     isMine: Boolean(userId) && row.user_id === userId,
     avatarIndex: row.avatar_index,
-    isLiked: like?.liked ?? false,
-    likeCount: like?.count ?? 0,
+    isLiked: false,
+    likeCount: 0,
   };
 }
 
@@ -74,7 +55,17 @@ const postColumns = "id, author_name, handle, initial, body, created_at, avatar_
 export async function fetchPosts(userId?: string | null): Promise<Post[]> {
   const { data, error } = await supabase.from("posts").select(postColumns).order("created_at", { ascending: false });
   if (error) throw error;
-  return (data ?? []).map((row) => toPost(row, userId));
+  const posts = (data ?? []).map((row) => toPost(row, userId));
+  if (posts.length === 0) return posts;
+  const { data: stats, error: likesError } = await supabase.rpc("get_post_likes", {
+    post_ids: posts.map((post) => post.id),
+  });
+  if (likesError) throw likesError;
+  const byId = new Map((stats ?? []).map((stat) => [stat.post_id, stat]));
+  return posts.map((post) => {
+    const stat = byId.get(post.id);
+    return { ...post, likeCount: Number(stat?.like_count ?? 0), isLiked: Boolean(userId && stat?.is_liked) };
+  });
 }
 
 export async function syncProfile(author: Author): Promise<void> {
@@ -133,15 +124,13 @@ export function timeLabel(iso: string): string {
   return date.toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" });
 }
 
-export function toggleLike(posts: Post[], id: string): Post[] {
-  const likes = readLikes();
-  const next = posts.map((post) => {
-    if (post.id !== id) return post;
-    const liked = !post.isLiked;
-    const count = Math.max(0, (post.likeCount ?? 0) + (post.isLiked ? -1 : 1));
-    likes[id] = { liked, count };
-    return { ...post, isLiked: liked, likeCount: count };
+export async function setPostLike(id: string, liked: boolean, userId: string) {
+  if (!userId) throw new Error("いいねするにはログインしてください。");
+  const { data, error } = await supabase.rpc("set_post_like", {
+    target_post_id: id, liked, expected_user_id: userId,
   });
-  writeLikes(likes);
-  return next;
+  if (error) throw error;
+  const stat = data?.[0];
+  if (!stat) throw new Error("いいねを保存できませんでした。");
+  return { isLiked: stat.is_liked, likeCount: Number(stat.like_count) };
 }
