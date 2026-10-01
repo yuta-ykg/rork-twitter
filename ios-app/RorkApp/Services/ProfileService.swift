@@ -1,7 +1,7 @@
 import Foundation
 import Supabase
 
-nonisolated struct IrukaProfile: Decodable, Identifiable, Sendable {
+nonisolated struct IrukaProfile: Codable, Identifiable, Sendable {
     let id: String
     let name: String
     let handle: String?
@@ -24,6 +24,7 @@ nonisolated struct ProfileIDs: Encodable, Sendable {
 @MainActor
 enum ProfileService {
     static func fetch(ids: [String]) async throws -> [IrukaProfile] {
+        if DevelopmentData.isActive { return ids.contains(DevelopmentData.userId) ? [DevelopmentData.profile()] : [] }
         guard !ids.isEmpty else { return [] }
         return try await IrukaDatabase.client
             .rpc("get_public_profiles", params: ProfileIDs(profile_ids: Array(Set(ids))))
@@ -31,6 +32,7 @@ enum ProfileService {
     }
 
     static func ensure(_ user: AuthManager.User) async throws {
+        if DevelopmentData.isActive { return }
         try await IrukaDatabase.client.rpc("ensure_profile", params: [
             "expected_user_id": user.id, "profile_email": user.email,
             "profile_name": user.name ?? "ユーザー", "profile_avatar": user.picture ?? ""
@@ -44,6 +46,16 @@ enum ProfileService {
               bio.unicodeScalars.count <= 160,
               avatar.isEmpty || (URL(string: avatar)?.scheme == "https" && avatar.count <= 2048) else {
             throw NSError(domain: "Profile", code: 1, userInfo: [NSLocalizedDescriptionKey: "表示名・ユーザー名・自己紹介・画像URLを確認してください。"])
+        }
+        if DevelopmentData.isActive {
+            guard id == DevelopmentData.userId else {
+                throw NSError(domain: "Profile", code: 3, userInfo: [NSLocalizedDescriptionKey: "開発ユーザーが一致しません。"])
+            }
+            let profile = IrukaProfile(id: id, name: trimmed, handle: handle, bio: bio,
+                                       avatarUrl: avatar.isEmpty ? nil : avatar, createdAt: DevelopmentData.profile().createdAt,
+                                       postCount: DevelopmentData.posts().count)
+            DevelopmentData.save(profile: profile)
+            return profile
         }
         let profiles: [IrukaProfile] = try await IrukaDatabase.client.rpc("save_profile", params: [
             "expected_user_id": id, "profile_name": trimmed, "profile_handle": handle,
