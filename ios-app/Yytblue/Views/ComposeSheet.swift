@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ComposeSheet: View {
+    @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
     @Environment(\.dismiss) private var dismiss
     var authorName: String = "あなた"
     var handle: String = "@you"
@@ -33,7 +34,7 @@ struct ComposeSheet: View {
 
                 ZStack(alignment: .topLeading) {
                     if draft.isEmpty {
-                        Text("今の気持ちを、70字まで。")
+                        Text(L("今の気持ちを、70字まで。"))
                             .font(.system(size: 17))
                             .foregroundStyle(Color.irukaSecondary)
                             .padding(.horizontal, 14)
@@ -61,17 +62,17 @@ struct ComposeSheet: View {
                     Text("\(count) / \(PostLimits.maxCharacters)")
                         .font(.system(size: 15, weight: .medium, design: .monospaced))
                         .foregroundStyle(count >= PostLimits.maxCharacters ? Color.red : Color.irukaSecondary)
-                        .accessibilityLabel("\(count)字、上限\(PostLimits.maxCharacters)字")
+                        .accessibilityLabel(L("character_count", count, PostLimits.maxCharacters))
                 }
 
                 postButton
             }
             .padding(20)
-            .navigationTitle("新しい投稿")
+            .navigationTitle(L("新しい投稿"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("閉じる") { dismiss() }
+                    Button(L("閉じる")) { dismiss() }
                 }
             }
         }
@@ -83,7 +84,7 @@ struct ComposeSheet: View {
 
     private var postButton: some View {
         Button(action: submit) {
-            Text("投稿する")
+            Text(L("投稿する"))
                 .font(.system(size: 17, weight: .semibold))
                 .frame(maxWidth: .infinity)
                 .frame(minHeight: 52)

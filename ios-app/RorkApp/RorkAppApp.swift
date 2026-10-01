@@ -15,6 +15,7 @@ struct RorkAppApp: App {
         WindowGroup {
             ContentView()
                 .environment(authManager)
+                .modifier(AppLanguageModifier())
                 .modifier(AppThemeModifier())
         }
     }

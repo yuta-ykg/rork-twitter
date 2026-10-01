@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ProfileView: View {
+    @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
     @Environment(\.irukaPalette) private var palette
     let profileId: String
     @Bindable var store: PostStore
@@ -17,7 +18,7 @@ struct ProfileView: View {
     var body: some View {
         List {
             if loading {
-                ProgressView("読み込み中…")
+                ProgressView(L("読み込み中…"))
             } else if let profile {
                 Section {
                     VStack(alignment: .leading, spacing: 12) {
@@ -25,14 +26,14 @@ struct ProfileView: View {
                         Text(profile.name).font(.title2.bold())
                         if let handle = profile.handle { Text("@\(handle)").foregroundStyle(palette.secondary) }
                         if !profile.bio.isEmpty { Text(profile.bio).font(.body) }
-                        Text("\(profile.postCount) 投稿").foregroundStyle(palette.secondary)
-                        if own { Button("プロフィールを編集") { editing = true }.buttonStyle(.bordered) }
+                        Text(L("post_count", profile.postCount)).foregroundStyle(palette.secondary)
+                        if own { Button(L("プロフィールを編集")) { editing = true }.buttonStyle(.bordered) }
                     }
                     .padding(.vertical, 12)
                 }
-                Section("投稿") {
+                Section(L("投稿")) {
                     if userPosts.isEmpty {
-                        Text("まだ投稿がありません。").foregroundStyle(palette.secondary)
+                        Text(L("まだ投稿がありません。")).foregroundStyle(palette.secondary)
                     } else {
                         ForEach(userPosts) { post in
                             VStack(alignment: .leading, spacing: 0) {
@@ -43,14 +44,14 @@ struct ProfileView: View {
                     }
                 }
             } else {
-                Text(error ?? "プロフィールが見つかりません。")
-                Button("再読み込み") { retry += 1 }
+                Text(L(error ?? "プロフィールが見つかりません。"))
+                Button(L("再読み込み")) { retry += 1 }
             }
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
         .background(palette.background)
-        .navigationTitle("プロフィール")
+        .navigationTitle(L("プロフィール"))
         .navigationBarTitleDisplayMode(.inline)
         .task(id: "\(profileId):\(auth.user?.id ?? ""):\(retry)") {
             loading = true
@@ -81,6 +82,7 @@ struct ProfileView: View {
 }
 
 private struct ProfileEditor: View {
+    @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
     @Environment(\.irukaPalette) private var palette
     let profile: IrukaProfile
     let onSave: (IrukaProfile) -> Void
@@ -96,31 +98,31 @@ private struct ProfileEditor: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("表示名（1〜40文字）") { TextField("表示名", text: $name) }
-                Section("ユーザー名（英数字と_、3〜25文字）") {
-                    TextField("ユーザー名", text: $handle)
+                Section(L("表示名（1〜40文字）")) { TextField(L("表示名"), text: $name) }
+                Section(L("ユーザー名（英数字と_、3〜25文字）")) {
+                    TextField(L("ユーザー名"), text: $handle)
                         .textInputAutocapitalization(.never).autocorrectionDisabled()
                 }
-                Section("自己紹介（160文字まで）") {
+                Section(L("自己紹介（160文字まで）")) {
                     TextEditor(text: $bio).frame(minHeight: 120)
                     Text("\(bio.unicodeScalars.count) / 160").foregroundStyle(palette.secondary)
                 }
-                Section("プロフィール画像URL") {
+                Section(L("プロフィール画像URL")) {
                     TextField("https://", text: $avatar)
                         .keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled()
-                    Text("HTTPSの画像URL。空欄にすると画像を解除します。").font(.footnote)
+                    Text(L("HTTPSの画像URL。空欄にすると画像を解除します。")).font(.footnote)
                 }
-                if let error { Text(error).foregroundStyle(.red) }
+                if let error { Text(L(error)).foregroundStyle(.red) }
             }
             .scrollContentBackground(.hidden)
             .background(palette.background)
-            .navigationTitle("プロフィール編集")
+            .navigationTitle(L("プロフィール編集"))
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("キャンセル") { dismiss() }.disabled(saving)
+                    Button(L("キャンセル")) { dismiss() }.disabled(saving)
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(saving ? "保存中…" : "保存") {
+                    Button(saving ? L("保存中…") : L("保存")) {
                         guard auth.user?.id == profile.id, !saving else { return }
                         saving = true
                         error = nil

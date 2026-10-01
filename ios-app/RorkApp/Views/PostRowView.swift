@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct PostRowView: View {
+    @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
     @Environment(\.irukaPalette) private var palette
     let post: Post
     var showsAuthor: Bool = true
@@ -27,6 +28,7 @@ struct PostRowView: View {
 }
 
 struct AvatarView: View {
+    @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
     @Environment(\.irukaPalette) private var palette
     let initial: String
     let index: Int
@@ -52,6 +54,7 @@ struct AvatarView: View {
 }
 
 struct LikeButton: View {
+    @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
     @AppStorage("iruka-like-icon") private var iconChoice = LikeIcon.heart.rawValue
     private var icon: LikeIcon { LikeIcon(rawValue: iconChoice) ?? .heart }
     @Environment(\.irukaPalette) private var palette
@@ -66,8 +69,8 @@ struct LikeButton: View {
         }
         .buttonStyle(.borderless)
         .foregroundStyle(post.isLiked ? icon.selectedColor : palette.secondary)
-        .accessibilityLabel(post.isLiked ? "いいねを取り消す" : "いいね")
-        .accessibilityValue("\(post.likeCount)件")
+        .accessibilityLabel(post.isLiked ? L("いいねを取り消す") : L("いいね"))
+        .accessibilityValue(L("like_count", post.likeCount))
     }
 }
 
@@ -76,10 +79,10 @@ enum LikeIcon: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .heart: "ハート"
-        case .star: "星"
-        case .thumbsUp: "親指"
-        case .upvote: "Upvote"
+        case .heart: L("ハート")
+        case .star: L("星")
+        case .thumbsUp: L("親指")
+        case .upvote: L("Upvote")
         }
     }
     var selectedColor: Color {

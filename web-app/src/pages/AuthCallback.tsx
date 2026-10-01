@@ -1,9 +1,11 @@
+import { t, useLanguage } from "@/lib/language";
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { useAuth } from "@/hooks/useAuth";
 
 export default function AuthCallback() {
+  useLanguage();
   const { exchangeCode } = useAuth();
   const navigate = useNavigate();
   const ran = useRef(false);
@@ -19,5 +21,5 @@ export default function AuthCallback() {
     void exchangeCode(code).finally(() => navigate("/", { replace: true }));
   }, [exchangeCode, navigate]);
 
-  return <div className="grid min-h-dvh place-items-center text-[#536471]">ログインしています…</div>;
+  return <div className="grid min-h-dvh place-items-center text-[#536471]">{t("ログインしています…")}</div>;
 }

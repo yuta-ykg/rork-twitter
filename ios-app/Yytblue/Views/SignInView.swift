@@ -2,6 +2,7 @@ import AuthenticationServices
 import SwiftUI
 
 struct SignInView: View {
+    @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
     @Environment(AuthManager.self) private var auth
     var title: String = "ログインしてはじめる"
     var message: String = "GoogleかAppleで入ると、自分の投稿が残ります。"
@@ -10,10 +11,10 @@ struct SignInView: View {
         @Bindable var auth = auth
 
         VStack(alignment: .leading, spacing: 16) {
-            Text(title)
+            Text(L(title))
                 .font(.system(size: 28, weight: .bold))
                 .foregroundStyle(Color.irukaInk)
-            Text(message)
+            Text(L(message))
                 .font(.system(size: 16))
                 .foregroundStyle(Color.irukaSecondary)
 
@@ -26,7 +27,7 @@ struct SignInView: View {
             Button {
                 Task { await auth.signIn(provider: "google") }
             } label: {
-                Text("Googleで続ける")
+                Text(L("Googleで続ける"))
                     .font(.system(size: 17, weight: .semibold))
                     .frame(maxWidth: .infinity)
                     .frame(minHeight: 52)
@@ -36,11 +37,11 @@ struct SignInView: View {
             .disabled(auth.isSigningIn)
 
             if auth.canSkipLogin {
-                Button("開発用にログインをスキップ") { auth.skipLogin() }
+                Button(L("開発用にログインをスキップ")) { auth.skipLogin() }
                     .buttonStyle(.bordered)
                     .frame(minHeight: 44)
                     .disabled(auth.isSigningIn)
-                Text("スキップ中のデータはこの端末内に保存されます。")
+                Text(L("スキップ中のデータはこの端末内に保存されます。"))
                     .font(.footnote).foregroundStyle(Color.irukaSecondary)
             }
 
@@ -56,10 +57,10 @@ struct SignInView: View {
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .alert("ログインできませんでした", isPresented: $auth.showError) {
+        .alert(L("ログインできませんでした"), isPresented: $auth.showError) {
             Button("OK") {}
         } message: {
-            Text(auth.errorMessage)
+            Text(L(auth.errorMessage))
         }
     }
 }
