@@ -6,7 +6,7 @@ struct PostRowView: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            AvatarView(initial: post.initial, index: post.avatarIndex)
+            AvatarView(initial: post.initial, index: post.avatarIndex, url: post.avatarUrl)
             VStack(alignment: .leading, spacing: 3) {
                 if showsAuthor {
                     Text(post.authorName)
@@ -28,13 +28,23 @@ struct PostRowView: View {
 struct AvatarView: View {
     let initial: String
     let index: Int
+    var url: String? = nil
 
     var body: some View {
-        Text(initial)
+        Group {
+            if let url, let imageURL = URL(string: url), imageURL.scheme == "https" {
+                AsyncImage(url: imageURL) { phase in
+                    if let image = phase.image {
+                        image.resizable().scaledToFill()
+                    } else { Text(initial) }
+                }
+            } else { Text(initial) }
+        }
             .font(.system(size: 16, weight: .semibold))
             .foregroundStyle(Color.irukaInk.opacity(0.72))
             .frame(width: 46, height: 46)
             .background(Color(hex: AvatarPalette.fills[index % AvatarPalette.fills.count]), in: Circle())
+            .clipShape(Circle())
             .accessibilityHidden(true)
     }
 }
