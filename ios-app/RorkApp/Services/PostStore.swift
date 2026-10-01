@@ -7,7 +7,8 @@ import Supabase
 @Observable
 final class PostStore {
     private(set) var posts: [Post] = []
-    private let likesKey = "iruka-likes"
+    private var pendingLikes: Set<UUID> = []
+    var likeError: String?
     private var currentUserId: String?
 
     var timeline: [Post] {
@@ -33,15 +34,38 @@ final class PostStore {
     }
 
     func toggleLike(id: UUID) {
-        guard let index = posts.firstIndex(where: { $0.id == id }) else { return }
-        let wasLiked = posts[index].isLiked
-        posts[index].storedLikeCount = max(0, posts[index].likeCount + (wasLiked ? -1 : 1))
-        posts[index].likedByMe = !wasLiked
-        saveLikes()
+        guard let userId = currentUserId else {
+            likeError = "いいねするにはAppleかGoogleでログインしてください。"
+            return
+        }
+        guard !pendingLikes.contains(id),
+              let post = posts.first(where: { $0.id == id }) else { return }
+        pendingLikes.insert(id)
+        Task {
+            defer { pendingLikes.remove(id) }
+            do {
+                let stats: [PostLikeStats] = try await IrukaDatabase.client
+                    .rpc("set_post_like", params: SetLikeParams(
+                        target_post_id: id, liked: !post.isLiked, expected_user_id: userId
+                    ))
+                    .execute().value
+                guard currentUserId == userId,
+                      let stat = stats.first,
+                      let index = posts.firstIndex(where: { $0.id == id }) else { return }
+                posts[index].likedByMe = stat.isLiked
+                posts[index].storedLikeCount = stat.likeCount
+                likeError = nil
+            } catch {
+                if currentUserId == userId {
+                    likeError = "いいねを保存できませんでした。もう一度試してください。"
+                }
+            }
+        }
     }
 
     func refresh(userId: String?) async {
         currentUserId = userId
+        likeError = nil
         do {
             let rows: [PostRow] = try await IrukaDatabase.client
                 .from("posts")
@@ -49,7 +73,14 @@ final class PostStore {
                 .order("created_at", ascending: false)
                 .execute()
                 .value
-            let likes = likeMap()
+            var stats: [PostLikeStats] = []
+            if !rows.isEmpty {
+                stats = try await IrukaDatabase.client
+                    .rpc("get_post_likes", params: LikeStatsParams(post_ids: rows.map(\.id)))
+                    .execute().value
+            }
+            guard currentUserId == userId else { return }
+            let likes = Dictionary(uniqueKeysWithValues: stats.map { ($0.postId, $0) })
             posts = rows.map { row in
                 var post = Post(
                     id: row.id,
@@ -62,14 +93,15 @@ final class PostStore {
                     avatarIndex: row.avatarIndex,
                     userId: row.userId
                 )
-                if let like = likes[row.id.uuidString] {
-                    post.likedByMe = like.liked
-                    post.storedLikeCount = like.count
+                if let like = likes[row.id] {
+                    post.likedByMe = userId != nil && like.isLiked
+                    post.storedLikeCount = like.likeCount
                 }
                 return post
             }
         } catch {
-            posts = []
+            guard currentUserId == userId else { return }
+            likeError = "投稿またはいいねを読み込めませんでした。"
         }
     }
 
@@ -103,26 +135,4 @@ final class PostStore {
         }
     }
 
-    private struct LikeRecord: Codable {
-        var liked: Bool
-        var count: Int
-    }
-
-    private func likeMap() -> [String: LikeRecord] {
-        guard let data = UserDefaults.standard.data(forKey: likesKey),
-              let decoded = try? JSONDecoder().decode([String: LikeRecord].self, from: data) else {
-            return [:]
-        }
-        return decoded
-    }
-
-    private func saveLikes() {
-        var map = likeMap()
-        for post in posts {
-            map[post.id.uuidString] = LikeRecord(liked: post.isLiked, count: post.likeCount)
-        }
-        if let data = try? JSONEncoder().encode(map) {
-            UserDefaults.standard.set(data, forKey: likesKey)
-        }
-    }
 }
