@@ -1,7 +1,12 @@
 import SwiftUI
 
 struct PostDetailView: View {
-    let post: Post
+    let initialPost: Post
+    @Bindable var store: PostStore
+
+    private var post: Post {
+        store.posts.first(where: { $0.id == initialPost.id }) ?? initialPost
+    }
 
     var body: some View {
         ScrollView {
@@ -22,6 +27,8 @@ struct PostDetailView: View {
                     .font(.system(size: 24, weight: .semibold))
                     .foregroundStyle(Color.irukaInk)
                     .fixedSize(horizontal: false, vertical: true)
+
+                LikeButton(post: post) { store.toggleLike(id: post.id) }
 
                 Divider()
 
