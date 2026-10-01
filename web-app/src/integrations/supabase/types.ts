@@ -18,6 +18,32 @@ export type Database = {
   }
   public: {
     Tables: {
+      post_likes: {
+        Row: {
+          created_at: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       posts: {
         Row: {
           author_name: string
@@ -54,39 +80,33 @@ export type Database = {
         }
         Relationships: []
       }
-      post_likes: {
-        Row: { post_id: string; user_id: string; created_at: string }
-        Insert: { post_id: string; user_id: string; created_at?: string }
-        Update: { post_id?: string; user_id?: string; created_at?: string }
-        Relationships: [{ foreignKeyName: "post_likes_post_id_fkey"; columns: ["post_id"]; isOneToOne: false; referencedRelation: "posts"; referencedColumns: ["id"] }]
-      }
       profiles: {
         Row: {
-          bio: string
-          handle: string | null
           avatar_url: string | null
+          bio: string
           created_at: string | null
           email: string | null
+          handle: string | null
           id: string
           name: string | null
           updated_at: string | null
         }
         Insert: {
-          bio?: string
-          handle?: string | null
           avatar_url?: string | null
+          bio?: string
           created_at?: string | null
           email?: string | null
+          handle?: string | null
           id: string
           name?: string | null
           updated_at?: string | null
         }
         Update: {
-          bio?: string
-          handle?: string | null
           avatar_url?: string | null
+          bio?: string
           created_at?: string | null
           email?: string | null
+          handle?: string | null
           id?: string
           name?: string | null
           updated_at?: string | null
@@ -98,27 +118,66 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      get_public_profiles: {
-        Args: { profile_ids: string[] }
-        Returns: { id: string; name: string; handle: string | null; bio: string; avatar_url: string | null; created_at: string | null; post_count: number }[]
-      }
       ensure_profile: {
-        Args: { expected_user_id: string; profile_email: string; profile_name: string; profile_avatar: string }
+        Args: {
+          expected_user_id: string
+          profile_avatar: string
+          profile_email: string
+          profile_name: string
+        }
         Returns: undefined
       }
-      save_profile: {
-        Args: { expected_user_id: string; profile_name: string; profile_handle: string; profile_bio: string; profile_avatar: string }
-        Returns: { id: string; name: string; handle: string | null; bio: string; avatar_url: string | null; created_at: string | null; post_count: number }[]
-      }
-      user_id: { Args: never; Returns: string }
       get_post_likes: {
         Args: { post_ids: string[] }
-        Returns: { post_id: string; like_count: number; is_liked: boolean }[]
+        Returns: {
+          is_liked: boolean
+          like_count: number
+          post_id: string
+        }[]
+      }
+      get_public_profiles: {
+        Args: { profile_ids: string[] }
+        Returns: {
+          avatar_url: string
+          bio: string
+          created_at: string
+          handle: string
+          id: string
+          name: string
+          post_count: number
+        }[]
+      }
+      save_profile: {
+        Args: {
+          expected_user_id: string
+          profile_avatar: string
+          profile_bio: string
+          profile_handle: string
+          profile_name: string
+        }
+        Returns: {
+          avatar_url: string
+          bio: string
+          created_at: string
+          handle: string
+          id: string
+          name: string
+          post_count: number
+        }[]
       }
       set_post_like: {
-        Args: { target_post_id: string; liked: boolean; expected_user_id: string }
-        Returns: { post_id: string; like_count: number; is_liked: boolean }[]
+        Args: {
+          expected_user_id: string
+          liked: boolean
+          target_post_id: string
+        }
+        Returns: {
+          is_liked: boolean
+          like_count: number
+          post_id: string
+        }[]
       }
+      user_id: { Args: never; Returns: string }
     }
     Enums: {
       [_ in never]: never
