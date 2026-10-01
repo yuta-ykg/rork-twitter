@@ -26,6 +26,11 @@ struct HomeView: View {
                     NavigationLink(value: post) {
                         PostRowView(post: post)
                     }
+                    if let userId = post.userId {
+                        NavigationLink("プロフィール") { ProfileView(profileId: userId, store: store) }
+                            .font(.subheadline)
+                            .foregroundStyle(Color.irukaBlue)
+                    }
                     LikeButton(post: post) { store.toggleLike(id: post.id) }
                         .padding(.leading, 58)
                 }
@@ -89,6 +94,14 @@ struct MineView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
                 .listRowSeparator(.hidden)
+            }
+
+            if let user = auth.user {
+                Section {
+                    NavigationLink("プロフィールを見る・編集") {
+                        ProfileView(profileId: user.id, store: store)
+                    }
+                }
             }
 
             if auth.user == nil {
