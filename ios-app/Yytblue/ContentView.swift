@@ -5,6 +5,7 @@ struct ContentView: View {
     @Environment(AuthManager.self) private var auth
     @State private var store = PostStore()
     @State private var bookmarks = BookmarkStore()
+    @Environment(\.scenePhase) private var scenePhase
     @State private var showsComposer = false
     @State private var showsSignIn = false
     @State private var selectedTab: MainTab = .home
@@ -58,6 +59,7 @@ struct ContentView: View {
         .tint(Color.irukaBlue)
         .task(id: auth.user?.id) {
             bookmarks.configure(userId: auth.user?.id)
+            await bookmarks.refresh()
             if let user = auth.user {
                 await store.syncProfile(user)
             }
@@ -105,6 +107,9 @@ struct ContentView: View {
             Button("OK") { bookmarks.error = nil }
         } message: { Text(L(bookmarks.error ?? "")) }
         .environment(bookmarks)
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { Task { await bookmarks.refresh() } }
+        }
         .onChange(of: auth.user?.id) { _, newValue in
             bookmarks.configure(userId: newValue)
             if newValue != nil {

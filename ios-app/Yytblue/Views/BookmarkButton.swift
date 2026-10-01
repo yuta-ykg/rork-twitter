@@ -15,6 +15,7 @@ struct BookmarkButton: View {
                 .frame(minWidth: 44, minHeight: 44)
         }
         .buttonStyle(.borderless)
+        .disabled(bookmarks.loading || bookmarks.pending.contains(postId))
         .foregroundStyle(saved ? Color.irukaBlue : Color.irukaSecondary)
         .accessibilityLabel(L(saved ? "ブックマークを解除" : "ブックマークに追加"))
         .accessibilityAddTraits(saved ? .isSelected : [])

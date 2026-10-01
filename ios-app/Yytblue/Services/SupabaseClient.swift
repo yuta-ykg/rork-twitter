@@ -90,3 +90,20 @@ nonisolated struct SetLikeParams: Encodable, Sendable {
     let liked: Bool
     let expected_user_id: String
 }
+
+nonisolated struct PostBookmarkRow: Decodable, Sendable {
+    let postId: UUID
+    enum CodingKeys: String, CodingKey { case postId = "post_id" }
+}
+nonisolated struct BookmarkIdentityParams: Encodable, Sendable {
+    let expected_user_id: String
+}
+nonisolated struct SetBookmarkParams: Encodable, Sendable {
+    let target_post_id: UUID
+    let saved: Bool
+    let expected_user_id: String
+}
+nonisolated struct ImportBookmarksParams: Encodable, Sendable {
+    let post_ids: [UUID]
+    let expected_user_id: String
+}
