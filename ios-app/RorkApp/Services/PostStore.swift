@@ -34,14 +34,7 @@ final class PostStore {
     }
 
     func toggleLike(id: UUID) {
-        if DevelopmentData.isActive {
-            guard let index = posts.firstIndex(where: { $0.id == id }) else { return }
-            let liked = !posts[index].isLiked
-            posts[index].likedByMe = liked
-            posts[index].storedLikeCount = liked ? 1 : 0
-            DevelopmentData.save(posts: posts)
-            return
-        }
+
         guard let userId = currentUserId else {
             likeError = "いいねするにはAppleかGoogleでログインしてください。"
             return
@@ -74,7 +67,6 @@ final class PostStore {
     func refresh(userId: String?) async {
         currentUserId = userId
         likeError = nil
-        if DevelopmentData.isActive { posts = DevelopmentData.timeline(); return }
         do {
             let rows: [PostRow] = try await IrukaDatabase.client
                 .from("posts")
@@ -123,16 +115,7 @@ final class PostStore {
     }
 
     private func insert(_ body: String, user: AuthManager.User) async {
-        if user.id == DevelopmentData.userId && !DevelopmentData.isActive { return }
-        if DevelopmentData.isActive {
-            let profile = DevelopmentData.profile()
-            let post = Post(id: UUID(), authorName: profile.name, handle: "@" + (profile.handle ?? "developer"),
-                            initial: String(profile.name.prefix(1)), body: body, createdAt: Date(),
-                            isMine: true, avatarIndex: 0, userId: DevelopmentData.userId, avatarUrl: profile.avatarUrl)
-            posts.insert(post, at: 0)
-            DevelopmentData.save(posts: posts)
-            return
-        }
+
         await syncProfile(user)
         let profile = try? await ProfileService.fetch(ids: [user.id]).first
         let payload = PostInsert(
