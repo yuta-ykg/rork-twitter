@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct HomeView: View {
+    @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
     @Environment(AuthManager.self) private var auth
     @Bindable var store: PostStore
     @Binding var showsComposer: Bool
@@ -10,10 +11,10 @@ struct HomeView: View {
         List {
             Section {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("いま、みんなが書いている")
+                    Text(L("いま、みんなが書いている"))
                         .font(.system(size: 28, weight: .bold))
                         .foregroundStyle(Color.irukaInk)
-                    Text("70字までの短い投稿")
+                    Text(L("70字までの短い投稿"))
                         .font(.system(size: 16))
                         .foregroundStyle(Color.irukaSecondary)
                 }
@@ -27,7 +28,7 @@ struct HomeView: View {
                         PostRowView(post: post)
                     }
                     if let userId = post.userId {
-                        NavigationLink("プロフィール") { ProfileView(profileId: userId, store: store) }
+                        NavigationLink(L("プロフィール")) { ProfileView(profileId: userId, store: store) }
                             .font(.subheadline)
                             .foregroundStyle(Color.irukaBlue)
                     }
@@ -53,6 +54,7 @@ struct HomeView: View {
 }
 
 struct MineView: View {
+    @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
     @Environment(AuthManager.self) private var auth
     @Bindable var store: PostStore
     @Binding var showsComposer: Bool
@@ -66,7 +68,7 @@ struct MineView: View {
                         .font(.system(size: 56, weight: .bold))
                         .foregroundStyle(Color.irukaInk)
                         .monospacedDigit()
-                    Text("今週の投稿")
+                    Text(L("今週の投稿"))
                         .font(.system(size: 16))
                         .foregroundStyle(Color.irukaSecondary)
                 }
@@ -77,18 +79,18 @@ struct MineView: View {
 
             if let user = auth.user {
                 Section {
-                    NavigationLink("プロフィールを見る・編集") {
+                    NavigationLink(L("プロフィールを見る・編集")) {
                         ProfileView(profileId: user.id, store: store)
                     }
                 }
             }
 
             if auth.user == nil {
-                SignInView(title: "自分の投稿", message: "ログインすると、この端末を超えて自分の投稿が見られます。")
+                SignInView(title: L("自分の投稿"), message: L("ログインすると、この端末を超えて自分の投稿が見られます。"))
                     .listRowSeparator(.hidden)
                     .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
             } else if store.mine.isEmpty {
-                ContentUnavailableView("まだ投稿がありません", systemImage: "fish", description: Text("70字以内で、いまの気持ちを残しましょう。"))
+                ContentUnavailableView(L("まだ投稿がありません"), systemImage: "fish", description: Text(L("70字以内で、いまの気持ちを残しましょう。")))
                     .listRowSeparator(.hidden)
             } else {
                 ForEach(store.mine) { post in
@@ -114,7 +116,7 @@ struct MineView: View {
             }
             if auth.user != nil {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("ログアウト") {
+                    Button(L("ログアウト")) {
                         Task { await auth.signOut() }
                     }
                 }

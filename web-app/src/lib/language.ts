@@ -1,0 +1,162 @@
+import { useLayoutEffect, useSyncExternalStore } from "react";
+
+export type Language = "ja" | "en";
+const key = "iruka-language";
+const english: Record<string, string> = {
+  "ホーム": "Home",
+  "投稿": "Posts",
+  "自分": "Mine",
+  "設定": "Settings",
+  "あなた": "You",
+  "あ": "Y",
+  "ログイン": "Sign in",
+  "閉じる": "Close",
+  "いいね": "Like",
+  "ライト": "Light",
+  "ダーク": "Dark",
+  "ダークブルー": "Dark blue",
+  "ミント": "Mint",
+  "システム": "System",
+  "星": "Star",
+  "ハート": "Heart",
+  "親指": "Thumbs up",
+  "外観": "Appearance",
+  "テーマ": "Theme",
+  "言語": "Language",
+  "いいねアイコン": "Like icon",
+  "アイコン": "Icon",
+  "システムを選ぶと端末の外観設定に合わせて切り替わります。": "System follows your device appearance.",
+  "いいねの表示に使うアイコンを選べます。": "Choose the icon used for likes.",
+  "イルカ": "Iruka",
+  "今の気持ちを、70字まで。": "Share how you feel, in up to 70 characters.",
+  "新しい投稿": "New post",
+  "投稿する": "Post",
+  "投稿を作成": "Create a post",
+  "投稿本文": "Post text",
+  "メインナビゲーション": "Main navigation",
+  "いま、みんなが書いている": "What everyone is sharing",
+  "70字までの短い投稿": "Short posts, up to 70 characters",
+  "プロフィール": "Profile",
+  "今週の投稿": "Posts this week",
+  "プロフィールを見る・編集": "View or edit profile",
+  "自分の投稿": "My posts",
+  "ログインすると、この端末を超えて自分の投稿が見られます。": "Sign in to access your posts across devices.",
+  "まだ投稿がありません": "No posts yet",
+  "まだ投稿がありません。": "No posts yet.",
+  "70字以内で、いまの気持ちを残しましょう。": "Share how you feel in up to 70 characters.",
+  "ログアウト": "Sign out",
+  "プロフィールを見る": "View profile",
+  "投稿時刻": "Posted at",
+  "文字数": "Characters",
+  "いいねを取り消す": "Unlike",
+  "いいね数": "Like count",
+  "読み込み中…": "Loading…",
+  "プロフィールを編集": "Edit profile",
+  "プロフィール編集": "Edit profile",
+  "プロフィールが見つかりません。": "Profile not found.",
+  "再読み込み": "Try again",
+  "プロフィールを読み込めませんでした。": "Couldn't load the profile.",
+  "表示名（1〜40文字）": "Display name (1–40 characters)",
+  "表示名": "Display name",
+  "ユーザー名（英数字と_、3〜25文字）": "Username (letters, numbers and _, 3–25 characters)",
+  "ユーザー名": "Username",
+  "自己紹介（160文字まで）": "Bio (up to 160 characters)",
+  "プロフィール画像URL": "Profile image URL",
+  "HTTPSの画像URL。空欄にすると画像を解除します。": "HTTPS image URL. Leave blank to remove the image.",
+  "キャンセル": "Cancel",
+  "保存中…": "Saving…",
+  "保存": "Save",
+  "保存する": "Save",
+  "保存できませんでした。入力内容とユーザー名の重複を確認してください。": "Couldn't save. Check your details and whether the username is available.",
+  "ログインしてはじめる": "Sign in to get started",
+  "GoogleかAppleで入ると、自分の投稿が残ります。": "Sign in with Google or Apple to save your posts.",
+  "Googleで続ける": "Continue with Google",
+  "Appleで続ける": "Continue with Apple",
+  "開発用にログインをスキップ": "Skip sign-in for development",
+  "スキップ中のデータはこの端末内に保存されます。": "Development data is saved on this device.",
+  "ログインできませんでした": "Couldn't sign in",
+  "ログインに失敗しました": "Sign-in failed",
+  "ログイン用のURLが不正です": "The sign-in URL is invalid.",
+  "認証コードを受け取れませんでした": "Couldn't receive the authorization code.",
+  "URLが不正です": "The URL is invalid.",
+  "ログインが時間切れになりました": "Sign-in timed out.",
+  "ログインをキャンセルしました": "Sign-in was cancelled.",
+  "いいねするにはAppleかGoogleでログインしてください。": "Sign in with Apple or Google to like posts.",
+  "いいねを保存できませんでした。もう一度試してください。": "Couldn't save your like. Please try again.",
+  "投稿またはいいねを読み込めませんでした。": "Couldn't load posts or likes.",
+  "ユーザー": "User",
+  "表示名・ユーザー名・自己紹介・画像URLを確認してください。": "Check your display name, username, bio and image URL.",
+  "開発ユーザーが一致しません。": "Development user does not match.",
+  "プロフィールを保存できませんでした。": "Couldn't save the profile.",
+  "ログイン情報が見つかりません。もう一度試してください。": "Sign-in details are missing. Please try again.",
+  "ポップアップがブロックされました。許可してからもう一度試してください。": "The pop-up was blocked. Allow pop-ups and try again.",
+  "投稿は1〜70文字で入力してください。": "Posts must contain 1–70 characters.",
+  "投稿できませんでした": "Couldn't post.",
+  "投稿が見つかりません。": "Post not found.",
+  "いいねするにはログインしてください。": "Sign in to like posts.",
+  "いいねを保存できませんでした。": "Couldn't save your like.",
+  "表示名は1〜40文字で入力してください。": "Display names must contain 1–40 characters.",
+  "ユーザー名は小文字の英数字と_で3〜25文字にしてください。": "Usernames must contain 3–25 lowercase letters, numbers or underscores.",
+  "自己紹介は160文字以内で入力してください。": "Bios must be 160 characters or fewer.",
+  "画像にはHTTPSのURLを指定してください。": "Use an HTTPS URL for the image.",
+  "画像のURLを確認してください。": "Check the image URL.",
+  "このユーザー名は既に使われています。": "This username is already taken.",
+  "プロフィールを保存できませんでした。もう一度試してください。": "Couldn't save the profile. Please try again.",
+  "ログインしています…": "Signing in…",
+  "ログイン中…": "Signing in…",
+  "タイムラインを読み込めませんでした。": "Couldn't load the timeline.",
+  "投稿できませんでした。もう一度試してください。": "Couldn't post. Please try again.",
+  "投稿するには、GoogleかAppleで入ってください。": "Sign in with Google or Apple to post.",
+  "開発モード・このブラウザに保存": "Development mode · saved in this browser",
+  "編集する": "Edit",
+  "1〜40文字": "1–40 characters",
+  "小文字の英数字と_、3〜25文字": "Lowercase letters, numbers and _, 3–25 characters",
+  "自己紹介": "Bio",
+  "保存できませんでした。": "Couldn't save.",
+  "戻る": "Back",
+  "今朝": "Today",
+  "昨日": "Yesterday",
+  "Oops! Page not found": "Page not found.",
+  "Return to Home": "Return to Home",
+  "文字": "characters",
+  "字": "characters",
+  "投稿数": "Post count",
+  " 投稿": " posts",
+  "文字まで": "characters maximum",
+  "開発セッションではありません。": "Not a development session.",
+  "Today": "今日",
+  "Yesterday": "昨日"
+};
+const japanese: Record<string, string> = {"Oops! Page not found":"ページが見つかりません。","Return to Home":"ホームへ戻る"};
+function storedLanguage(): Language {
+  try { return localStorage.getItem(key) === "en" ? "en" : "ja"; } catch { return "ja"; }
+}
+let currentLanguage = storedLanguage();
+const listeners = new Set<() => void>();
+function notify() { listeners.forEach((listener) => listener()); }
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  return () => { listeners.delete(listener); };
+}
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (event) => {
+    if (event.key === key || event.key === null) {
+      currentLanguage = storedLanguage();
+      notify();
+    }
+  });
+}
+export function getLanguage(): Language { return currentLanguage; }
+export function setLanguage(language: Language) {
+  currentLanguage = language === "en" ? "en" : "ja";
+  try { localStorage.setItem(key, currentLanguage); } catch { /* Keep the selection for this session. */ }
+  notify();
+}
+export function t(message: string): string {
+  return currentLanguage === "en" ? english[message] ?? message : japanese[message] ?? message;
+}
+export function useLanguage() {
+  const language = useSyncExternalStore(subscribe, getLanguage, () => "ja" as Language);
+  useLayoutEffect(() => { document.documentElement.lang = language; }, [language]);
+  return { language, setLanguage };
+}

@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct DolphinMark: View {
+    @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
     @Environment(\.irukaPalette) private var palette
     var size: CGFloat = 22
 
@@ -9,7 +10,7 @@ struct DolphinMark: View {
             .font(.system(size: size * 0.72, weight: .semibold))
             .foregroundStyle(palette.blue)
             .frame(width: size, height: size)
-            .accessibilityLabel("イルカ")
+            .accessibilityLabel(L("イルカ"))
             .overlay(alignment: .topTrailing) {
                 Circle()
                     .fill(palette.blue)
@@ -20,6 +21,7 @@ struct DolphinMark: View {
 }
 
 struct Wordmark: View {
+    @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
     @Environment(\.irukaPalette) private var palette
     var body: some View {
         HStack(spacing: 6) {
@@ -27,12 +29,12 @@ struct Wordmark: View {
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(palette.blue)
                 .accessibilityHidden(true)
-            Text("イルカ")
+            Text(L("イルカ"))
                 .font(.system(size: 20, weight: .bold))
                 .foregroundStyle(palette.ink)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("イルカ")
+        .accessibilityLabel(L("イルカ"))
     }
 }
 

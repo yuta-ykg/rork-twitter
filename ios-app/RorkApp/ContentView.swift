@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ContentView: View {
+    @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
     @Environment(\.irukaPalette) private var palette
     @Environment(AuthManager.self) private var auth
     @State private var store = PostStore()
@@ -23,7 +24,7 @@ struct ContentView: View {
                 } else { selectedTab = tab }
             }
         )) {
-            Tab("ホーム", systemImage: "house.fill", value: MainTab.home) {
+            Tab(L("ホーム"), systemImage: "house.fill", value: MainTab.home) {
                 NavigationStack {
                     HomeView(store: store, showsComposer: $showsComposer, showsSignIn: $showsSignIn)
                         .navigationDestination(for: Post.self) { post in
@@ -31,10 +32,10 @@ struct ContentView: View {
                         }
                 }
             }
-            Tab("投稿", systemImage: "square.and.pencil", value: MainTab.compose) {
+            Tab(L("投稿"), systemImage: "square.and.pencil", value: MainTab.compose) {
                 Color.clear
             }
-            Tab("自分", systemImage: "person.fill", value: MainTab.mine) {
+            Tab(L("自分"), systemImage: "person.fill", value: MainTab.mine) {
                 NavigationStack {
                     MineView(store: store, showsComposer: $showsComposer, showsSignIn: $showsSignIn)
                         .navigationDestination(for: Post.self) { post in
@@ -42,7 +43,7 @@ struct ContentView: View {
                         }
                 }
             }
-            Tab("設定", systemImage: "gearshape", value: MainTab.settings) {
+            Tab(L("設定"), systemImage: "gearshape", value: MainTab.settings) {
                 NavigationStack { SettingsView() }
             }
         }
@@ -70,24 +71,24 @@ struct ContentView: View {
         }) {
             NavigationStack {
                 SignInView()
-                    .navigationTitle("ログイン")
+                    .navigationTitle(L("ログイン"))
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
-                            Button("閉じる") { showsSignIn = false }
+                            Button(L("閉じる")) { showsSignIn = false }
                         }
                     }
             }
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
         }
-        .alert("いいね", isPresented: Binding(
+        .alert(L("いいね"), isPresented: Binding(
             get: { store.likeError != nil },
             set: { if !$0 { store.likeError = nil } }
         )) {
             Button("OK") { store.likeError = nil }
         } message: {
-            Text(store.likeError ?? "")
+            Text(L(store.likeError ?? ""))
         }
         .onChange(of: auth.user?.id) { _, newValue in
             if newValue != nil {

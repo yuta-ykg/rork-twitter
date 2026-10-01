@@ -15,6 +15,7 @@ struct YytblueApp: App {
         WindowGroup {
             ContentView()
                 .environment(authManager)
+                .modifier(AppLanguageModifier())
         }
     }
 }

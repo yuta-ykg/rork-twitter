@@ -5,10 +5,10 @@ enum AppTheme: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .light: "ライト"
-        case .dark: "ダーク"
-        case .darkBlue: "ダークブルー"
-        case .system: "システム"
+        case .light: L("ライト")
+        case .dark: L("ダーク")
+        case .darkBlue: L("ダークブルー")
+        case .system: L("システム")
         }
     }
     var scheme: ColorScheme? {
