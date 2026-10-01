@@ -11,6 +11,8 @@ export type Post = {
   createdAt: string;
   isMine: boolean;
   avatarIndex: number;
+  isLiked?: boolean;
+  likeCount?: number;
 };
 
 const STORAGE_KEY = "iruka-posts";
@@ -39,7 +41,11 @@ function seed(): Post[] {
 export function loadPosts(): Post[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return seed();
+    if (!raw) {
+      const initial = seed();
+      savePosts(initial);
+      return initial;
+    }
     const parsed = JSON.parse(raw) as Post[];
     return parsed.length > 0 ? parsed : seed();
   } catch {
@@ -74,4 +80,12 @@ export function timeLabel(iso: string): string {
   if (date.toDateString() === today.toDateString()) return `今朝 ${time}`;
   if (date.toDateString() === yesterday.toDateString()) return `昨日 ${time}`;
   return date.toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" });
+}
+
+export function toggleLike(posts: Post[], id: string): Post[] {
+  return posts.map((post) => post.id === id ? {
+    ...post,
+    isLiked: !post.isLiked,
+    likeCount: Math.max(0, (post.likeCount ?? 0) + (post.isLiked ? -1 : 1)),
+  } : post);
 }
