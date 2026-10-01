@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
+import ProfilePage from "./pages/Profile";
 import AuthCallback from "./pages/AuthCallback";
 import { HomePage, MinePage, PostPage } from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -18,6 +19,7 @@ const App = () => (
         <Routes>
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/" element={<HomePage />} />
+          <Route path="/profile/:id" element={<ProfilePage />} />
           <Route path="/mine" element={<MinePage />} />
           <Route path="/post/:id" element={<PostPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
