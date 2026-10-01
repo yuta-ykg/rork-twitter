@@ -54,6 +54,12 @@ export type Database = {
         }
         Relationships: []
       }
+      post_likes: {
+        Row: { post_id: string; user_id: string; created_at: string }
+        Insert: { post_id: string; user_id: string; created_at?: string }
+        Update: { post_id?: string; user_id?: string; created_at?: string }
+        Relationships: [{ foreignKeyName: "post_likes_post_id_fkey"; columns: ["post_id"]; isOneToOne: false; referencedRelation: "posts"; referencedColumns: ["id"] }]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -87,6 +93,14 @@ export type Database = {
     }
     Functions: {
       user_id: { Args: never; Returns: string }
+      get_post_likes: {
+        Args: { post_ids: string[] }
+        Returns: { post_id: string; like_count: number; is_liked: boolean }[]
+      }
+      set_post_like: {
+        Args: { target_post_id: string; liked: boolean; expected_user_id: string }
+        Returns: { post_id: string; like_count: number; is_liked: boolean }[]
+      }
     }
     Enums: {
       [_ in never]: never
