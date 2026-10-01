@@ -47,6 +47,14 @@ final class PostStore {
         save()
     }
 
+    func toggleLike(id: UUID) {
+        guard let index = posts.firstIndex(where: { $0.id == id }) else { return }
+        let wasLiked = posts[index].isLiked
+        posts[index].storedLikeCount = max(0, posts[index].likeCount + (wasLiked ? -1 : 1))
+        posts[index].likedByMe = !wasLiked
+        save()
+    }
+
     private func load() {
         guard let data = try? Data(contentsOf: fileURL),
               let decoded = try? JSONDecoder().decode([Post].self, from: data),
