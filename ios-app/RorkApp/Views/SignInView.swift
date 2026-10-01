@@ -35,6 +35,15 @@ struct SignInView: View {
             .tint(Color.irukaBlue)
             .disabled(auth.isSigningIn)
 
+            if auth.canSkipLogin {
+                Button("開発用にログインをスキップ") { auth.skipLogin() }
+                    .buttonStyle(.bordered)
+                    .frame(minHeight: 44)
+                    .disabled(auth.isSigningIn)
+                Text("スキップ中のデータはこの端末内に保存されます。")
+                    .font(.footnote).foregroundStyle(Color.irukaSecondary)
+            }
+
             SignInWithAppleButton(.signIn) { request in
                 request.requestedScopes = [.fullName, .email]
             } onCompletion: { _ in
