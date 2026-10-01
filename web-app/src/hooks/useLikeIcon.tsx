@@ -2,10 +2,10 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { ArrowBigUp, Heart, Star, ThumbsUp } from "lucide-react";
 
 export const likeIconOptions = [
-  { value: "heart", label: "ハート", Icon: Heart },
-  { value: "star", label: "星", Icon: Star },
-  { value: "thumbs-up", label: "親指", Icon: ThumbsUp },
-  { value: "upvote", label: "Upvote", Icon: ArrowBigUp },
+  { value: "heart", label: "デフォルト", Icon: Heart },
+  { value: "star", label: "ふぁぼ", Icon: Star },
+  { value: "thumbs-up", label: "高評価", Icon: ThumbsUp },
+  { value: "upvote", label: "賛成", Icon: ArrowBigUp },
 ] as const;
 export type LikeIcon = typeof likeIconOptions[number]["value"];
 const key = "iruka-like-icon";

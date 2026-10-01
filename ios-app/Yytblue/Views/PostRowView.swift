@@ -76,10 +76,10 @@ enum LikeIcon: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .heart: L("ハート")
-        case .star: L("星")
-        case .thumbsUp: L("親指")
-        case .upvote: L("Upvote")
+        case .heart: L("デフォルト")
+        case .star: L("ふぁぼ")
+        case .thumbsUp: L("高評価")
+        case .upvote: L("賛成")
         }
     }
     var selectedColor: Color {
