@@ -69,3 +69,24 @@ nonisolated struct ProfileUpsert: Encodable, Sendable {
         case avatarUrl = "avatar_url"
     }
 }
+
+nonisolated struct PostLikeStats: Decodable, Sendable {
+    let postId: UUID
+    let likeCount: Int
+    let isLiked: Bool
+    enum CodingKeys: String, CodingKey {
+        case postId = "post_id"
+        case likeCount = "like_count"
+        case isLiked = "is_liked"
+    }
+}
+
+nonisolated struct LikeStatsParams: Encodable, Sendable {
+    let post_ids: [UUID]
+}
+
+nonisolated struct SetLikeParams: Encodable, Sendable {
+    let target_post_id: UUID
+    let liked: Bool
+    let expected_user_id: String
+}
