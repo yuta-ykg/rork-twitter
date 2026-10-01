@@ -14,13 +14,18 @@ struct BookmarksView: View {
 
     var body: some View {
         List {
-            Text(L("ブックマークはこの端末に保存されます。"))
+            Text(L(DevelopmentData.isActive ? "開発モードのブックマークはこの端末に保存されます。" : "ブックマークはアカウントに保存され、端末間で共有されます。"))
                 .font(.subheadline)
                 .foregroundStyle(Color.irukaSecondary)
                 .listRowSeparator(.hidden)
             if auth.user == nil {
                 SignInView(title: L("ブックマーク"), message: L("ブックマークするにはログインしてください。"))
                     .listRowSeparator(.hidden)
+            } else if bookmarks.loading {
+                ProgressView(L("読み込み中…"))
+            } else if let error = bookmarks.error {
+                Text(L(error))
+                Button(L("再読み込み")) { Task { await bookmarks.refresh() } }
             } else if savedPosts.isEmpty {
                 ContentUnavailableView(L("まだブックマークがありません。"), systemImage: "bookmark")
                     .listRowSeparator(.hidden)
@@ -43,6 +48,10 @@ struct BookmarksView: View {
         .background(Color.white)
         .navigationTitle(L("ブックマーク"))
         .navigationBarTitleDisplayMode(.inline)
-        .refreshable { await store.refresh(userId: auth.user?.id) }
+        .task { await bookmarks.refresh() }
+        .refreshable {
+            await bookmarks.refresh()
+            await store.refresh(userId: auth.user?.id)
+        }
     }
 }

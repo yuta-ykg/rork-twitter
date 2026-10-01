@@ -18,6 +18,12 @@ export type Database = {
   }
   public: {
     Tables: {
+      post_bookmarks: {
+        Row: { created_at: string; post_id: string; user_id: string }
+        Insert: { created_at?: string; post_id: string; user_id: string }
+        Update: { created_at?: string; post_id?: string; user_id?: string }
+        Relationships: [{ foreignKeyName: "post_bookmarks_post_id_fkey"; columns: ["post_id"]; isOneToOne: false; referencedRelation: "posts"; referencedColumns: ["id"] }]
+      }
       post_likes: {
         Row: {
           created_at: string
@@ -118,6 +124,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_post_bookmarks: {
+        Args: { expected_user_id: string }
+        Returns: { post_id: string; created_at: string }[]
+      }
+      set_post_bookmark: {
+        Args: { expected_user_id: string; saved: boolean; target_post_id: string }
+        Returns: { post_id: string; created_at: string }[]
+      }
+      import_post_bookmarks: {
+        Args: { expected_user_id: string; post_ids: string[] }
+        Returns: { post_id: string; created_at: string }[]
+      }
       ensure_profile: {
         Args: {
           expected_user_id: string

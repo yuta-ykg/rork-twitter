@@ -11,6 +11,8 @@ enum AppLanguage: String, CaseIterable, Identifiable {
 }
 
 private let englishMessages: [String: String] = [
+    "ブックマークはアカウントに保存され、端末間で共有されます。": "Bookmarks are saved to your account and synced across devices.",
+    "開発モードのブックマークはこの端末に保存されます。": "Development bookmarks are saved on this device.",
     "ブックマーク": "Bookmarks",
     "ブックマークに追加": "Save bookmark",
     "ブックマークを解除": "Remove bookmark",

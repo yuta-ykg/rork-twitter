@@ -464,7 +464,7 @@ export function PostPage() {
 export function BookmarksPage() {
   useLanguage();
   const { user } = useAuth();
-  const { ids } = useBookmarks(user?.id);
+  const { ids, loading: bookmarksLoading, error: bookmarkError, refresh: refreshBookmarks } = useBookmarks(user?.id);
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -505,10 +505,10 @@ export function BookmarksPage() {
   return <>
     <Shell tab="bookmarks" onCompose={() => setOpen(true)}>
       <h1 className="pt-4 text-[28px] font-bold">{t("ブックマーク")}</h1>
-      <p className="mb-4 mt-2 text-base text-muted-foreground">{t("ブックマークはこの端末に保存されます。")}</p>
+      <p className="mb-4 mt-2 text-base text-muted-foreground">{t(isDevelopmentSession() ? "開発モードのブックマークはこの端末に保存されます。" : "ブックマークはアカウントに保存され、端末間で共有されます。")}</p>
       {!user ? <SignInPanel title={t("ブックマーク")} message={t("ブックマークするにはログインしてください。")} /> :
-        loading ? <p role="status" className="py-10 text-muted-foreground">{t("読み込み中…")}</p> :
-        error ? <div className="py-6"><p role="alert">{t(error)}</p><button type="button" onClick={() => setRetry((value) => value + 1)} className="min-h-11 text-[hsl(var(--brand))]">{t("再読み込み")}</button></div> :
+        loading || bookmarksLoading ? <p role="status" className="py-10 text-muted-foreground">{t("読み込み中…")}</p> :
+        error || bookmarkError ? <div className="py-6"><p role="alert">{t(error || bookmarkError)}</p><button type="button" onClick={() => { setRetry((value) => value + 1); void refreshBookmarks().catch(() => {}); }} className="min-h-11 text-[hsl(var(--brand))]">{t("再読み込み")}</button></div> :
         savedPosts.length ? savedPosts.map((post) => <Row key={post.id} post={post} showAuthor onLike={() => like(post)} />) :
         <p className="py-10 text-center text-muted-foreground">{t("まだブックマークがありません。")}</p>}
     </Shell>
