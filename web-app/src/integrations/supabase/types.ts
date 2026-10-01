@@ -62,6 +62,8 @@ export type Database = {
       }
       profiles: {
         Row: {
+          bio: string
+          handle: string | null
           avatar_url: string | null
           created_at: string | null
           email: string | null
@@ -70,6 +72,8 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          bio?: string
+          handle?: string | null
           avatar_url?: string | null
           created_at?: string | null
           email?: string | null
@@ -78,6 +82,8 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          bio?: string
+          handle?: string | null
           avatar_url?: string | null
           created_at?: string | null
           email?: string | null
@@ -92,6 +98,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_public_profiles: {
+        Args: { profile_ids: string[] }
+        Returns: { id: string; name: string; handle: string | null; bio: string; avatar_url: string | null; created_at: string | null; post_count: number }[]
+      }
+      ensure_profile: {
+        Args: { expected_user_id: string; profile_email: string; profile_name: string; profile_avatar: string }
+        Returns: undefined
+      }
+      save_profile: {
+        Args: { expected_user_id: string; profile_name: string; profile_handle: string; profile_bio: string; profile_avatar: string }
+        Returns: { id: string; name: string; handle: string | null; bio: string; avatar_url: string | null; created_at: string | null; post_count: number }[]
+      }
       user_id: { Args: never; Returns: string }
       get_post_likes: {
         Args: { post_ids: string[] }
