@@ -103,3 +103,37 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* Iruka themes share the same semantic tokens across every screen. */
+:root {
+  --background: 0 0% 100%; --foreground: 204 25% 8%;
+  --card: 0 0% 100%; --card-foreground: 204 25% 8%;
+  --popover: 0 0% 100%; --popover-foreground: 204 25% 8%;
+  --muted: 180 14% 97%; --muted-foreground: 205 15% 38%;
+  --border: 200 17% 91%; --input: 205 17% 80%;
+  --primary: 203 89% 41%; --primary-foreground: 0 0% 100%;
+  --ring: 203 89% 41%;
+}
+:root[data-theme="dark"] {
+  --background: 0 0% 3%; --foreground: 210 17% 95%;
+  --card: 0 0% 7%; --card-foreground: 210 17% 95%;
+  --popover: 0 0% 7%; --popover-foreground: 210 17% 95%;
+  --muted: 0 0% 12%; --muted-foreground: 210 10% 70%;
+  --secondary: 0 0% 12%; --secondary-foreground: 210 17% 95%;
+  --accent: 0 0% 16%; --accent-foreground: 210 17% 95%;
+  --border: 0 0% 24%; --input: 0 0% 32%;
+  --primary: 203 89% 60%; --primary-foreground: 0 0% 3%;
+  --ring: 203 89% 60%;
+}
+:root[data-theme="dark-blue"] {
+  --background: 210 34% 13%; --foreground: 210 17% 95%;
+  --card: 210 32% 16%; --card-foreground: 210 17% 95%;
+  --popover: 210 32% 16%; --popover-foreground: 210 17% 95%;
+  --muted: 210 28% 20%; --muted-foreground: 210 14% 72%;
+  --secondary: 210 28% 20%; --secondary-foreground: 210 17% 95%;
+  --accent: 210 28% 24%; --accent-foreground: 210 17% 95%;
+  --border: 210 22% 29%; --input: 210 22% 36%;
+  --primary: 203 89% 60%; --primary-foreground: 210 34% 13%;
+  --ring: 203 89% 60%;
+}
+html, body, #root { min-height: 100%; background: hsl(var(--background)); color: hsl(var(--foreground)); }
