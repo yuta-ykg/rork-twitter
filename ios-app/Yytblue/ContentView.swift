@@ -8,7 +8,7 @@ struct ContentView: View {
     @State private var selectedTab: MainTab = .home
     @State private var composeAfterLogin = false
 
-    private enum MainTab: Hashable { case home, compose, mine }
+    private enum MainTab: Hashable { case home, compose, mine, settings }
 
     var body: some View {
         TabView(selection: Binding(
@@ -40,6 +40,9 @@ struct ContentView: View {
                             PostDetailView(initialPost: post, store: store)
                         }
                 }
+            }
+            Tab("設定", systemImage: "gearshape", value: MainTab.settings) {
+                NavigationStack { SettingsView() }
             }
         }
         .tint(Color.irukaBlue)

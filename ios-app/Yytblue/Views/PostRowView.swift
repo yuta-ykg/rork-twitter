@@ -50,18 +50,28 @@ struct AvatarView: View {
 }
 
 struct LikeButton: View {
+    @AppStorage("iruka-like-icon") private var iconChoice = LikeIcon.heart.rawValue
+    private var icon: LikeIcon { LikeIcon(rawValue: iconChoice) ?? .heart }
     let post: Post
     let onLike: () -> Void
 
     var body: some View {
         Button(action: onLike) {
-            Label("\(post.likeCount)", systemImage: post.isLiked ? "heart.fill" : "heart")
+            Label("\(post.likeCount)", systemImage: icon.symbol(liked: post.isLiked))
                 .font(.system(size: 15))
                 .frame(minWidth: 44, minHeight: 44)
         }
         .buttonStyle(.borderless)
-        .foregroundStyle(post.isLiked ? Color.pink : Color.irukaSecondary)
+        .foregroundStyle(post.isLiked ? icon.selectedColor : Color.irukaSecondary)
         .accessibilityLabel(post.isLiked ? "いいねを取り消す" : "いいね")
         .accessibilityValue("\(post.likeCount)件")
     }
+}
+
+enum LikeIcon: String, CaseIterable, Identifiable {
+    case heart, star
+    var id: String { rawValue }
+    var title: String { self == .star ? "星" : "ハート" }
+    var selectedColor: Color { self == .star ? .orange : .pink }
+    func symbol(liked: Bool) -> String { rawValue + (liked ? ".fill" : "") }
 }
