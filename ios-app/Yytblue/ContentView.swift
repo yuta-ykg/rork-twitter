@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ContentView: View {
+    @AppStorage("iruka-bottom-bar-labels") private var showBottomBarLabels = false
     @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
     @Environment(AuthManager.self) private var auth
     @State private var store = PostStore()
@@ -14,17 +15,7 @@ struct ContentView: View {
     private enum MainTab: Hashable { case home, compose, mine, bookmarks, settings }
 
     var body: some View {
-        TabView(selection: Binding(
-            get: { selectedTab },
-            set: { tab in
-                if tab == .compose {
-                    if auth.user == nil {
-                        composeAfterLogin = true
-                        showsSignIn = true
-                    } else { showsComposer = true }
-                } else { selectedTab = tab }
-            }
-        )) {
+        TabView(selection: Binding(get: { selectedTab }, set: selectTab)) {
             Tab(L("ホーム"), systemImage: "house.fill", value: MainTab.home) {
                 NavigationStack {
                     HomeView(store: store, showsComposer: $showsComposer, showsSignIn: $showsSignIn)
@@ -55,6 +46,19 @@ struct ContentView: View {
             Tab(L("設定"), systemImage: "gearshape", value: MainTab.settings) {
                 NavigationStack { SettingsView() }
             }
+        }
+        .toolbar(.hidden, for: .tabBar)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            HStack(spacing: 0) {
+                bottomBarButton(.home, title: "ホーム", symbol: "house.fill")
+                bottomBarButton(.compose, title: "投稿", symbol: "square.and.pencil")
+                bottomBarButton(.mine, title: "自分", symbol: "person.fill")
+                bottomBarButton(.bookmarks, title: "ブックマーク", symbol: "bookmark.fill")
+                bottomBarButton(.settings, title: "設定", symbol: "gearshape")
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 8)
+            .background(.bar)
         }
         .tint(Color.irukaBlue)
         .task(id: auth.user?.id) {
@@ -117,9 +121,34 @@ struct ContentView: View {
             }
         }
     }
+    private func selectTab(_ tab: MainTab) {
+        if tab == .compose {
+            if auth.user == nil {
+                composeAfterLogin = true
+                showsSignIn = true
+            } else { showsComposer = true }
+        } else { selectedTab = tab }
+    }
+
+    private func bottomBarButton(_ tab: MainTab, title: String, symbol: String) -> some View {
+        Button { selectTab(tab) } label: {
+            VStack(spacing: 3) {
+                Image(systemName: symbol).font(.system(size: 20))
+                if showBottomBarLabels { Text(L(title)).font(.caption2).lineLimit(1) }
+            }
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(selectedTab == tab || tab == .compose ? Color.irukaBlue : Color.irukaSecondary)
+        .accessibilityLabel(L(title))
+        .accessibilityAddTraits(selectedTab == tab ? .isSelected : [])
+    }
+
 }
 
 #Preview {
     ContentView()
         .environment(AuthManager())
+
 }

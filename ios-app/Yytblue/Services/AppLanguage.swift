@@ -21,6 +21,8 @@ private let englishMessages: [String: String] = [
     "ブックマークを読み込めませんでした。": "Couldn't load bookmarks.",
     "まだブックマークがありません。": "No bookmarks yet.",
     "ブックマークはこの端末に保存されます。": "Bookmarks are saved on this device.",
+    "ボトムバー": "Bottom bar",
+    "ボトムバーの文字を表示": "Show bottom bar labels",
     "ホーム": "Home",
     "投稿": "Posts",
     "自分": "Mine",

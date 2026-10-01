@@ -1,3 +1,5 @@
+import { useBottomBarLabels } from "@/hooks/useBottomBarLabels";
+import { Switch } from "@/components/ui/switch";
 import { t, useLanguage } from "@/lib/language";
 import { likeIconOptions, useLikeIcon, type LikeIcon } from "@/hooks/useLikeIcon";
 import { Link } from "react-router-dom";
@@ -5,6 +7,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { themeOptions, useTheme, type Theme } from "@/hooks/useTheme";
 
 export default function SettingsPage() {
+  const { showBottomBarLabels, setShowBottomBarLabels } = useBottomBarLabels();
   const { language, setLanguage } = useLanguage();
   const { theme, setTheme } = useTheme();
   const { likeIcon, setLikeIcon } = useLikeIcon();
@@ -22,6 +25,13 @@ export default function SettingsPage() {
           {t(option.label)}<RadioGroupItem id={`theme-${option.value}`} value={option.value} />
         </label>)}
       </RadioGroup>
+    </section>
+    <section className="border-t border-border py-6">
+      <h2 className="mb-5 text-xl font-semibold">{t("ボトムバー")}</h2>
+      <div className="flex min-h-14 items-center justify-between gap-4 rounded-xl border border-border bg-card px-4 py-3">
+        <label htmlFor="bottom-bar-labels" className="cursor-pointer text-base">{t("ボトムバーの文字を表示")}</label>
+        <Switch id="bottom-bar-labels" checked={showBottomBarLabels} onCheckedChange={setShowBottomBarLabels} />
+      </div>
     </section>
     <section className="border-t border-border py-6">
       <h2 id="like-icon-label" className="text-xl font-semibold">{t("いいねアイコン")}</h2>
