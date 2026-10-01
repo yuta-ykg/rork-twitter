@@ -1,5 +1,6 @@
+import { toast } from "sonner";
 import { Fish, Heart, House, UserRound, X } from "lucide-react";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { displayName, useAuth, userHandle } from "@/hooks/useAuth";
@@ -11,7 +12,7 @@ import {
   sortTimeline,
   thisWeekCount,
   timeLabel,
-  toggleLike,
+  setPostLike,
   type Post,
 } from "@/lib/posts";
 
@@ -189,7 +190,7 @@ function Shell({
   );
 }
 
-function Row({ post, showAuthor, onLike }: { post: Post; showAuthor: boolean; onLike: () => void }) {
+function Row({ post, showAuthor, onLike }: { post: Post; showAuthor: boolean; onLike: () => void | Promise<void> }) {
   return (
     <div className="border-b border-[#ECF0F2] py-3">
     <Link to={`/post/${post.id}`} className="flex gap-3">
@@ -204,8 +205,13 @@ function Row({ post, showAuthor, onLike }: { post: Post; showAuthor: boolean; on
   );
 }
 
-function LikeButton({ post, onClick }: { post: Post; onClick: () => void }) {
-  return <button type="button" onClick={onClick} aria-pressed={Boolean(post.isLiked)}
+function LikeButton({ post, onClick }: { post: Post; onClick: () => void | Promise<void> }) {
+  const [pending, setPending] = useState(false);
+  return <button type="button" disabled={pending} aria-busy={pending} onClick={async () => {
+    if (pending) return;
+    setPending(true);
+    try { await onClick(); } finally { setPending(false); }
+  }} aria-pressed={Boolean(post.isLiked)}
     aria-label={post.isLiked ? "いいねを取り消す" : "いいね"}
     className={`inline-flex min-h-11 min-w-11 items-center gap-2 rounded-full px-2 transition ${post.isLiked ? "text-pink-500" : "text-[#536471]"} hover:bg-pink-50`}>
     <Heart className="h-5 w-5" fill={post.isLiked ? "currentColor" : "none"} aria-hidden />
@@ -222,11 +228,25 @@ export function HomePage() {
   const timeline = useMemo(() => sortTimeline(posts), [posts]);
 
   useEffect(() => {
-    fetchPosts(user?.id).then(setPosts).catch(() => setError("タイムラインを読み込めませんでした。"));
+    let cancelled = false;
+    fetchPosts(user?.id).then((next) => { if (!cancelled) setPosts(next); })
+      .catch(() => { if (!cancelled) setError("タイムラインを読み込めませんでした。"); });
+    return () => { cancelled = true; };
   }, [user?.id]);
 
-  function like(id: string) {
-    setPosts(toggleLike(posts, id));
+  const activeUser = useRef(user?.id);
+  activeUser.current = user?.id;
+  async function like(id: string) {
+    if (!user) { toast.error("いいねするにはAppleかGoogleでログインしてください。"); return; }
+    const post = posts.find((item) => item.id === id);
+    if (!post) return;
+    const userId = user.id;
+    try {
+      const state = await setPostLike(id, !post.isLiked, userId);
+      if (activeUser.current === userId) {
+        setPosts((current) => current.map((item) => item.id === id ? { ...item, ...state } : item));
+      }
+    } catch { toast.error("いいねを保存できませんでした。もう一度試してください。"); }
   }
 
   async function add(body: string) {
@@ -274,11 +294,25 @@ export function MinePage() {
   const count = thisWeekCount(posts);
 
   useEffect(() => {
-    fetchPosts(user?.id).then(setPosts).catch(() => undefined);
+    let cancelled = false;
+    fetchPosts(user?.id).then((next) => { if (!cancelled) setPosts(next); })
+      .catch(() => { if (!cancelled) toast.error("投稿またはいいねを読み込めませんでした。"); });
+    return () => { cancelled = true; };
   }, [user?.id]);
 
-  function like(id: string) {
-    setPosts(toggleLike(posts, id));
+  const activeUser = useRef(user?.id);
+  activeUser.current = user?.id;
+  async function like(id: string) {
+    if (!user) { toast.error("いいねするにはAppleかGoogleでログインしてください。"); return; }
+    const post = posts.find((item) => item.id === id);
+    if (!post) return;
+    const userId = user.id;
+    try {
+      const state = await setPostLike(id, !post.isLiked, userId);
+      if (activeUser.current === userId) {
+        setPosts((current) => current.map((item) => item.id === id ? { ...item, ...state } : item));
+      }
+    } catch { toast.error("いいねを保存できませんでした。もう一度試してください。"); }
   }
 
   async function add(body: string) {
@@ -333,14 +367,25 @@ export function PostPage() {
   const post = posts.find((item) => item.id === id);
   const { user } = useAuth();
   useEffect(() => {
+    let cancelled = false;
     fetchPosts(user?.id)
-      .then(setPosts)
-      .catch(() => undefined)
-      .finally(() => setReady(true));
+      .then((next) => { if (!cancelled) setPosts(next); })
+      .catch(() => { if (!cancelled) toast.error("投稿またはいいねを読み込めませんでした。"); })
+      .finally(() => { if (!cancelled) setReady(true); });
+    return () => { cancelled = true; };
   }, [user?.id]);
-  function like() {
-    if (!id) return;
-    setPosts(toggleLike(posts, id));
+  const activeUser = useRef(user?.id);
+  activeUser.current = user?.id;
+  async function like() {
+    if (!user) { toast.error("いいねするにはAppleかGoogleでログインしてください。"); return; }
+    if (!id || !post) return;
+    const userId = user.id;
+    try {
+      const state = await setPostLike(id, !post.isLiked, userId);
+      if (activeUser.current === userId) {
+        setPosts((current) => current.map((item) => item.id === id ? { ...item, ...state } : item));
+      }
+    } catch { toast.error("いいねを保存できませんでした。もう一度試してください。"); }
   }
 
   if (!ready) {
