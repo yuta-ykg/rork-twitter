@@ -56,6 +56,14 @@ struct ContentView: View {
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
         }
+        .alert("いいね", isPresented: Binding(
+            get: { store.likeError != nil },
+            set: { if !$0 { store.likeError = nil } }
+        )) {
+            Button("OK") { store.likeError = nil }
+        } message: {
+            Text(store.likeError ?? "")
+        }
         .onChange(of: auth.user?.id) { _, newValue in
             if newValue != nil {
                 showsSignIn = false
