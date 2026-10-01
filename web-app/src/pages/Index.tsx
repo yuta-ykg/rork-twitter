@@ -1,6 +1,6 @@
 import { isDevelopmentSession } from "@/lib/development";
 import { toast } from "sonner";
-import { Fish, Heart, House, SquarePen, UserRound, X } from "lucide-react";
+import { Fish, Heart, House, SquarePen, Settings, UserRound, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
@@ -22,7 +22,7 @@ type Tab = "home" | "mine";
 function Avatar({ initial, index }: { initial: string; index: number }) {
   return (
     <span
-      className="grid h-[46px] w-[46px] shrink-0 place-items-center rounded-full text-base font-semibold text-[#0F1419]/70"
+      className="grid h-[46px] w-[46px] shrink-0 place-items-center rounded-full text-base font-semibold text-[rgba(15,20,25,0.7)]"
       style={{ backgroundColor: avatarFills[index % avatarFills.length] }}
       aria-hidden
     >
@@ -33,7 +33,7 @@ function Avatar({ initial, index }: { initial: string; index: number }) {
 
 function Wordmark() {
   return (
-    <span className="inline-flex items-center gap-1.5 text-xl font-bold text-[#0F1419]">
+    <span className="inline-flex items-center gap-1.5 text-xl font-bold text-foreground">
       <Fish className="h-[18px] w-[18px] text-[#1D9BF0]" aria-hidden />
       イルカ
     </span>
@@ -58,7 +58,7 @@ function SignInPanel({ title, message }: { title: string; message: string }) {
   return (
     <div className="py-6">
       <h2 className="text-[28px] font-bold leading-tight">{title}</h2>
-      <p className="mt-2 text-base text-[#536471]">{message}</p>
+      <p className="mt-2 text-base text-muted-foreground">{message}</p>
       {error ? (
         <p className="mt-3 text-sm text-red-500">
           {error}{" "}
@@ -78,7 +78,7 @@ function SignInPanel({ title, message }: { title: string; message: string }) {
           Appleで続ける
         </button>
         {canSkipLogin ? <button type="button" disabled={isSigningIn} onClick={skipLogin}
-          className="min-h-11 rounded-full border border-[#CFD9DE] px-4 text-base text-[#536471]">開発用にログインをスキップ</button> : null}
+          className="min-h-11 rounded-full border border-input px-4 text-base text-muted-foreground">開発用にログインをスキップ</button> : null}
       </div>
     </div>
   );
@@ -107,38 +107,38 @@ function ComposeSheet({
         role="dialog"
         aria-modal="true"
         aria-labelledby="compose-title"
-        className="flex max-h-[92dvh] w-full max-w-[430px] flex-col rounded-t-[28px] bg-white px-5 pb-6 pt-3 shadow-2xl sm:rounded-[28px]"
+        className="flex max-h-[92dvh] w-full max-w-[430px] flex-col rounded-t-[28px] bg-background px-5 pb-6 pt-3 shadow-2xl sm:rounded-[28px]"
       >
         <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-[#ECF0F2]" />
         <div className="mb-4 flex items-center justify-between">
-          <h2 id="compose-title" className="text-[17px] font-semibold text-[#0F1419]">
+          <h2 id="compose-title" className="text-[17px] font-semibold text-foreground">
             新しい投稿
           </h2>
-          <button type="button" onClick={onClose} className="grid h-11 w-11 place-items-center text-[#536471]" aria-label="閉じる">
+          <button type="button" onClick={onClose} className="grid h-11 w-11 place-items-center text-muted-foreground" aria-label="閉じる">
             <X className="h-5 w-5" />
           </button>
         </div>
         <div className="mb-4 flex items-center gap-3">
           <Avatar initial={initial} index={0} />
           <div>
-            <p className="text-base font-semibold text-[#0F1419]">{authorName}</p>
-            <p className="text-sm text-[#536471]">{handle}</p>
+            <p className="text-base font-semibold text-foreground">{authorName}</p>
+            <p className="text-sm text-muted-foreground">{handle}</p>
           </div>
         </div>
-        <div className="relative min-h-[220px] rounded-2xl bg-[#F7F9F9]">
+        <div className="relative min-h-[220px] rounded-2xl bg-muted">
           {draft.length === 0 ? (
-            <p className="pointer-events-none absolute left-3.5 top-4 text-[17px] text-[#536471]">今の気持ちを、70字まで。</p>
+            <p className="pointer-events-none absolute left-3.5 top-4 text-[17px] text-muted-foreground">今の気持ちを、70字まで。</p>
           ) : null}
           <textarea
             autoFocus
             value={draft}
             maxLength={MAX_CHARACTERS}
             onChange={(event) => setDraft(event.target.value.slice(0, MAX_CHARACTERS))}
-            className="h-[220px] w-full resize-none bg-transparent p-3.5 text-[17px] text-[#0F1419] outline-none"
+            className="h-[220px] w-full resize-none bg-transparent p-3.5 text-[17px] text-foreground outline-none"
             aria-label="投稿本文"
           />
         </div>
-        <p className={`mt-3 text-right font-mono text-[15px] ${count >= MAX_CHARACTERS ? "text-red-500" : "text-[#536471]"}`}>
+        <p className={`mt-3 text-right font-mono text-[15px] ${count >= MAX_CHARACTERS ? "text-red-500" : "text-muted-foreground"}`}>
           {count} / {MAX_CHARACTERS}
         </p>
         <div className="mt-4">
@@ -173,15 +173,20 @@ function Shell({
     onCompose();
   }
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col bg-white text-[#0F1419]">
-      <header className="sticky top-0 z-10 border-b border-[#ECF0F2]/80 bg-white/75 px-5 py-3 backdrop-blur-xl">
-        <Wordmark />
-        {isDevelopmentSession() ? <p className="mt-1 text-sm text-[#536471]">開発モード・このブラウザに保存</p> : null}
+    <div className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col bg-background text-foreground">
+      <header className="sticky top-0 z-10 border-b border-border/80 bg-background/75 px-5 py-3 backdrop-blur-xl">
+        <div className="flex items-center justify-between">
+          <Wordmark />
+          <Link to="/settings" aria-label="設定" className="grid min-h-11 min-w-11 place-items-center text-muted-foreground">
+            <Settings className="h-5 w-5" aria-hidden />
+          </Link>
+        </div>
+        {isDevelopmentSession() ? <p className="mt-1 text-sm text-muted-foreground">開発モード・このブラウザに保存</p> : null}
       </header>
       <main className="flex-1 px-5 pb-24">{children}</main>
       <div className="fixed bottom-0 left-1/2 z-20 w-full max-w-[430px] -translate-x-1/2">
-        <nav aria-label="メインナビゲーション" className="grid grid-cols-3 border-t border-white/40 bg-white/70 px-6 pb-[max(8px,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl">
-          <Link to="/" className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "home" ? "text-[#1D9BF0]" : "text-[#536471]"}`}>
+        <nav aria-label="メインナビゲーション" className="grid grid-cols-3 border-t border-border/60 bg-background/70 px-6 pb-[max(8px,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl">
+          <Link to="/" className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "home" ? "text-[#1D9BF0]" : "text-muted-foreground"}`}>
             <House className="h-5 w-5" />
             ホーム
           </Link>
@@ -190,7 +195,7 @@ function Shell({
             <SquarePen className="h-5 w-5" aria-hidden />
             投稿
           </button>
-          <Link to="/mine" className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "mine" ? "text-[#1D9BF0]" : "text-[#536471]"}`}>
+          <Link to="/mine" className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "mine" ? "text-[#1D9BF0]" : "text-muted-foreground"}`}>
             <UserRound className="h-5 w-5" />
             自分
           </Link>
@@ -202,7 +207,7 @@ function Shell({
 
 function Row({ post, showAuthor, onLike }: { post: Post; showAuthor: boolean; onLike: () => void | Promise<void> }) {
   return (
-    <div className="border-b border-[#ECF0F2] py-3">
+    <div className="border-b border-border py-3">
     <Link to={`/post/${post.id}`} className="flex gap-3">
       <Avatar initial={post.initial} index={post.avatarIndex} />
       <span className="min-w-0 pt-0.5">
@@ -224,7 +229,7 @@ function LikeButton({ post, onClick }: { post: Post; onClick: () => void | Promi
     try { await onClick(); } finally { setPending(false); }
   }} aria-pressed={Boolean(post.isLiked)}
     aria-label={post.isLiked ? "いいねを取り消す" : "いいね"}
-    className={`inline-flex min-h-11 min-w-11 items-center gap-2 rounded-full px-2 transition ${post.isLiked ? "text-pink-500" : "text-[#536471]"} hover:bg-pink-50`}>
+    className={`inline-flex min-h-11 min-w-11 items-center gap-2 rounded-full px-2 transition ${post.isLiked ? "text-pink-500" : "text-muted-foreground"} hover:bg-pink-50`}>
     <Heart className="h-5 w-5" fill={post.isLiked ? "currentColor" : "none"} aria-hidden />
     <span>{post.likeCount ?? 0}</span>
   </button>;
@@ -275,7 +280,7 @@ export function HomePage() {
     <>
       <Shell tab="home" onCompose={() => (user ? setOpen(true) : setNeedsSignIn(true))}>
         <h1 className="pt-4 text-[28px] font-bold leading-tight">いま、みんなが書いている</h1>
-        <p className="mb-2 mt-1 text-base text-[#536471]">70字までの短い投稿</p>
+        <p className="mb-2 mt-1 text-base text-muted-foreground">70字までの短い投稿</p>
         {error ? <p className="mb-2 text-sm text-red-500">{error}</p> : null}
         {needsSignIn && !user ? (
           <SignInPanel title="ログインしてはじめる" message="投稿するには、GoogleかAppleで入ってください。" />
@@ -345,10 +350,10 @@ export function MinePage() {
             </div>
             <div className="py-6 text-center">
               <p className="text-[56px] font-bold leading-none tabular-nums">{count}</p>
-              <p className="mt-1 text-base text-[#536471]">今週の投稿</p>
+              <p className="mt-1 text-base text-muted-foreground">今週の投稿</p>
             </div>
             {mine.length === 0 ? (
-              <p className="py-10 text-center text-[#536471]">まだ投稿がありません</p>
+              <p className="py-10 text-center text-muted-foreground">まだ投稿がありません</p>
             ) : (
               mine.map((post) => <Row key={post.id} post={post} showAuthor={false} onLike={() => like(post.id)} />)
             )}
@@ -400,23 +405,23 @@ export function PostPage() {
   }
 
   if (!ready) {
-    return <div className="mx-auto min-h-dvh max-w-[430px] bg-white" />;
+    return <div className="mx-auto min-h-dvh max-w-[430px] bg-background" />;
   }
 
   if (!post) {
     return (
-      <div className="mx-auto flex min-h-dvh max-w-[430px] flex-col bg-white px-5 pt-6">
+      <div className="mx-auto flex min-h-dvh max-w-[430px] flex-col bg-background px-5 pt-6">
         <button type="button" onClick={() => navigate(-1)} className="mb-6 h-11 text-left text-[#1D9BF0]">
           戻る
         </button>
-        <p className="text-[#536471]">投稿が見つかりません。</p>
+        <p className="text-muted-foreground">投稿が見つかりません。</p>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto min-h-dvh w-full max-w-[430px] bg-white px-5 pb-10 text-[#0F1419]">
-      <header className="sticky top-0 flex h-14 items-center bg-white/75 backdrop-blur-xl">
+    <div className="mx-auto min-h-dvh w-full max-w-[430px] bg-background px-5 pb-10 text-foreground">
+      <header className="sticky top-0 flex h-14 items-center bg-background/75 backdrop-blur-xl">
         <button type="button" onClick={() => navigate(-1)} className="h-11 pr-4 text-[#1D9BF0]">
           戻る
         </button>
@@ -426,18 +431,18 @@ export function PostPage() {
         <Avatar initial={post.initial} index={post.avatarIndex} />
         <div>
           {post.userId ? <Link to={`/profile/${encodeURIComponent(post.userId)}`} className="text-[17px] font-semibold text-[#1D9BF0]">{post.authorName}</Link> : <p className="text-[17px] font-semibold">{post.authorName}</p>}
-          <p className="text-[15px] text-[#536471]">{post.handle}</p>
+          <p className="text-[15px] text-muted-foreground">{post.handle}</p>
         </div>
       </div>
       <p className="mt-5 text-2xl font-semibold leading-snug">{post.body}</p>
       <div className="mt-3"><LikeButton post={post} onClick={like} /></div>
-      <div className="mt-6 grid grid-cols-2 border-t border-[#ECF0F2] pt-4">
+      <div className="mt-6 grid grid-cols-2 border-t border-border pt-4">
         <div>
-          <p className="text-[13px] text-[#536471]">投稿時刻</p>
+          <p className="text-[13px] text-muted-foreground">投稿時刻</p>
           <p className="mt-1 text-[17px] font-semibold">{timeLabel(post.createdAt)}</p>
         </div>
-        <div className="border-l border-[#ECF0F2] pl-4">
-          <p className="text-[13px] text-[#536471]">文字数</p>
+        <div className="border-l border-border pl-4">
+          <p className="text-[13px] text-muted-foreground">文字数</p>
           <p className="mt-1 text-[17px] font-semibold">{post.body.length}字</p>
         </div>
       </div>
