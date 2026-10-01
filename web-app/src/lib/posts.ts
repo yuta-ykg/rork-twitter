@@ -1,3 +1,4 @@
+import { ensureProfile, fetchProfile, fetchProfiles } from "@/lib/profiles";
 import { supabase } from "@/lib/supabase";
 
 export const MAX_CHARACTERS = 70;
@@ -13,6 +14,7 @@ export type Post = {
   createdAt: string;
   isMine: boolean;
   avatarIndex: number;
+  userId?: string | null;
   isLiked?: boolean;
   likeCount?: number;
 };
@@ -45,6 +47,7 @@ function toPost(row: Row, userId?: string | null): Post {
     createdAt: row.created_at,
     isMine: Boolean(userId) && row.user_id === userId,
     avatarIndex: row.avatar_index,
+    userId: row.user_id,
     isLiked: false,
     likeCount: 0,
   };
@@ -61,27 +64,31 @@ export async function fetchPosts(userId?: string | null): Promise<Post[]> {
     post_ids: posts.map((post) => post.id),
   });
   if (likesError) throw likesError;
+  const profiles = await fetchProfiles(posts.flatMap((post) => post.userId ? [post.userId] : []));
+  const profileById = new Map(profiles.map((profile) => [profile.id, profile]));
   const byId = new Map((stats ?? []).map((stat) => [stat.post_id, stat]));
   return posts.map((post) => {
     const stat = byId.get(post.id);
-    return { ...post, likeCount: Number(stat?.like_count ?? 0), isLiked: Boolean(userId && stat?.is_liked) };
+    const profile = post.userId ? profileById.get(post.userId) : undefined;
+    return { ...post,
+      authorName: profile?.name ?? post.authorName,
+      handle: profile?.handle ? `@${profile.handle}` : post.handle,
+      initial: (profile?.name ?? post.authorName).slice(0, 1),
+      likeCount: Number(stat?.like_count ?? 0), isLiked: Boolean(userId && stat?.is_liked) };
   });
 }
 
 export async function syncProfile(author: Author): Promise<void> {
-  const { error } = await supabase.from("profiles").upsert(
-    { id: author.id, email: author.email, name: author.name ?? null, avatar_url: author.picture ?? null },
-    { onConflict: "id" },
-  );
-  if (error) throw error;
+  await ensureProfile(author);
 }
 
 export async function insertPost(body: string, author: Author): Promise<Post> {
   const trimmed = body.trim();
-  const name = (author.name?.trim() || author.email || "あなた").slice(0, 40);
-  const local = (author.email.split("@")[0] ?? "you").replace(/[^A-Za-z0-9_]/g, "");
-  const handle = `@${(local || "you").slice(0, 38)}`;
   await syncProfile(author);
+  const profile = await fetchProfile(author.id);
+  const name = (profile?.name || author.name?.trim() || author.email || "あなた").slice(0, 40);
+  const local = (author.email.split("@")[0] ?? "you").replace(/[^A-Za-z0-9_]/g, "");
+  const handle = profile?.handle ? `@${profile.handle}` : `@${(local || "you").slice(0, 38)}`;
   const { data, error } = await supabase
     .from("posts")
     .insert({
