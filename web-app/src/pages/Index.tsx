@@ -1,3 +1,4 @@
+import { isDevelopmentSession } from "@/lib/development";
 import { toast } from "sonner";
 import { Fish, Heart, House, SquarePen, UserRound, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -53,7 +54,7 @@ function PostButton({ label, disabled, onClick }: { label: string; disabled?: bo
 }
 
 function SignInPanel({ title, message }: { title: string; message: string }) {
-  const { isSigningIn, error, signIn, clearError } = useAuth();
+  const { isSigningIn, error, signIn, clearError, canSkipLogin, skipLogin } = useAuth();
   return (
     <div className="py-6">
       <h2 className="text-[28px] font-bold leading-tight">{title}</h2>
@@ -76,7 +77,8 @@ function SignInPanel({ title, message }: { title: string; message: string }) {
         >
           Appleで続ける
         </button>
-
+        {canSkipLogin ? <button type="button" disabled={isSigningIn} onClick={skipLogin}
+          className="min-h-11 rounded-full border border-[#CFD9DE] px-4 text-base text-[#536471]">開発用にログインをスキップ</button> : null}
       </div>
     </div>
   );
@@ -174,7 +176,7 @@ function Shell({
     <div className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col bg-white text-[#0F1419]">
       <header className="sticky top-0 z-10 border-b border-[#ECF0F2]/80 bg-white/75 px-5 py-3 backdrop-blur-xl">
         <Wordmark />
-
+        {isDevelopmentSession() ? <p className="mt-1 text-sm text-[#536471]">開発モード・このブラウザに保存</p> : null}
       </header>
       <main className="flex-1 px-5 pb-24">{children}</main>
       <div className="fixed bottom-0 left-1/2 z-20 w-full max-w-[430px] -translate-x-1/2">
