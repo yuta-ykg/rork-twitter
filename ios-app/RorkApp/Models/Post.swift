@@ -10,6 +10,13 @@ nonisolated struct Post: Identifiable, Codable, Hashable, Sendable {
     let isMine: Bool
     let avatarIndex: Int
 
+    // Optional storage fields preserve decoding of posts saved before likes existed.
+    var likedByMe: Bool? = nil
+    var storedLikeCount: Int? = nil
+
+    var isLiked: Bool { likedByMe ?? false }
+    var likeCount: Int { max(0, storedLikeCount ?? 0) }
+
     var characterCount: Int {
         body.count
     }
