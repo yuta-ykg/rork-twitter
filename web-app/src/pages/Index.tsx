@@ -1,8 +1,10 @@
+import { BookmarkButton } from "@/components/BookmarkButton";
+import { useBookmarks } from "@/hooks/useBookmarks";
 import { t, useLanguage } from "@/lib/language";
 import { LikeIconGlyph, useLikeIcon } from "@/hooks/useLikeIcon";
 import { isDevelopmentSession } from "@/lib/development";
 import { toast } from "sonner";
-import { Fish, House, SquarePen, Settings, UserRound, X } from "lucide-react";
+import { Bookmark, Fish, House, SquarePen, Settings, UserRound, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
@@ -19,7 +21,7 @@ import {
   type Post,
 } from "@/lib/posts";
 
-type Tab = "home" | "mine";
+type Tab = "home" | "mine" | "bookmarks";
 
 function Avatar({ initial, index }: { initial: string; index: number }) {
   useLanguage();
@@ -189,7 +191,7 @@ function Shell({
       </header>
       <main className="flex-1 px-5 pb-24">{children}</main>
       <div className="fixed bottom-0 left-1/2 z-20 w-full max-w-[430px] -translate-x-1/2">
-        <nav aria-label={t("メインナビゲーション")} className="grid grid-cols-3 border-t border-border/60 bg-background/70 px-6 pb-[max(8px,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl">
+        <nav aria-label={t("メインナビゲーション")} className="grid grid-cols-4 border-t border-border/60 bg-background/70 px-6 pb-[max(8px,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl">
           <Link to="/" className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "home" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
             <House className="h-5 w-5" />
             {t("ホーム")}</Link>
@@ -197,6 +199,10 @@ function Shell({
             className="flex min-h-11 flex-col items-center justify-center gap-0.5 text-sm text-[hsl(var(--brand))]">
             <SquarePen className="h-5 w-5" aria-hidden />
             {t("投稿")}</button>
+          <Link to="/bookmarks" className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "bookmarks" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
+            <Bookmark className="h-5 w-5" aria-hidden />
+            {t("ブックマーク")}
+          </Link>
           <Link to="/mine" className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "mine" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
             <UserRound className="h-5 w-5" />
             {t("自分")}</Link>
@@ -218,7 +224,7 @@ function Row({ post, showAuthor, onLike }: { post: Post; showAuthor: boolean; on
       </span>
     </Link>
     {post.userId ? <Link to={`/profile/${encodeURIComponent(post.userId)}`} className="ml-[58px] inline-flex min-h-11 items-center text-sm text-[hsl(var(--brand))]">{t("プロフィール")}</Link> : null}
-    <div className="ml-[58px]"><LikeButton post={post} onClick={onLike} /></div>
+    <div className="ml-[58px] flex items-center gap-2"><LikeButton post={post} onClick={onLike} /><BookmarkButton postId={post.id} /></div>
     </div>
   );
 }
@@ -440,7 +446,7 @@ export function PostPage() {
         </div>
       </div>
       <p className="mt-5 text-2xl font-semibold leading-snug">{post.body}</p>
-      <div className="mt-3"><LikeButton post={post} onClick={like} /></div>
+      <div className="mt-3 flex items-center gap-2"><LikeButton post={post} onClick={like} /><BookmarkButton postId={post.id} /></div>
       <div className="mt-6 grid grid-cols-2 border-t border-border pt-4">
         <div>
           <p className="text-[13px] text-muted-foreground">{t("投稿時刻")}</p>
@@ -453,4 +459,60 @@ export function PostPage() {
       </div>
     </div>
   );
+}
+
+export function BookmarksPage() {
+  useLanguage();
+  const { user } = useAuth();
+  const { ids } = useBookmarks(user?.id);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [retry, setRetry] = useState(0);
+  const [open, setOpen] = useState(false);
+  const activeUser = useRef(user?.id);
+  activeUser.current = user?.id;
+
+  useEffect(() => {
+    let cancelled = false;
+    setPosts([]); setError(""); setLoading(true);
+    if (!user?.id) { setLoading(false); return; }
+    fetchPosts(user.id)
+      .then((next) => { if (!cancelled) setPosts(next); })
+      .catch(() => { if (!cancelled) setError("ブックマークを読み込めませんでした。"); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [user?.id, retry]);
+
+  const byId = new Map(posts.map((post) => [post.id, post]));
+  const savedPosts = ids.flatMap((id) => { const post = byId.get(id); return post ? [post] : []; });
+  async function like(post: Post) {
+    if (!user) return;
+    const userId = user.id;
+    try {
+      const state = await setPostLike(post.id, !post.isLiked, userId);
+      if (activeUser.current === userId) setPosts((current) => current.map((item) => item.id === post.id ? { ...item, ...state } : item));
+    } catch { toast.error(t("いいねを保存できませんでした。もう一度試してください。")); }
+  }
+  async function add(body: string) {
+    if (!user) return;
+    const userId = user.id;
+    try {
+      const post = await insertPost(body, user);
+      if (activeUser.current === userId) setPosts((current) => [post, ...current]);
+    } catch { toast.error(t("投稿できませんでした。もう一度試してください。")); }
+  }
+  return <>
+    <Shell tab="bookmarks" onCompose={() => setOpen(true)}>
+      <h1 className="pt-4 text-[28px] font-bold">{t("ブックマーク")}</h1>
+      <p className="mb-4 mt-2 text-base text-muted-foreground">{t("ブックマークはこの端末に保存されます。")}</p>
+      {!user ? <SignInPanel title={t("ブックマーク")} message={t("ブックマークするにはログインしてください。")} /> :
+        loading ? <p role="status" className="py-10 text-muted-foreground">{t("読み込み中…")}</p> :
+        error ? <div className="py-6"><p role="alert">{t(error)}</p><button type="button" onClick={() => setRetry((value) => value + 1)} className="min-h-11 text-[hsl(var(--brand))]">{t("再読み込み")}</button></div> :
+        savedPosts.length ? savedPosts.map((post) => <Row key={post.id} post={post} showAuthor onLike={() => like(post)} />) :
+        <p className="py-10 text-center text-muted-foreground">{t("まだブックマークがありません。")}</p>}
+    </Shell>
+    {open && user ? <ComposeSheet onClose={() => setOpen(false)} onPost={add}
+      authorName={displayName(user)} handle={userHandle(user)} initial={displayName(user).slice(0, 1)} /> : null}
+  </>;
 }

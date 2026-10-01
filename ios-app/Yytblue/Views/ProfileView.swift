@@ -37,7 +37,10 @@ struct ProfileView: View {
                         ForEach(userPosts) { post in
                             VStack(alignment: .leading, spacing: 0) {
                                 NavigationLink(value: post) { PostRowView(post: post, showsAuthor: false) }
-                                LikeButton(post: post) { store.toggleLike(id: post.id) }
+                                HStack(spacing: 8) {
+                                    LikeButton(post: post) { store.toggleLike(id: post.id) }
+                                    BookmarkButton(postId: post.id)
+                                }
                             }
                         }
                     }

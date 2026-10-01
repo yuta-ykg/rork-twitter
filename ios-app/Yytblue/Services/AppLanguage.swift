@@ -11,6 +11,14 @@ enum AppLanguage: String, CaseIterable, Identifiable {
 }
 
 private let englishMessages: [String: String] = [
+    "ブックマーク": "Bookmarks",
+    "ブックマークに追加": "Save bookmark",
+    "ブックマークを解除": "Remove bookmark",
+    "ブックマークするにはログインしてください。": "Sign in to save bookmarks.",
+    "ブックマークを保存できませんでした。": "Couldn't save the bookmark.",
+    "ブックマークを読み込めませんでした。": "Couldn't load bookmarks.",
+    "まだブックマークがありません。": "No bookmarks yet.",
+    "ブックマークはこの端末に保存されます。": "Bookmarks are saved on this device.",
     "ホーム": "Home",
     "投稿": "Posts",
     "自分": "Mine",

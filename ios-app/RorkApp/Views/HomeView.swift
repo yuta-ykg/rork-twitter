@@ -33,7 +33,10 @@ struct HomeView: View {
                             .font(.subheadline)
                             .foregroundStyle(palette.blue)
                     }
-                    LikeButton(post: post) { store.toggleLike(id: post.id) }
+                    HStack(spacing: 8) {
+                        LikeButton(post: post) { store.toggleLike(id: post.id) }
+                        BookmarkButton(postId: post.id)
+                    }
                         .padding(.leading, 58)
                 }
                 .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
@@ -100,7 +103,10 @@ struct MineView: View {
                         NavigationLink(value: post) {
                             PostRowView(post: post, showsAuthor: false)
                         }
+                        HStack(spacing: 8) {
                         LikeButton(post: post) { store.toggleLike(id: post.id) }
+                        BookmarkButton(postId: post.id)
+                    }
                             .padding(.leading, 58)
                     }
                     .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
