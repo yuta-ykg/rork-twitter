@@ -10,7 +10,7 @@ struct ContentView: View {
                 NavigationStack {
                     HomeView(store: store, showsComposer: $showsComposer)
                         .navigationDestination(for: Post.self) { post in
-                            PostDetailView(post: post)
+                            PostDetailView(initialPost: post, store: store)
                         }
                 }
             }
@@ -18,7 +18,7 @@ struct ContentView: View {
                 NavigationStack {
                     MineView(store: store, showsComposer: $showsComposer)
                         .navigationDestination(for: Post.self) { post in
-                            PostDetailView(post: post)
+                            PostDetailView(initialPost: post, store: store)
                         }
                 }
             }
