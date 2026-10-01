@@ -106,6 +106,7 @@ All colors MUST be HSL.
 
 /* Iruka themes share the same semantic tokens across every screen. */
 :root {
+  --brand: 204 88% 53%;
   --background: 0 0% 100%; --foreground: 204 25% 8%;
   --card: 0 0% 100%; --card-foreground: 204 25% 8%;
   --popover: 0 0% 100%; --popover-foreground: 204 25% 8%;
@@ -137,3 +138,20 @@ All colors MUST be HSL.
   --ring: 203 89% 60%;
 }
 html, body, #root { min-height: 100%; background: hsl(var(--background)); color: hsl(var(--foreground)); }
+
+:root[data-theme="mint"] {
+  --brand: 164 70% 27%;
+  --background: 153 45% 96%; --foreground: 164 40% 12%;
+  --card: 153 40% 99%; --card-foreground: 164 40% 12%;
+  --popover: 153 40% 99%; --popover-foreground: 164 40% 12%;
+  --muted: 153 35% 90%; --muted-foreground: 164 20% 34%;
+  --secondary: 153 35% 90%; --secondary-foreground: 164 40% 12%;
+  --accent: 153 40% 86%; --accent-foreground: 164 40% 12%;
+  --border: 153 25% 78%; --input: 153 25% 65%;
+  --primary: 164 70% 27%; --primary-foreground: 0 0% 100%;
+  --ring: 164 70% 27%;
+  --sidebar-background: 153 40% 99%; --sidebar-foreground: 164 40% 12%;
+  --sidebar-primary: 164 70% 27%; --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 153 40% 86%; --sidebar-accent-foreground: 164 40% 12%;
+  --sidebar-border: 153 25% 78%; --sidebar-ring: 164 70% 27%;
+}
