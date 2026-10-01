@@ -1,6 +1,6 @@
 import { isDevelopmentSession } from "@/lib/development";
 import { toast } from "sonner";
-import { Fish, Heart, House, UserRound, X } from "lucide-react";
+import { Fish, Heart, House, SquarePen, UserRound, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
@@ -160,30 +160,36 @@ function ComposeSheet({
 function Shell({
   tab,
   children,
-  actionLabel,
   onCompose,
 }: {
   tab: Tab;
   children: ReactNode;
-  actionLabel: string;
   onCompose: () => void;
 }) {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  function compose() {
+    if (!user) { navigate("/mine"); return; }
+    onCompose();
+  }
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col bg-white text-[#0F1419]">
       <header className="sticky top-0 z-10 border-b border-[#ECF0F2]/80 bg-white/75 px-5 py-3 backdrop-blur-xl">
         <Wordmark />
         {isDevelopmentSession() ? <p className="mt-1 text-sm text-[#536471]">開発モード・このブラウザに保存</p> : null}
       </header>
-      <main className="flex-1 px-5 pb-36">{children}</main>
+      <main className="flex-1 px-5 pb-24">{children}</main>
       <div className="fixed bottom-0 left-1/2 z-20 w-full max-w-[430px] -translate-x-1/2">
-        <div className="px-5 pb-2">
-          <PostButton label={actionLabel} onClick={onCompose} />
-        </div>
-        <nav className="grid grid-cols-2 border-t border-white/40 bg-white/70 px-6 pb-[max(8px,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl">
+        <nav aria-label="メインナビゲーション" className="grid grid-cols-3 border-t border-white/40 bg-white/70 px-6 pb-[max(8px,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl">
           <Link to="/" className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "home" ? "text-[#1D9BF0]" : "text-[#536471]"}`}>
             <House className="h-5 w-5" />
             ホーム
           </Link>
+          <button type="button" onClick={compose} aria-label="投稿を作成"
+            className="flex min-h-11 flex-col items-center justify-center gap-0.5 text-sm text-[#1D9BF0]">
+            <SquarePen className="h-5 w-5" aria-hidden />
+            投稿
+          </button>
           <Link to="/mine" className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "mine" ? "text-[#1D9BF0]" : "text-[#536471]"}`}>
             <UserRound className="h-5 w-5" />
             自分
@@ -267,7 +273,7 @@ export function HomePage() {
 
   return (
     <>
-      <Shell tab="home" actionLabel="投稿する" onCompose={() => (user ? setOpen(true) : setNeedsSignIn(true))}>
+      <Shell tab="home" onCompose={() => (user ? setOpen(true) : setNeedsSignIn(true))}>
         <h1 className="pt-4 text-[28px] font-bold leading-tight">いま、みんなが書いている</h1>
         <p className="mb-2 mt-1 text-base text-[#536471]">70字までの短い投稿</p>
         {error ? <p className="mb-2 text-sm text-red-500">{error}</p> : null}
@@ -328,7 +334,7 @@ export function MinePage() {
 
   return (
     <>
-      <Shell tab="mine" actionLabel={user ? "新しく投稿" : "ログイン"} onCompose={() => (user ? setOpen(true) : undefined)}>
+      <Shell tab="mine" onCompose={() => (user ? setOpen(true) : undefined)}>
         {user ? (
           <>
             <div className="flex items-center justify-between pt-4">
