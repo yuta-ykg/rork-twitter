@@ -225,13 +225,14 @@ function Row({ post, showAuthor, onLike }: { post: Post; showAuthor: boolean; on
 function LikeButton({ post, onClick }: { post: Post; onClick: () => void | Promise<void> }) {
   const [pending, setPending] = useState(false);
   const { likeIcon } = useLikeIcon();
+  const selectedColor = { heart: "text-pink-500", star: "text-amber-500", "thumbs-up": "text-blue-500", upvote: "text-orange-500" }[likeIcon];
   return <button type="button" disabled={pending} aria-busy={pending} onClick={async () => {
     if (pending) return;
     setPending(true);
     try { await onClick(); } finally { setPending(false); }
   }} aria-pressed={Boolean(post.isLiked)}
     aria-label={post.isLiked ? "いいねを取り消す" : "いいね"}
-    className={`inline-flex min-h-11 min-w-11 items-center gap-2 rounded-full px-2 transition ${post.isLiked ? (likeIcon === "star" ? "text-amber-500" : "text-pink-500") : "text-muted-foreground"} hover:bg-muted`}>
+    className={`inline-flex min-h-11 min-w-11 items-center gap-2 rounded-full px-2 transition ${post.isLiked ? selectedColor : "text-muted-foreground"} hover:bg-muted`}>
     <LikeIconGlyph className="h-5 w-5" liked={Boolean(post.isLiked)} />
     <span>{post.likeCount ?? 0}</span>
   </button>;
