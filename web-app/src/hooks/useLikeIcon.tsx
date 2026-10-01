@@ -1,14 +1,16 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { Heart, Star } from "lucide-react";
+import { ArrowBigUp, Heart, Star, ThumbsUp } from "lucide-react";
 
 export const likeIconOptions = [
   { value: "heart", label: "ハート", Icon: Heart },
   { value: "star", label: "星", Icon: Star },
+  { value: "thumbs-up", label: "親指", Icon: ThumbsUp },
+  { value: "upvote", label: "Upvote", Icon: ArrowBigUp },
 ] as const;
 export type LikeIcon = typeof likeIconOptions[number]["value"];
 const key = "iruka-like-icon";
 function validLikeIcon(value: unknown): LikeIcon {
-  return value === "star" ? "star" : "heart";
+  return likeIconOptions.find((option) => option.value === value)?.value ?? "heart";
 }
 function storedLikeIcon(): LikeIcon {
   try { return validLikeIcon(localStorage.getItem(key)); } catch { return "heart"; }
@@ -41,6 +43,6 @@ export function useLikeIcon() {
 }
 export function LikeIconGlyph({ liked = false, className }: { liked?: boolean; className?: string }) {
   const { likeIcon } = useLikeIcon();
-  const Icon = likeIcon === "star" ? Star : Heart;
+  const Icon = likeIconOptions.find((option) => option.value === likeIcon)?.Icon ?? Heart;
   return <Icon className={className} fill={liked ? "currentColor" : "none"} aria-hidden />;
 }

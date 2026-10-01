@@ -69,9 +69,31 @@ struct LikeButton: View {
 }
 
 enum LikeIcon: String, CaseIterable, Identifiable {
-    case heart, star
+    case heart, star, thumbsUp = "thumbs-up", upvote
     var id: String { rawValue }
-    var title: String { self == .star ? "星" : "ハート" }
-    var selectedColor: Color { self == .star ? .orange : .pink }
-    func symbol(liked: Bool) -> String { rawValue + (liked ? ".fill" : "") }
+    var title: String {
+        switch self {
+        case .heart: "ハート"
+        case .star: "星"
+        case .thumbsUp: "親指"
+        case .upvote: "Upvote"
+        }
+    }
+    var selectedColor: Color {
+        switch self {
+        case .heart: .pink
+        case .star, .upvote: .orange
+        case .thumbsUp: .blue
+        }
+    }
+    func symbol(liked: Bool) -> String {
+        let name: String
+        switch self {
+        case .heart: name = "heart"
+        case .star: name = "star"
+        case .thumbsUp: name = "hand.thumbsup"
+        case .upvote: name = "arrowshape.up"
+        }
+        return name + (liked ? ".fill" : "")
+    }
 }
