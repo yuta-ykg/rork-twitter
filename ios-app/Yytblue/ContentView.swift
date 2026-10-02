@@ -17,69 +17,17 @@ struct ContentView: View {
     private enum MainTab: Hashable { case home, compose, mine, bookmarks, notifications, settings }
 
     var body: some View {
-        TabView(selection: Binding(get: { selectedTab }, set: selectTab)) {
-            Tab(L("ホーム"), systemImage: "house.fill", value: MainTab.home) {
-                NavigationStack {
-                    HomeView(store: store, showsComposer: $showsComposer, showsSignIn: $showsSignIn)
-                        .navigationDestination(for: Post.self) { post in
-                            PostDetailView(initialPost: post, store: store)
-                        }
-                        .navigationDestination(for: ProfileRoute.self) { route in
-                            ProfileView(profileId: route.id, store: store)
-                        }
-                }
+        Group {
+            if auth.isLoading {
+                ProgressView()
+                    .tint(Color.irukaBlue)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if auth.user == nil {
+                // ログインしていないときはアプリの内容を見せない。
+                NavigationStack { SignInView() }
+            } else {
+                mainTabs
             }
-            Tab(L("投稿"), systemImage: "square.and.pencil", value: MainTab.compose) {
-                Color.clear
-            }
-            Tab(L("自分"), systemImage: "person.fill", value: MainTab.mine) {
-                NavigationStack {
-                    MineView(store: store, showsComposer: $showsComposer, showsSignIn: $showsSignIn)
-                        .navigationDestination(for: Post.self) { post in
-                            PostDetailView(initialPost: post, store: store)
-                        }
-                        .navigationDestination(for: ProfileRoute.self) { route in
-                            ProfileView(profileId: route.id, store: store)
-                        }
-                }
-            }
-            Tab(L("ブックマーク"), systemImage: "bookmark.fill", value: MainTab.bookmarks) {
-                NavigationStack {
-                    BookmarksView(store: store)
-                        .navigationDestination(for: Post.self) { post in
-                            PostDetailView(initialPost: post, store: store)
-                        }
-                        .navigationDestination(for: ProfileRoute.self) { route in
-                            ProfileView(profileId: route.id, store: store)
-                        }
-                }
-            }
-            Tab(L("通知"), systemImage: "bell.fill", value: MainTab.notifications) {
-                NavigationStack { NotificationsView(store: store) }
-                        .navigationDestination(for: Post.self) { post in
-                            PostDetailView(initialPost: post, store: store)
-                        }
-                        .navigationDestination(for: ProfileRoute.self) { route in
-                            ProfileView(profileId: route.id, store: store)
-                        }
-            }
-            Tab(L("設定"), systemImage: "gearshape", value: MainTab.settings) {
-                NavigationStack { SettingsView() }
-            }
-        }
-        .toolbar(.hidden, for: .tabBar)
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            HStack(spacing: 0) {
-                bottomBarButton(.home, title: "ホーム", symbol: "house.fill")
-                bottomBarButton(.compose, title: "投稿", symbol: "square.and.pencil")
-                bottomBarButton(.mine, title: "自分", symbol: "person.fill")
-                bottomBarButton(.bookmarks, title: "ブックマーク", symbol: "bookmark.fill")
-                bottomBarButton(.notifications, title: "通知", symbol: "bell.fill")
-                bottomBarButton(.settings, title: "設定", symbol: "gearshape")
-            }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 8)
-            .background(.bar)
         }
         .tint(Color.irukaBlue)
         .task(id: auth.user?.id) {
@@ -161,6 +109,74 @@ struct ContentView: View {
             }
         }
     }
+
+    private var mainTabs: some View {
+        TabView(selection: Binding(get: { selectedTab }, set: selectTab)) {
+            Tab(L("ホーム"), systemImage: "house.fill", value: MainTab.home) {
+                NavigationStack {
+                    HomeView(store: store, showsComposer: $showsComposer, showsSignIn: $showsSignIn)
+                        .navigationDestination(for: Post.self) { post in
+                            PostDetailView(initialPost: post, store: store)
+                        }
+                        .navigationDestination(for: ProfileRoute.self) { route in
+                            ProfileView(profileId: route.id, store: store)
+                        }
+                }
+            }
+            Tab(L("投稿"), systemImage: "square.and.pencil", value: MainTab.compose) {
+                Color.clear
+            }
+            Tab(L("自分"), systemImage: "person.fill", value: MainTab.mine) {
+                NavigationStack {
+                    MineView(store: store, showsComposer: $showsComposer, showsSignIn: $showsSignIn)
+                        .navigationDestination(for: Post.self) { post in
+                            PostDetailView(initialPost: post, store: store)
+                        }
+                        .navigationDestination(for: ProfileRoute.self) { route in
+                            ProfileView(profileId: route.id, store: store)
+                        }
+                }
+            }
+            Tab(L("ブックマーク"), systemImage: "bookmark.fill", value: MainTab.bookmarks) {
+                NavigationStack {
+                    BookmarksView(store: store)
+                        .navigationDestination(for: Post.self) { post in
+                            PostDetailView(initialPost: post, store: store)
+                        }
+                        .navigationDestination(for: ProfileRoute.self) { route in
+                            ProfileView(profileId: route.id, store: store)
+                        }
+                }
+            }
+            Tab(L("通知"), systemImage: "bell.fill", value: MainTab.notifications) {
+                NavigationStack { NotificationsView(store: store) }
+                        .navigationDestination(for: Post.self) { post in
+                            PostDetailView(initialPost: post, store: store)
+                        }
+                        .navigationDestination(for: ProfileRoute.self) { route in
+                            ProfileView(profileId: route.id, store: store)
+                        }
+            }
+            Tab(L("設定"), systemImage: "gearshape", value: MainTab.settings) {
+                NavigationStack { SettingsView() }
+            }
+        }
+        .toolbar(.hidden, for: .tabBar)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            HStack(spacing: 0) {
+                bottomBarButton(.home, title: "ホーム", symbol: "house.fill")
+                bottomBarButton(.compose, title: "投稿", symbol: "square.and.pencil")
+                bottomBarButton(.mine, title: "自分", symbol: "person.fill")
+                bottomBarButton(.bookmarks, title: "ブックマーク", symbol: "bookmark.fill")
+                bottomBarButton(.notifications, title: "通知", symbol: "bell.fill")
+                bottomBarButton(.settings, title: "設定", symbol: "gearshape")
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 8)
+            .background(.bar)
+        }
+    }
+
     private func selectTab(_ tab: MainTab) {
         if tab == .compose {
             if auth.user == nil {
@@ -194,12 +210,9 @@ struct ContentView: View {
         .accessibilityValue(tab == .notifications && notifications.unreadCount > 0 ? L("未読の通知") + ": " + String(notifications.unreadCount) : "")
         .accessibilityAddTraits(selectedTab == tab ? .isSelected : [])
     }
-
 }
 
 #Preview {
     ContentView()
         .environment(AuthManager())
-
 }
-

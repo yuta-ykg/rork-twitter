@@ -5,6 +5,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/hooks/useAuth";
+import { isGuestSession } from "@/lib/development";
 import { listUserRelationships, setUserRelationship, type UserRelationship } from "@/lib/userRelationships";
 import { DesktopSidebar } from "@/components/DesktopSidebar";
 import { useDesktopNavigation } from "@/hooks/useDesktopNavigation";
@@ -44,7 +45,8 @@ export default function SettingsPage() {
       {user ? (
         <>
           <p className="mt-4 text-sm text-muted-foreground">{t("メールアドレス")}</p>
-          <p className="mt-1 break-all text-base">{user.email || t("未設定")}</p>
+          <p className="mt-1 break-all text-base">{isGuestSession() ? t("ゲスト") : (user.email || t("未設定"))}</p>
+          {isGuestSession() ? <p className="mt-1 text-sm text-muted-foreground">{t("アカウント登録なしで試せます。データはこの端末にだけ保存され、30日で削除されます。")}</p> : null}
           {deleteError ? <p role="alert" className="mt-3 text-sm text-red-600">{t(deleteError)}</p> : null}
           <AlertDialog open={confirmOpen} onOpenChange={(open) => { if (!deleting) setConfirmOpen(open); }}>
             <AlertDialogTrigger asChild>

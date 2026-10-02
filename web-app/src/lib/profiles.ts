@@ -1,4 +1,4 @@
-import { developerUser, isDevelopmentSession, readDevelopmentProfile, writeDevelopmentProfile } from "@/lib/development";
+import { isDevelopmentSession, localUser, readDevelopmentProfile, writeDevelopmentProfile } from "@/lib/development";
 import { supabase } from "@/lib/supabase";
 
 export type Profile = {
@@ -6,7 +6,7 @@ export type Profile = {
   avatar_url: string | null; created_at: string | null; post_count: number;
 };
 export async function fetchProfiles(ids: string[]): Promise<Profile[]> {
-  if (isDevelopmentSession()) return ids.includes(developerUser.id) ? [readDevelopmentProfile()] : [];
+  if (isDevelopmentSession()) return ids.includes(localUser().id) ? [readDevelopmentProfile()] : [];
   if (!ids.length) return [];
   const { data, error } = await supabase.rpc("get_public_profiles", { profile_ids: [...new Set(ids)] });
   if (error) throw error;

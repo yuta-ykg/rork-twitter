@@ -1,4 +1,10 @@
-import { canSkipLogin, developerUser, isDevelopmentSession, startDevelopmentSession, endDevelopmentSession } from "@/lib/development";
+import {
+  canSkipLogin, clearLocalData, developerUser, endDevelopmentSession, expireGuestSessionIfNeeded,
+  isDevelopmentSession, isGuestSession, localUser, readDevelopmentPosts, startDevelopmentSession, startGuestSession,
+} from "@/lib/development";
+import { insertPost } from "@/lib/posts";
+import { t } from "@/lib/language";
+import { toast } from "sonner";
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 
 const AUTH_URL = import.meta.env.EXPO_PUBLIC_RORK_AUTH_URL as string;
@@ -64,6 +70,7 @@ interface AuthContextType {
   isSigningIn: boolean;
   error: string | null;
   signIn: (provider: "google" | "apple") => Promise<void>;
+  signInAsGuest: () => void;
   signOut: () => void;
   clearError: () => void;
   canSkipLogin: boolean;
@@ -97,7 +104,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function checkAuth() {
     try {
-      if (isDevelopmentSession()) { setUser(developerUser); return; }
+      if (expireGuestSessionIfNeeded()) {
+        toast(t("ゲストのデータは保持期限（30日）を過ぎたため、削除されました。"));
+      }
+      if (isDevelopmentSession()) { setUser(localUser()); return; }
       const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
       if (accessToken) {
         const decoded = userFromToken(accessToken);
@@ -139,6 +149,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(ACCESS_TOKEN_KEY, access_token);
     localStorage.setItem(REFRESH_TOKEN_KEY, refresh_token);
     setUser(userData);
+    await carryOverGuestData(userData);
+  }
+
+  function signInAsGuest() {
+    setError(null);
+    setIsLoading(false);
+    setUser(startGuestSession());
+  }
+
+  /** Moves device-local guest posts into the newly signed-in account, then deletes the guest data. */
+  async function carryOverGuestData(author: AuthUser) {
+    if (!isGuestSession()) return;
+    const guestPosts = readDevelopmentPosts().filter((post) => {
+      if (post.parentId) return false;
+      const body = post.body.trim();
+      return body.length > 0 && Array.from(body).length <= 70;
+    });
+    endDevelopmentSession();
+    clearLocalData();
+    let moved = 0;
+    for (const post of guestPosts) {
+      try {
+        await insertPost(post.body.trim(), author);
+        moved += 1;
+      } catch { /* Skip posts that fail to move. */ }
+    }
+    if (moved > 0) toast.success(t("ゲストの投稿を新しいアカウントに引き継ぎました"));
   }
 
   function skipLogin() {
@@ -150,7 +187,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signIn(provider: "google" | "apple") {
-    endDevelopmentSession();
+    // Keep guest sessions alive so their posts can be carried over after sign-in.
+    if (!isGuestSession()) endDevelopmentSession();
     setIsSigningIn(true);
     setError(null);
     try {
@@ -240,6 +278,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   function signOut() {
+    if (isGuestSession()) clearLocalData();
     endDevelopmentSession();
     localStorage.removeItem(ACCESS_TOKEN_KEY);
     localStorage.removeItem(REFRESH_TOKEN_KEY);
@@ -248,7 +287,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, isSigningIn, error, signIn, signOut, clearError, exchangeCode, canSkipLogin, skipLogin }}>
+    <AuthContext.Provider value={{ user, isLoading, isSigningIn, error, signIn, signInAsGuest, signOut, clearError, exchangeCode, canSkipLogin, skipLogin }}>
       {children}
     </AuthContext.Provider>
   );

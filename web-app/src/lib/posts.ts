@@ -1,5 +1,5 @@
 import { getLanguage, t } from "@/lib/language";
-import { developerUser, isDevelopmentSession, readDevelopmentPosts, writeDevelopmentPosts, readDevelopmentProfile } from "@/lib/development";
+import { isDevelopmentSession, localUser, readDevelopmentPosts, writeDevelopmentPosts, readDevelopmentProfile } from "@/lib/development";
 import { ensureProfile, fetchProfiles } from "@/lib/profiles";
 import { hiddenDevelopmentUsers } from "@/lib/userRelationships";
 import { supabase } from "@/lib/supabase";
@@ -99,7 +99,7 @@ export async function insertPost(body: string, author: Author): Promise<Post> {
     const trimmed = body.trim();
     if (!trimmed || Array.from(trimmed).length > MAX_CHARACTERS) throw new Error("投稿は1〜70文字で入力してください。");
     const profile = readDevelopmentProfile();
-    const post: Post = { id: crypto.randomUUID(), userId: developerUser.id, authorName: profile.name,
+    const post: Post = { id: crypto.randomUUID(), userId: localUser().id, authorName: profile.name,
       handle: `@${profile.handle}`, initial: Array.from(profile.name)[0] ?? "開", body: trimmed,
       createdAt: new Date().toISOString(), isMine: true, avatarIndex: 0, isLiked: false, likeCount: 0 };
     writeDevelopmentPosts([post, ...readDevelopmentPosts()]);
@@ -139,7 +139,7 @@ export function timeLabel(iso: string): string {
 
 export async function setPostLike(id: string, liked: boolean, userId: string) {
   if (isDevelopmentSession()) {
-    if (userId !== developerUser.id) throw new Error("開発ユーザーが一致しません。");
+    if (userId !== localUser().id) throw new Error("ローカルユーザーが一致しません。");
     const posts = readDevelopmentPosts();
     const post = posts.find((item) => item.id === id);
     if (!post) throw new Error("投稿が見つかりません。");

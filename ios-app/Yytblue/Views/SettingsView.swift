@@ -17,7 +17,12 @@ struct SettingsView: View {
         Form {
             Section(L("アカウント")) {
                 if let user = auth.user {
-                    LabeledContent(L("メールアドレス"), value: user.email.isEmpty ? L("未設定") : user.email)
+                    LabeledContent(L("メールアドレス"), value: DevelopmentData.isGuest ? L("ゲスト") : (user.email.isEmpty ? L("未設定") : user.email))
+                    if DevelopmentData.isGuest {
+                        Text(L("アカウント登録なしで試せます。データはこの端末にだけ保存され、30日で削除されます。"))
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
                     Button(deleting ? L("削除中…") : L("アカウントを削除"), role: .destructive) {
                         confirmsDelete = true
                     }

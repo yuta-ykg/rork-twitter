@@ -14,7 +14,7 @@ struct BookmarksView: View {
 
     var body: some View {
         List {
-            Text(L(DevelopmentData.isActive ? "開発モードのブックマークはこの端末に保存されます。" : "ブックマークはアカウントに保存され、端末間で共有されます。"))
+            Text(L(DevelopmentData.isGuest ? "ゲストモードのブックマークはこの端末に保存されます。" : DevelopmentData.isActive ? "開発モードのブックマークはこの端末に保存されます。" : "ブックマークはアカウントに保存され、端末間で共有されます。"))
                 .font(.subheadline)
                 .foregroundStyle(Color.irukaSecondary)
                 .listRowSeparator(.hidden)

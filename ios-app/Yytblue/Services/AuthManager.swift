@@ -1,5 +1,7 @@
 import AuthenticationServices
 import CryptoKit
+import PostgREST
+import Supabase
 import SwiftUI
 
 @Observable
@@ -115,6 +117,7 @@ class AuthManager {
     @MainActor
     func checkAuth() async {
         defer { isLoading = false }
+        DevelopmentData.expireGuestIfNeeded()
         if DevelopmentData.isActive { user = DevelopmentData.user; return }
         if let accessToken = KeychainHelper.get("access_token"),
            let user = userFromToken(accessToken) {
@@ -135,9 +138,20 @@ class AuthManager {
         showError = false
     }
 
+    /// 端末ローカルのゲストセッションを開始する。データは引き継ぎない限り30日で削除される。
+    @MainActor
+    func signInAsGuest() {
+        DevelopmentData.startGuest()
+        user = DevelopmentData.user
+        isLoading = false
+        showError = false
+        errorMessage = ""
+    }
+
     @MainActor
     func signIn(provider: String) async {
-        DevelopmentData.end()
+        // ゲストセッションは保持して、ログイン後に投稿を引き継げるようにする。
+        if DevelopmentData.sessionKind == .developer { DevelopmentData.end() }
         isSigningIn = true
         defer { isSigningIn = false }
         do {
@@ -277,8 +291,31 @@ class AuthManager {
             KeychainHelper.set("access_token", value: tokenResponse.access_token)
             KeychainHelper.set("refresh_token", value: tokenResponse.refresh_token)
             user = tokenResponse.user
+            await carryOverGuestPosts(to: tokenResponse.user)
         } catch {
             setError("ログインに失敗しました")
+        }
+    }
+
+    /// 端末ローカルのゲスト投稿を新しいアカウントに移し、ゲストデータを削除する。
+    @MainActor
+    private func carryOverGuestPosts(to user: User) async {
+        guard DevelopmentData.sessionKind == .guest else { return }
+        let guestPosts = DevelopmentData.posts().filter { post in
+            guard post.parentId == nil else { return false }
+            let body = post.body.trimmingCharacters(in: .whitespacesAndNewlines)
+            return !body.isEmpty && body.count <= PostLimits.maxCharacters
+        }
+        DevelopmentData.end()
+        DevelopmentData.clearGuestData()
+        for post in guestPosts {
+            try? await IrukaDatabase.client
+                .rpc("create_post", params: CreatePostParams(
+                    post_id: UUID(),
+                    post_body: post.body.trimmingCharacters(in: .whitespacesAndNewlines),
+                    expected_user_id: user.id
+                ))
+                .execute()
         }
     }
 
@@ -312,7 +349,11 @@ class AuthManager {
 
     @MainActor
     func signOut() async {
-        DevelopmentData.end()
+        if DevelopmentData.isGuest {
+            DevelopmentData.clearGuestData()
+        } else {
+            DevelopmentData.end()
+        }
         KeychainHelper.delete("access_token")
         KeychainHelper.delete("refresh_token")
         UserDefaults.standard.removeObject(forKey: "RORK_AUTH_REFRESH_TOKEN")

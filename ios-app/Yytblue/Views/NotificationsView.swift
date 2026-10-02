@@ -22,7 +22,7 @@ struct NotificationsView: View {
             if auth.user == nil {
                 SignInView(title: L("通知"), message: L("通知を見るにはログインしてください。"))
             } else if DevelopmentData.isActive {
-                Text(L("開発モードでは通知は届きません。"))
+                Text(L(DevelopmentData.isGuest ? "ゲストモードでは通知は届きません。" : "開発モードでは通知は届きません。"))
             } else if notifications.loading {
                 ProgressView(L("読み込み中…"))
             } else if let error = notifications.error {

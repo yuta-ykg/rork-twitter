@@ -9,7 +9,7 @@ import { BookmarkButton } from "@/components/BookmarkButton";
 import { useBookmarks } from "@/hooks/useBookmarks";
 import { t, useLanguage } from "@/lib/language";
 import { LikeIconGlyph, useLikeIcon } from "@/hooks/useLikeIcon";
-import { isDevelopmentSession } from "@/lib/development";
+import { isDevelopmentSession, isGuestSession } from "@/lib/development";
 import { toast } from "sonner";
 import { Bookmark, Download, Fish, House, MessageCircle, SquarePen, Settings, UserRound, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -205,7 +205,7 @@ function Shell({
             <Settings className="h-5 w-5" aria-hidden />
           </Link>
         </div>
-        {isDevelopmentSession() ? <p className="mt-1 text-sm text-muted-foreground">{t("開発モード・このブラウザに保存")}</p> : null}
+        {isDevelopmentSession() ? <p className="mt-1 text-sm text-muted-foreground">{t(isGuestSession() ? "ゲストモード・このブラウザに保存" : "開発モード・このブラウザに保存")}</p> : null}
       </header>
       <main className={`flex-1 px-5 pb-24 ${useDesktopBottomBar ? "" : "lg:pb-8"}`}>{children}</main>
       <div className={`fixed bottom-0 left-1/2 z-20 w-full max-w-[430px] -translate-x-1/2 ${useDesktopBottomBar ? "" : "lg:hidden"}`}>
@@ -561,7 +561,7 @@ export function BookmarksPage() {
   return <>
     <Shell tab="bookmarks" onCompose={() => setOpen(true)}>
       <h1 className="pt-4 text-[28px] font-bold">{t("ブックマーク")}</h1>
-      <p className="mb-4 mt-2 text-base text-muted-foreground">{t(isDevelopmentSession() ? "開発モードのブックマークはこの端末に保存されます。" : "ブックマークはアカウントに保存され、端末間で共有されます。")}</p>
+      <p className="mb-4 mt-2 text-base text-muted-foreground">{t(isDevelopmentSession() ? (isGuestSession() ? "ゲストモードのブックマークはこの端末に保存されます。" : "開発モードのブックマークはこの端末に保存されます。") : "ブックマークはアカウントに保存され、端末間で共有されます。")}</p>
       {!user ? <SignInPanel title={t("ブックマーク")} message={t("ブックマークするにはログインしてください。")} /> :
         loading || bookmarksLoading ? <p role="status" className="py-10 text-muted-foreground">{t("読み込み中…")}</p> :
         error || bookmarkError ? <div className="py-6"><p role="alert">{t(error || bookmarkError)}</p><button type="button" onClick={() => { setRetry((value) => value + 1); void refreshBookmarks().catch(() => {}); }} className="min-h-11 text-[hsl(var(--brand))]">{t("再読み込み")}</button></div> :
@@ -598,7 +598,7 @@ export function NotificationsPage() {
       </div>
       <p className="mb-4 mt-2 text-base text-muted-foreground">{t("自分の投稿へのいいねをお知らせします。")}</p>
       {!user ? <SignInPanel title={t("通知")} message={t("通知を見るにはログインしてください。")} /> :
-        isDevelopmentSession() ? <p className="py-10 text-muted-foreground">{t("開発モードでは通知は届きません。")}</p> :
+        isDevelopmentSession() ? <p className="py-10 text-muted-foreground">{t(isGuestSession() ? "ゲストモードでは通知は届きません。" : "開発モードでは通知は届きません。")}</p> :
         notifications.loading ? <p role="status" className="py-10 text-muted-foreground">{t("読み込み中…")}</p> :
         notifications.error ? <div className="py-6"><p role="alert">{t("通知を読み込めませんでした。")}</p><button type="button" onClick={() => void notifications.refresh()} className="min-h-11 text-[hsl(var(--brand))]">{t("再読み込み")}</button></div> :
         notifications.rows.length ? <>
