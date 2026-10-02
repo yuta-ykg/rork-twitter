@@ -32,7 +32,7 @@ struct BookmarksView: View {
             } else {
                 ForEach(savedPosts) { post in
                     VStack(alignment: .leading, spacing: 0) {
-                        NavigationLink(value: post) { PostRowView(post: post) }
+                        PostRowView(post: post)
                         HStack(spacing: 8) {
                             LikeButton(post: post) { store.toggleLike(id: post.id) }
                             BookmarkButton(postId: post.id)

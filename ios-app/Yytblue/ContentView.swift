@@ -24,6 +24,9 @@ struct ContentView: View {
                         .navigationDestination(for: Post.self) { post in
                             PostDetailView(initialPost: post, store: store)
                         }
+                        .navigationDestination(for: ProfileRoute.self) { route in
+                            ProfileView(profileId: route.id, store: store)
+                        }
                 }
             }
             Tab(L("投稿"), systemImage: "square.and.pencil", value: MainTab.compose) {
@@ -35,6 +38,9 @@ struct ContentView: View {
                         .navigationDestination(for: Post.self) { post in
                             PostDetailView(initialPost: post, store: store)
                         }
+                        .navigationDestination(for: ProfileRoute.self) { route in
+                            ProfileView(profileId: route.id, store: store)
+                        }
                 }
             }
             Tab(L("ブックマーク"), systemImage: "bookmark.fill", value: MainTab.bookmarks) {
@@ -43,10 +49,19 @@ struct ContentView: View {
                         .navigationDestination(for: Post.self) { post in
                             PostDetailView(initialPost: post, store: store)
                         }
+                        .navigationDestination(for: ProfileRoute.self) { route in
+                            ProfileView(profileId: route.id, store: store)
+                        }
                 }
             }
             Tab(L("通知"), systemImage: "bell.fill", value: MainTab.notifications) {
                 NavigationStack { NotificationsView(store: store) }
+                        .navigationDestination(for: Post.self) { post in
+                            PostDetailView(initialPost: post, store: store)
+                        }
+                        .navigationDestination(for: ProfileRoute.self) { route in
+                            ProfileView(profileId: route.id, store: store)
+                        }
             }
             Tab(L("設定"), systemImage: "gearshape", value: MainTab.settings) {
                 NavigationStack { SettingsView() }

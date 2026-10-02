@@ -24,14 +24,7 @@ struct HomeView: View {
 
             ForEach(store.timeline) { post in
                 VStack(alignment: .leading, spacing: 0) {
-                    NavigationLink(value: post) {
-                        PostRowView(post: post)
-                    }
-                    if let userId = post.userId {
-                        NavigationLink(L("プロフィール")) { ProfileView(profileId: userId, store: store) }
-                            .font(.subheadline)
-                            .foregroundStyle(Color.irukaBlue)
-                    }
+                    PostRowView(post: post)
                     HStack(spacing: 8) {
                         LikeButton(post: post) { store.toggleLike(id: post.id) }
                         BookmarkButton(postId: post.id)
@@ -98,9 +91,7 @@ struct MineView: View {
             } else {
                 ForEach(store.mine) { post in
                     VStack(alignment: .leading, spacing: 0) {
-                        NavigationLink(value: post) {
-                            PostRowView(post: post, showsAuthor: false)
-                        }
+                        PostRowView(post: post, showsAuthor: false)
                         HStack(spacing: 8) {
                         LikeButton(post: post) { store.toggleLike(id: post.id) }
                         BookmarkButton(postId: post.id)

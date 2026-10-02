@@ -239,14 +239,19 @@ function Row({ post, showAuthor, onLike }: { post: Post; showAuthor: boolean; on
   return (
     <div className="border-b border-border py-3">
     {post.parentId && <Link to={`/post/${post.parentId}`} className="mb-2 inline-flex min-h-11 items-center text-sm text-muted-foreground">{t("返信先の投稿")}</Link>}
-    <Link to={`/post/${post.id}`} className="flex gap-3">
-      <Avatar initial={post.initial} index={post.avatarIndex} />
+    <div className="flex gap-3">
+      {post.userId ? (
+        <Link to={`/profile/${encodeURIComponent(post.userId)}`} aria-label={t("プロフィール")} className="shrink-0">
+          <Avatar initial={post.initial} index={post.avatarIndex} />
+        </Link>
+      ) : <Avatar initial={post.initial} index={post.avatarIndex} />}
       <span className="min-w-0 pt-0.5">
-        {showAuthor ? <span className="block text-base font-semibold">{post.authorName}</span> : null}
-        <span className="block text-base leading-snug">{post.body}</span>
+        {showAuthor ? (post.userId ? (
+          <Link to={`/profile/${encodeURIComponent(post.userId)}`} className="block text-base font-semibold text-foreground">{post.authorName}</Link>
+        ) : <span className="block text-base font-semibold">{post.authorName}</span>) : null}
+        <Link to={`/post/${post.id}`} className="block text-base leading-snug">{post.body}</Link>
       </span>
-    </Link>
-    {post.userId ? <Link to={`/profile/${encodeURIComponent(post.userId)}`} className="ml-[58px] inline-flex min-h-11 items-center text-sm text-[hsl(var(--brand))]">{t("プロフィール")}</Link> : null}
+    </div>
     <div className="ml-[58px] flex items-center gap-2"><LikeButton post={post} onClick={onLike} /><BookmarkButton postId={post.id} /><Link to={`/post/${post.id}`} aria-label={t("返信")} className="grid min-h-11 min-w-11 place-items-center text-muted-foreground"><MessageCircle className="h-5 w-5" aria-hidden /></Link></div>
     </div>
   );
@@ -467,9 +472,13 @@ export function PostPage() {
         <span className="text-[17px] font-semibold">{t("投稿")}</span>
       </header>
       <div className="mt-2 flex items-center gap-3">
-        <Avatar initial={post.initial} index={post.avatarIndex} />
+        {post.userId ? (
+          <Link to={`/profile/${encodeURIComponent(post.userId)}`} aria-label={t("プロフィール")} className="shrink-0">
+            <Avatar initial={post.initial} index={post.avatarIndex} />
+          </Link>
+        ) : <Avatar initial={post.initial} index={post.avatarIndex} />}
         <div>
-          {post.userId ? <Link to={`/profile/${encodeURIComponent(post.userId)}`} className="text-[17px] font-semibold text-[hsl(var(--brand))]">{post.authorName}</Link> : <p className="text-[17px] font-semibold">{post.authorName}</p>}
+          {post.userId ? <Link to={`/profile/${encodeURIComponent(post.userId)}`} className="text-[17px] font-semibold">{post.authorName}</Link> : <p className="text-[17px] font-semibold">{post.authorName}</p>}
           <p className="text-[15px] text-muted-foreground">{post.handle}</p>
         </div>
       </div>

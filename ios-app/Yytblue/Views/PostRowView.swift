@@ -7,23 +7,45 @@ struct PostRowView: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            AvatarView(initial: post.initial, index: post.avatarIndex, url: post.avatarUrl)
+            profileLink {
+                AvatarView(initial: post.initial, index: post.avatarIndex, url: post.avatarUrl)
+            }
             VStack(alignment: .leading, spacing: 3) {
                 if showsAuthor {
-                    Text(post.authorName)
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(Color.irukaInk)
+                    profileLink {
+                        Text(post.authorName)
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(Color.irukaInk)
+                            .multilineTextAlignment(.leading)
+                    }
                 }
                 if post.parentId != nil { Text(L("返信")).font(.caption).foregroundStyle(.secondary) }
-                Text(post.body)
-                    .font(.system(size: 16))
-                    .foregroundStyle(Color.irukaInk)
-                    .fixedSize(horizontal: false, vertical: true)
+                NavigationLink(value: post) {
+                    Text(post.body)
+                        .font(.system(size: 16))
+                        .foregroundStyle(Color.irukaInk)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .buttonStyle(.plain)
             }
             Spacer(minLength: 0)
         }
         .padding(.vertical, 12)
-        .accessibilityElement(children: .combine)
+    }
+
+    /// アイコンと表示名のタップで投稿者のプロフィールへ遷移する。
+    /// 開発モードなど userId が無い投稿はリンクにならない。
+    @ViewBuilder
+    private func profileLink<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        if let userId = post.userId {
+            NavigationLink(value: ProfileRoute(id: userId)) { content() }
+                .buttonStyle(.plain)
+                .accessibilityLabel(L("プロフィール"))
+        } else {
+            content()
+        }
     }
 }
 

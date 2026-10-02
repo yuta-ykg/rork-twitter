@@ -16,22 +16,32 @@ struct PostDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 HStack(spacing: 12) {
-                    AvatarView(initial: post.initial, index: post.avatarIndex, url: post.avatarUrl)
+                    if let userId = post.userId {
+                        NavigationLink(value: ProfileRoute(id: userId)) {
+                            AvatarView(initial: post.initial, index: post.avatarIndex, url: post.avatarUrl)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(L("プロフィール"))
+                    } else {
+                        AvatarView(initial: post.initial, index: post.avatarIndex, url: post.avatarUrl)
+                    }
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(post.authorName)
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundStyle(Color.irukaInk)
+                        if let userId = post.userId {
+                            NavigationLink(value: ProfileRoute(id: userId)) {
+                                Text(post.authorName)
+                                    .font(.system(size: 17, weight: .semibold))
+                                    .foregroundStyle(Color.irukaInk)
+                            }
+                            .buttonStyle(.plain)
+                        } else {
+                            Text(post.authorName)
+                                .font(.system(size: 17, weight: .semibold))
+                                .foregroundStyle(Color.irukaInk)
+                        }
                         Text(post.handle)
                             .font(.system(size: 15))
                             .foregroundStyle(Color.irukaSecondary)
                     }
-                }
-
-                if let userId = post.userId {
-                    NavigationLink(L("プロフィールを見る")) {
-                        ProfileView(profileId: userId, store: store)
-                    }
-                    .foregroundStyle(Color.irukaBlue)
                 }
 
                 if let parentId = post.parentId, let parent = store.posts.first(where: { $0.id == parentId }) {
@@ -66,9 +76,7 @@ struct PostDetailView: View {
                 Text(L("返信")).font(.title2.bold())
                 ReplyComposerView(post: post, store: store).id(post.id.uuidString + (auth.user?.id ?? ""))
                 ForEach(store.posts.filter { $0.parentId == post.id }.sorted { $0.createdAt < $1.createdAt }) { reply in
-                    NavigationLink { PostDetailView(initialPost: reply, store: store) } label: {
-                        PostRowView(post: reply)
-                    }
+                    PostRowView(post: reply)
                 }
                 if !store.posts.contains(where: { $0.parentId == post.id }) {
                     Text(L("まだ返信がありません。")).foregroundStyle(.secondary)
