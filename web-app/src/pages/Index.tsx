@@ -2,6 +2,8 @@ import { exportPostPdf } from "@/lib/postPdf";
 import { ReplyComposer } from "@/components/ReplyComposer";
 import { NotificationBell } from "@/components/NotificationBell";
 import { useNotifications, type AppNotification } from "@/hooks/useNotifications";
+import { useQuery } from "@tanstack/react-query";
+import { fetchProfile } from "@/lib/profiles";
 import { DesktopSidebar } from "@/components/DesktopSidebar";
 import { useDesktopNavigation } from "@/hooks/useDesktopNavigation";
 import { useBottomBarLabels } from "@/hooks/useBottomBarLabels";
@@ -274,12 +276,30 @@ function LikeButton({ post, onClick }: { post: Post; onClick: () => void | Promi
   </button>;
 }
 
+/** 保存済みプロフィールの表示名・ハンドル・頭文字。プロフィール編集がすぐ反映される。 */
+function useOwnProfile() {
+  const { user } = useAuth();
+  const query = useQuery({
+    queryKey: ["ownProfile", user?.id],
+    queryFn: async () => (user?.id ? await fetchProfile(user.id) : null),
+    enabled: Boolean(user?.id) && !isGuestSession(),
+  });
+  if (!user) return null;
+  const name = query.data?.name || displayName(user);
+  return {
+    name,
+    handle: query.data?.handle ? `@${query.data.handle}` : userHandle(user),
+    initial: Array.from(name)[0] ?? "い",
+  };
+}
+
 export function HomePage() {
   useLanguage();
   const { user } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [open, setOpen] = useState(false);
   const [needsSignIn, setNeedsSignIn] = useState(false);
+  const own = useOwnProfile();
   const [error, setError] = useState("");
   const timeline = useMemo(() => sortTimeline(posts), [posts]);
 
@@ -330,7 +350,7 @@ export function HomePage() {
               style={{ backgroundColor: avatarFills[0] }}
               aria-hidden
             >
-              {displayName(user).slice(0, 1)}
+              {own?.initial ?? displayName(user).slice(0, 1)}
             </span>
             <span className="text-base text-muted-foreground">{t("いまどうしてる？")}</span>
           </button>
@@ -347,9 +367,9 @@ export function HomePage() {
         <ComposeSheet
           onClose={() => setOpen(false)}
           onPost={add}
-          authorName={displayName(user)}
-          handle={userHandle(user)}
-          initial={displayName(user).slice(0, 1)}
+          authorName={own?.name ?? displayName(user)}
+          handle={own?.handle ?? userHandle(user)}
+          initial={own?.initial ?? displayName(user).slice(0, 1)}
         />
       ) : null}
     </>
@@ -359,6 +379,7 @@ export function HomePage() {
 export function MinePage() {
   useLanguage();
   const { user, signOut } = useAuth();
+  const own = useOwnProfile();
   const [posts, setPosts] = useState<Post[]>([]);
   const [open, setOpen] = useState(false);
   const mine = useMemo(() => sortTimeline(posts).filter((post) => post.isMine), [posts]);
@@ -420,9 +441,9 @@ export function MinePage() {
         <ComposeSheet
           onClose={() => setOpen(false)}
           onPost={add}
-          authorName={displayName(user)}
-          handle={userHandle(user)}
-          initial={displayName(user).slice(0, 1)}
+          authorName={own?.name ?? displayName(user)}
+          handle={own?.handle ?? userHandle(user)}
+          initial={own?.initial ?? displayName(user).slice(0, 1)}
         />
       ) : null}
     </>
@@ -534,6 +555,7 @@ export function PostPage() {
 export function BookmarksPage() {
   useLanguage();
   const { user } = useAuth();
+  const own = useOwnProfile();
   const { ids, loading: bookmarksLoading, error: bookmarkError, refresh: refreshBookmarks } = useBookmarks(user?.id);
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -583,7 +605,7 @@ export function BookmarksPage() {
         <p className="py-10 text-center text-muted-foreground">{t("まだブックマークがありません。")}</p>}
     </Shell>
     {open && user ? <ComposeSheet onClose={() => setOpen(false)} onPost={add}
-      authorName={displayName(user)} handle={userHandle(user)} initial={displayName(user).slice(0, 1)} /> : null}
+      authorName={own?.name ?? displayName(user)} handle={own?.handle ?? userHandle(user)} initial={own?.initial ?? displayName(user).slice(0, 1)} /> : null}
   </>;
 }
 
@@ -591,6 +613,7 @@ export function NotificationsPage() {
   useLanguage();
   const { user } = useAuth();
   const notifications = useNotifications();
+  const own = useOwnProfile();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   async function add(body: string) {
@@ -632,7 +655,7 @@ export function NotificationsPage() {
         </> : <p className="py-10 text-center text-muted-foreground">{t("まだ通知がありません。")}</p>}
     </Shell>
     {open && user ? <ComposeSheet onClose={() => setOpen(false)} onPost={add}
-      authorName={displayName(user)} handle={userHandle(user)} initial={displayName(user).slice(0, 1)} /> : null}
+      authorName={own?.name ?? displayName(user)} handle={own?.handle ?? userHandle(user)} initial={own?.initial ?? displayName(user).slice(0, 1)} /> : null}
   </>;
 }
 

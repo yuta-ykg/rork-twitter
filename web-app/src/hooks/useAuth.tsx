@@ -55,7 +55,9 @@ function userFromToken(token: string): AuthUser | null {
     const parts = token.split(".");
     if (parts.length !== 3) return null;
     const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-    const payload = JSON.parse(atob(base64)) as { sub?: string; email?: string; name?: string; picture?: string; exp?: number };
+    // atobはLatin-1を返すため、バイト列経由でUTF-8としてデコードする（日本語名の文字化け対策）。
+    const bytes = Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
+    const payload = JSON.parse(new TextDecoder().decode(bytes)) as { sub?: string; email?: string; name?: string; picture?: string; exp?: number };
     if (payload.exp && payload.exp * 1000 < Date.now()) return null;
     if (!payload.sub) return null;
     return { id: payload.sub, email: payload.email ?? "", name: payload.name, picture: payload.picture };

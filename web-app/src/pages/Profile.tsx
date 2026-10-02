@@ -1,4 +1,5 @@
 import { getUserRelationship, setUserRelationship, type RelationshipState } from "@/lib/userRelationships";
+import { useQueryClient } from "@tanstack/react-query";
 import { BookmarkButton } from "@/components/BookmarkButton";
 import { t, useLanguage } from "@/lib/language";
 import { LikeIconGlyph } from "@/hooks/useLikeIcon";
@@ -12,6 +13,7 @@ export default function ProfilePage() {
   useLanguage();
   const { id } = useParams();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const activeIdentity = useRef("");
   activeIdentity.current = `${id}:${user?.id ?? ""}`;
   const own = Boolean(user && user.id === id);
@@ -72,6 +74,7 @@ export default function ProfilePage() {
       const next = await saveProfile(user.id, name, handle.toLowerCase(), bio, avatar.trim());
       if (identity !== activeIdentity.current) return;
       setProfile(next); setEditing(false); setImageFailed(false);
+      queryClient.invalidateQueries({ queryKey: ["ownProfile", user.id] });
     } catch (error) { if (identity === activeIdentity.current) setError(error instanceof Error ? error.message : "保存できませんでした。"); }
     finally { setSaving(false); }
   }
