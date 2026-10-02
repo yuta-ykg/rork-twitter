@@ -17,6 +17,7 @@ export type Post = {
   isMine: boolean;
   avatarIndex: number;
   userId?: string | null;
+  parentId?: string | null;
   isLiked?: boolean;
   likeCount?: number;
 };
@@ -30,6 +31,7 @@ type Row = {
   created_at: string;
   avatar_index: number;
   user_id: string | null;
+  parent_id: string | null;
 };
 
 export type Author = {
@@ -50,12 +52,13 @@ function toPost(row: Row, userId?: string | null): Post {
     isMine: Boolean(userId) && row.user_id === userId,
     avatarIndex: row.avatar_index,
     userId: row.user_id,
+    parentId: row.parent_id,
     isLiked: false,
     likeCount: 0,
   };
 }
 
-const postColumns = "id, author_name, handle, initial, body, created_at, avatar_index, user_id";
+const postColumns = "id, author_name, handle, initial, body, created_at, avatar_index, user_id, parent_id";
 
 export async function fetchPosts(userId?: string | null): Promise<Post[]> {
   if (isDevelopmentSession()) {
@@ -167,4 +170,29 @@ export async function setPostLike(id: string, liked: boolean, userId: string) {
   const stat = data?.[0];
   if (!stat) throw new Error("いいねを保存できませんでした。");
   return { isLiked: stat.is_liked, likeCount: Number(stat.like_count) };
+}
+
+export async function insertReply(body: string, parentId: string, author: Author, replyId: string): Promise<Post> {
+  const trimmed = body.trim();
+  if (!trimmed || Array.from(trimmed).length > MAX_CHARACTERS) throw new Error("返信は1〜70文字で入力してください。");
+  if (isDevelopmentSession()) {
+    const posts = readDevelopmentPosts();
+    if (!posts.some((post) => post.id === parentId)) throw new Error("投稿が見つかりません。");
+    const existing = posts.find((post) => post.id === replyId);
+    if (existing) {
+      if (existing.parentId !== parentId || existing.body !== trimmed) throw new Error("返信を保存できませんでした。");
+      return existing;
+    }
+    const profile = readDevelopmentProfile();
+    const post: Post = { id: replyId, parentId, userId: author.id, authorName: profile.name,
+      handle: `@${profile.handle}`, initial: Array.from(profile.name)[0] ?? "開", body: trimmed,
+      createdAt: new Date().toISOString(), isMine: true, avatarIndex: 0, isLiked: false, likeCount: 0 };
+    writeDevelopmentPosts([post, ...posts]); return post;
+  }
+  await syncProfile(author);
+  const { data, error } = await supabase.rpc("create_reply", {
+    reply_id: replyId, target_post_id: parentId, reply_body: trimmed, expected_user_id: author.id,
+  });
+  if (error || !data?.[0]) throw error ?? new Error("返信を保存できませんでした。");
+  return toPost(data[0], author.id);
 }

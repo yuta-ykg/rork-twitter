@@ -1,3 +1,4 @@
+import { ReplyComposer } from "@/components/ReplyComposer";
 import { NotificationBell } from "@/components/NotificationBell";
 import { useNotifications, type AppNotification } from "@/hooks/useNotifications";
 import { DesktopSidebar } from "@/components/DesktopSidebar";
@@ -9,7 +10,7 @@ import { t, useLanguage } from "@/lib/language";
 import { LikeIconGlyph, useLikeIcon } from "@/hooks/useLikeIcon";
 import { isDevelopmentSession } from "@/lib/development";
 import { toast } from "sonner";
-import { Bookmark, Fish, House, SquarePen, Settings, UserRound, X } from "lucide-react";
+import { Bookmark, Fish, House, MessageCircle, SquarePen, Settings, UserRound, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 
@@ -236,6 +237,7 @@ function Row({ post, showAuthor, onLike }: { post: Post; showAuthor: boolean; on
   useLanguage();
   return (
     <div className="border-b border-border py-3">
+    {post.parentId && <Link to={`/post/${post.parentId}`} className="mb-2 inline-flex min-h-11 items-center text-sm text-muted-foreground">{t("返信先の投稿")}</Link>}
     <Link to={`/post/${post.id}`} className="flex gap-3">
       <Avatar initial={post.initial} index={post.avatarIndex} />
       <span className="min-w-0 pt-0.5">
@@ -244,7 +246,7 @@ function Row({ post, showAuthor, onLike }: { post: Post; showAuthor: boolean; on
       </span>
     </Link>
     {post.userId ? <Link to={`/profile/${encodeURIComponent(post.userId)}`} className="ml-[58px] inline-flex min-h-11 items-center text-sm text-[hsl(var(--brand))]">{t("プロフィール")}</Link> : null}
-    <div className="ml-[58px] flex items-center gap-2"><LikeButton post={post} onClick={onLike} /><BookmarkButton postId={post.id} /></div>
+    <div className="ml-[58px] flex items-center gap-2"><LikeButton post={post} onClick={onLike} /><BookmarkButton postId={post.id} /><Link to={`/post/${post.id}`} aria-label={t("返信")} className="grid min-h-11 min-w-11 place-items-center text-muted-foreground"><MessageCircle className="h-5 w-5" aria-hidden /></Link></div>
     </div>
   );
 }
@@ -413,16 +415,19 @@ export function PostPage() {
   const navigate = useNavigate();
   const [posts, setPosts] = useState<Post[]>([]);
   const [ready, setReady] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [retry, setRetry] = useState(0);
   const post = posts.find((item) => item.id === id);
   const { user } = useAuth();
   useEffect(() => {
     let cancelled = false;
+    setReady(false); setLoadError(false); setPosts([]);
     fetchPosts(user?.id)
       .then((next) => { if (!cancelled) setPosts(next); })
-      .catch(() => { if (!cancelled) toast.error(t("投稿またはいいねを読み込めませんでした。")); })
+      .catch(() => { if (!cancelled) setLoadError(true); })
       .finally(() => { if (!cancelled) setReady(true); });
     return () => { cancelled = true; };
-  }, [user?.id]);
+  }, [user?.id, id, retry]);
   const activeUser = useRef(user?.id);
   activeUser.current = user?.id;
   async function like() {
@@ -440,6 +445,8 @@ export function PostPage() {
   if (!ready) {
     return <div className="mx-auto min-h-dvh max-w-[430px] bg-background" />;
   }
+
+  if (loadError) return <div className="mx-auto max-w-[430px] p-5"><p role="alert">{t("投稿またはいいねを読み込めませんでした。")}</p><button type="button" onClick={() => setRetry((value) => value + 1)} className="min-h-11 text-[hsl(var(--brand))]">{t("再読み込み")}</button></div>;
 
   if (!post) {
     return (
@@ -465,6 +472,7 @@ export function PostPage() {
           <p className="text-[15px] text-muted-foreground">{post.handle}</p>
         </div>
       </div>
+      {post.parentId && <Link to={`/post/${post.parentId}`} className="inline-flex min-h-11 items-center text-[hsl(var(--brand))]">{t("返信先の投稿")}</Link>}
       <p className="mt-5 text-2xl font-semibold leading-snug">{post.body}</p>
       <div className="mt-3 flex items-center gap-2"><LikeButton post={post} onClick={like} /><BookmarkButton postId={post.id} /></div>
       <div className="mt-6 grid grid-cols-2 border-t border-border pt-4">
@@ -477,6 +485,18 @@ export function PostPage() {
           <p className="mt-1 text-[17px] font-semibold">{post.body.length} {t("文字")}</p>
         </div>
       </div>
+      <section className="mt-6 border-t border-border pt-4">
+        <h2 className="text-xl font-semibold">{t("返信")}</h2>
+        <ReplyComposer key={`${post.id}:${user?.id ?? ""}`} post={post} onReply={(reply) => setPosts((current) => [reply, ...current.filter((item) => item.id !== reply.id)])} />
+        {posts.filter((item) => item.parentId === post.id).sort((a, b) => a.createdAt.localeCompare(b.createdAt)).map((reply) =>
+          <Row key={reply.id} post={reply} showAuthor onLike={async () => {
+            if (!user) { toast.error(t("返信するにはログインしてください。")); return; }
+            try { const state = await setPostLike(reply.id, !reply.isLiked, user.id);
+              if (activeUser.current === user.id) setPosts((current) => current.map((item) => item.id === reply.id ? { ...item, ...state } : item));
+            } catch { toast.error(t("いいねを保存できませんでした。もう一度試してください。")); }
+          }} />)}
+        {!posts.some((item) => item.parentId === post.id) && <p className="py-5 text-muted-foreground">{t("まだ返信がありません。")}</p>}
+      </section>
     </div>
   );
 }

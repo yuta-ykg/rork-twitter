@@ -78,7 +78,7 @@ final class PostStore {
         do {
             let rows: [PostRow] = try await IrukaDatabase.client
                 .from("posts")
-                .select("id, author_name, handle, initial, body, created_at, avatar_index, user_id")
+                .select("id, author_name, handle, initial, body, created_at, avatar_index, user_id, parent_id")
                 .order("created_at", ascending: false)
                 .execute()
                 .value
@@ -104,6 +104,7 @@ final class PostStore {
                     isMine: userId != nil && row.userId == userId,
                     avatarIndex: row.avatarIndex,
                     userId: row.userId,
+                    parentId: row.parentId,
                     avatarUrl: profile?.avatarUrl
                 )
                 if let like = likes[row.id] {
@@ -156,6 +157,33 @@ final class PostStore {
         } catch {
             return
         }
+    }
+
+    func createReply(body: String, parentId: UUID, replyId: UUID, user: AuthManager.User) async throws {
+        let trimmed = body.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, trimmed.unicodeScalars.count <= PostLimits.maxCharacters else {
+            throw NSError(domain: "Reply", code: 1)
+        }
+        if DevelopmentData.isActive {
+            guard user.id == DevelopmentData.userId, posts.contains(where: { $0.id == parentId }) else {
+                throw NSError(domain: "Reply", code: 2)
+            }
+            if posts.contains(where: { $0.id == replyId }) { return }
+            let profile = DevelopmentData.profile()
+            let post = Post(id: replyId, authorName: profile.name, handle: "@" + (profile.handle ?? "developer"),
+                initial: String(profile.name.prefix(1)), body: trimmed, createdAt: Date(), isMine: true,
+                avatarIndex: 0, userId: user.id, parentId: parentId)
+            posts.insert(post, at: 0); DevelopmentData.save(posts: posts); return
+        }
+        await syncProfile(user)
+        let rows: [PostRow] = try await IrukaDatabase.client.rpc("create_reply", params: CreateReplyParams(
+            reply_id: replyId, target_post_id: parentId, reply_body: trimmed, expected_user_id: user.id
+        )).execute().value
+        guard currentUserId == user.id, let row = rows.first else { throw CancellationError() }
+        let post = Post(id: row.id, authorName: row.authorName, handle: row.handle, initial: row.initial,
+            body: row.body, createdAt: row.createdAt, isMine: true, avatarIndex: row.avatarIndex,
+            userId: row.userId, parentId: row.parentId)
+        posts.removeAll { $0.id == post.id }; posts.insert(post, at: 0)
     }
 
 }

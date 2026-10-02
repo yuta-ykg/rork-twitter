@@ -48,7 +48,7 @@ enum DevelopmentData {
         return posts().map { old in
             var post = Post(id: old.id, authorName: profile.name, handle: "@" + (profile.handle ?? "developer"),
                             initial: String(profile.name.prefix(1)), body: old.body, createdAt: old.createdAt,
-                            isMine: true, avatarIndex: old.avatarIndex, userId: userId, avatarUrl: profile.avatarUrl)
+                            isMine: true, avatarIndex: old.avatarIndex, userId: userId, parentId: old.parentId, avatarUrl: profile.avatarUrl)
             post.likedByMe = old.isLiked
             post.storedLikeCount = old.likeCount
             return post

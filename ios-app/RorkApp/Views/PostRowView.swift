@@ -15,6 +15,7 @@ struct PostRowView: View {
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(palette.ink)
                 }
+                if post.parentId != nil { Text(L("返信")).font(.caption).foregroundStyle(.secondary) }
                 Text(post.body)
                     .font(.system(size: 16))
                     .foregroundStyle(palette.ink)

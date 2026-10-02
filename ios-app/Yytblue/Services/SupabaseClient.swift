@@ -23,6 +23,7 @@ nonisolated struct PostRow: Codable, Sendable {
     let createdAt: Date
     let avatarIndex: Int
     let userId: String?
+    let parentId: UUID?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -33,6 +34,7 @@ nonisolated struct PostRow: Codable, Sendable {
         case createdAt = "created_at"
         case avatarIndex = "avatar_index"
         case userId = "user_id"
+        case parentId = "parent_id"
     }
 }
 
@@ -148,5 +150,12 @@ nonisolated struct NotificationReadAllParams: Encodable, Sendable {
 
 nonisolated struct NotificationReadParams: Encodable, Sendable {
     let notification_ids: [UUID]
+    let expected_user_id: String
+}
+
+nonisolated struct CreateReplyParams: Encodable, Sendable {
+    let reply_id: UUID
+    let target_post_id: UUID
+    let reply_body: String
     let expected_user_id: String
 }

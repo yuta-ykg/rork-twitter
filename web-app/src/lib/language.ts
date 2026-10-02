@@ -3,6 +3,16 @@ import { useLayoutEffect, useSyncExternalStore } from "react";
 export type Language = "ja" | "en";
 const key = "iruka-language";
 const english: Record<string, string> = {
+  "返信": "Replies",
+  "返信する": "Reply",
+  "返信本文": "Reply text",
+  "返信先": "Replying to",
+  "返信先の投稿": "View parent post",
+  "返信するにはログインしてください。": "Sign in to reply.",
+  "返信を保存できませんでした。": "Couldn't save your reply.",
+  "返信は1〜70文字で入力してください。": "Replies must contain 1–70 characters.",
+  "まだ返信がありません。": "No replies yet.",
+  "送信中…": "Sending…",
   "{name}さんがいいねしました。": "{name} liked your post.",
   "1人があなたの投稿にいいねしました。": "1 person liked your post.",
   "{count}人があなたの投稿にいいねしました。": "{count} people liked your post.",

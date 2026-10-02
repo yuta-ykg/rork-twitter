@@ -10,6 +10,7 @@ nonisolated struct Post: Identifiable, Codable, Hashable, Sendable {
     let isMine: Bool
     let avatarIndex: Int
     var userId: String? = nil
+    var parentId: UUID? = nil
     var avatarUrl: String? = nil
 
     // Optional storage fields preserve decoding of posts saved before likes existed.

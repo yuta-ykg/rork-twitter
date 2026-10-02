@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PostDetailView: View {
     @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
+    @Environment(AuthManager.self) private var auth
     let initialPost: Post
     @Bindable var store: PostStore
 
@@ -31,6 +32,10 @@ struct PostDetailView: View {
                     .foregroundStyle(Color.irukaBlue)
                 }
 
+                if let parentId = post.parentId, let parent = store.posts.first(where: { $0.id == parentId }) {
+                    NavigationLink(L("返信先の投稿")) { PostDetailView(initialPost: parent, store: store) }
+                }
+
                 Text(post.body)
                     .font(.system(size: 24, weight: .semibold))
                     .foregroundStyle(Color.irukaInk)
@@ -50,10 +55,23 @@ struct PostDetailView: View {
                         .frame(width: 1, height: 36)
                     metaColumn(title: L("文字数"), value: L("characters", post.characterCount))
                 }
+                Divider()
+                Text(L("返信")).font(.title2.bold())
+                ReplyComposerView(post: post, store: store).id(post.id.uuidString + (auth.user?.id ?? ""))
+                ForEach(store.posts.filter { $0.parentId == post.id }.sorted { $0.createdAt < $1.createdAt }) { reply in
+                    NavigationLink { PostDetailView(initialPost: reply, store: store) } label: {
+                        PostRowView(post: reply)
+                    }
+                }
+                if !store.posts.contains(where: { $0.parentId == post.id }) {
+                    Text(L("まだ返信がありません。")).foregroundStyle(.secondary)
+                }
             }
             .padding(20)
         }
         .background(Color.white)
+        .task(id: post.id) { await store.refresh(userId: auth.user?.id) }
+        .refreshable { await store.refresh(userId: auth.user?.id) }
         .navigationTitle(L("投稿"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
