@@ -3,6 +3,16 @@ import { useLayoutEffect, useSyncExternalStore } from "react";
 export type Language = "ja" | "en";
 const key = "iruka-language";
 const english: Record<string, string> = {
+  "ミュート": "Mute",
+  "ミュートを解除": "Unmute",
+  "ブロック": "Block",
+  "ブロックを解除": "Unblock",
+  "ミュート・ブロック中のアカウント": "Muted and blocked accounts",
+  "登録されたアカウントはありません。": "No muted or blocked accounts.",
+  "解除": "Remove",
+  "設定を読み込めませんでした。": "Couldn't load settings.",
+  "設定を保存できませんでした。": "Couldn't save settings.",
+  "自分をミュート・ブロックできません。": "You can't mute or block yourself.",
   "PDFとして出力": "Export as PDF",
   "PDFを開けませんでした。": "Could not open the PDF preview.",
   "返信": "Replies",

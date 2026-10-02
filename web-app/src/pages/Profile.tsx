@@ -1,3 +1,4 @@
+import { getUserRelationship, setUserRelationship, type RelationshipState } from "@/lib/userRelationships";
 import { BookmarkButton } from "@/components/BookmarkButton";
 import { t, useLanguage } from "@/lib/language";
 import { LikeIconGlyph } from "@/hooks/useLikeIcon";
@@ -15,6 +16,8 @@ export default function ProfilePage() {
   activeIdentity.current = `${id}:${user?.id ?? ""}`;
   const own = Boolean(user && user.id === id);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [relationship, setRelationship] = useState<RelationshipState>({ is_muted: false, is_blocked: false });
+  const [relationshipBusy, setRelationshipBusy] = useState(false);
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -29,19 +32,31 @@ export default function ProfilePage() {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true); setProfile(null); setError(""); setEditing(false); setImageFailed(false);
+    setLoading(true); setProfile(null); setError(""); setRelationship({ is_muted: false, is_blocked: false }); setEditing(false); setImageFailed(false);
     async function load() {
       if (!id) return;
       if (user?.id === id) await ensureProfile(user);
-      const [next, timeline] = await Promise.all([fetchProfile(id), fetchPosts(user?.id)]);
+      const [next, timeline, relation] = await Promise.all([fetchProfile(id), fetchPosts(user?.id), user && user.id !== id ? getUserRelationship(user.id, id) : Promise.resolve({ is_muted: false, is_blocked: false })]);
       if (cancelled) return;
-      setProfile(next); setPosts(timeline.filter((post) => post.userId === id));
+      setRelationship(relation); setProfile(next); setPosts(timeline.filter((post) => post.userId === id));
     }
     load().catch(() => { if (!cancelled) setError("プロフィールを読み込めませんでした。"); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [id, user?.id, retry]);
 
+  async function changeRelationship(kind: "mute" | "block") {
+    if (!user || !id || relationshipBusy) return;
+    const identity = activeIdentity.current;
+    setRelationshipBusy(true); setError("");
+    try {
+      const next = await setUserRelationship(user.id, id, kind, !(kind === "mute" ? relationship.is_muted : relationship.is_blocked));
+      if (identity !== activeIdentity.current) return;
+      setRelationship(next);
+      setRetry((value) => value + 1);
+    } catch { if (identity === activeIdentity.current) setError("設定を保存できませんでした。"); }
+    finally { setRelationshipBusy(false); }
+  }
   function edit() {
     if (!profile) return;
     setName(profile.name); setHandle(profile.handle ?? "");
@@ -68,6 +83,10 @@ export default function ProfilePage() {
       <Link to="/mine" className="flex min-h-11 items-center text-[hsl(var(--brand))]">{t("自分")}</Link>
     </header>
     <Link to="/settings" className="mt-2 inline-flex min-h-11 items-center text-[hsl(var(--brand))]">{t("設定")}</Link>
+    {user && id && !own && <div className="mt-3 flex flex-wrap gap-2">
+      <button type="button" disabled={relationshipBusy} onClick={() => void changeRelationship("mute")} className="min-h-11 rounded-full border border-input px-4 disabled:opacity-50">{t(relationship.is_muted ? "ミュートを解除" : "ミュート")}</button>
+      <button type="button" disabled={relationshipBusy} onClick={() => void changeRelationship("block")} className="min-h-11 rounded-full border border-input px-4 text-red-600 disabled:opacity-50">{t(relationship.is_blocked ? "ブロックを解除" : "ブロック")}</button>
+    </div>}
     {error ? <p role="alert" className="my-4 text-red-600">{t(error)}</p> : null}
     {loading ? <p role="status" className="py-10 text-muted-foreground">{t("読み込み中…")}</p> : !profile ? <div className="py-10">
       <p>{t("プロフィールが見つかりません。")}</p><button onClick={() => setRetry((value) => value + 1)} className="mt-3 min-h-11 text-[hsl(var(--brand))]">{t("再読み込み")}</button>

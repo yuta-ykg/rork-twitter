@@ -18,6 +18,12 @@ export type Database = {
   }
   public: {
     Tables: {
+      user_relationships: {
+        Row: { user_id: string; target_id: string; kind: string; created_at: string }
+        Insert: { user_id: string; target_id: string; kind: string; created_at?: string }
+        Update: { user_id?: string; target_id?: string; kind?: string; created_at?: string }
+        Relationships: []
+      }
       notifications: {
         Row: { id: string; recipient_id: string; actor_id: string; post_id: string; created_at: string; read_at: string | null }
         Insert: { id?: string; recipient_id: string; actor_id: string; post_id: string; created_at?: string; read_at?: string | null }
@@ -133,6 +139,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_visible_posts: { Args: { expected_user_id?: string | null }; Returns: Database["public"]["Tables"]["posts"]["Row"][] }
+      create_post: { Args: { post_id: string; post_body: string; expected_user_id: string }; Returns: Database["public"]["Tables"]["posts"]["Row"][] }
+      get_user_relationship: { Args: { target_user_id: string; expected_user_id: string }; Returns: { is_muted: boolean; is_blocked: boolean }[] }
+      list_user_relationships: { Args: { expected_user_id: string }; Returns: { target_id: string; kind: string; target_name: string; target_handle: string | null }[] }
+      set_user_relationship: { Args: { target_user_id: string; relation_kind: string; active: boolean; expected_user_id: string }; Returns: { is_muted: boolean; is_blocked: boolean }[] }
       create_reply: { Args: { reply_id: string; target_post_id: string; reply_body: string; expected_user_id: string }; Returns: Database["public"]["Tables"]["posts"]["Row"][] }
       get_notifications: {
         Args: { expected_user_id: string; before_created_at?: string; before_id?: string }

@@ -1,3 +1,6 @@
+import { useEffect, useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { listUserRelationships, setUserRelationship, type UserRelationship } from "@/lib/userRelationships";
 import { DesktopSidebar } from "@/components/DesktopSidebar";
 import { useDesktopNavigation } from "@/hooks/useDesktopNavigation";
 import { useBottomBarLabels } from "@/hooks/useBottomBarLabels";
@@ -9,6 +12,12 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { themeOptions, useTheme, type Theme } from "@/hooks/useTheme";
 
 export default function SettingsPage() {
+  const { user } = useAuth();
+  const [relationships, setRelationships] = useState<UserRelationship[]>([]);
+  const [relationshipError, setRelationshipError] = useState("");
+  const [relationshipBusy, setRelationshipBusy] = useState(false);
+  useEffect(() => { let cancelled = false; setRelationships([]); if (user) listUserRelationships(user.id).then((rows) => { if (!cancelled) setRelationships(rows); }).catch(() => { if (!cancelled) setRelationshipError("設定を読み込めませんでした。"); }); return () => { cancelled = true; }; }, [user?.id]);
+  async function removeRelationship(row: UserRelationship) { if (!user || relationshipBusy) return; setRelationshipBusy(true); setRelationshipError(""); try { await setUserRelationship(user.id, row.target_id, row.kind, false); setRelationships((rows) => rows.filter((item) => !(item.kind === row.kind && item.target_id === row.target_id))); } catch { setRelationshipError("設定を保存できませんでした。"); } finally { setRelationshipBusy(false); } }
   const { showBottomBarLabels, setShowBottomBarLabels } = useBottomBarLabels();
   const navigate = useNavigate();
   const { useDesktopBottomBar, setUseDesktopBottomBar } = useDesktopNavigation();
@@ -57,6 +66,16 @@ export default function SettingsPage() {
         </label>)}
       </RadioGroup>
     </section>
+    {user && <section className="border-t border-border py-6">
+      <h2 className="mb-4 text-xl font-semibold">{t("ミュート・ブロック中のアカウント")}</h2>
+      {relationshipError && <p role="alert" className="text-red-600">{t(relationshipError)}</p>}
+      {relationships.length === 0 ? <p className="text-muted-foreground">{t("登録されたアカウントはありません。")}</p> : relationships.map((row) =>
+        <div key={row.kind + row.target_id} className="flex min-h-14 items-center justify-between gap-3 border-b border-border py-2">
+          <span className="min-w-0 break-words">{row.target_name} <span className="text-sm text-muted-foreground">({t(row.kind === "mute" ? "ミュート" : "ブロック")})</span></span>
+          <button type="button" disabled={relationshipBusy} onClick={() => void removeRelationship(row)}
+            className="min-h-11 shrink-0 text-[hsl(var(--brand))] disabled:opacity-50">{t("解除")}</button>
+        </div>)}
+    </section>}
     <section className="border-t border-border py-6">
       <h2 id="language-label" className="mb-5 text-xl font-semibold">{t("言語")}</h2>
       <RadioGroup aria-labelledby="language-label" value={language} onValueChange={(value) => setLanguage(value === "en" ? "en" : "ja")}>
