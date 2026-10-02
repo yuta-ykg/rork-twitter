@@ -77,6 +77,24 @@ export default function SettingsPage() {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button type="button"
+                className="mt-3 min-h-11 rounded-full border border-border px-4 text-base font-semibold">
+                {t("ログアウト")}
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{t("ログアウトしますか？")}</AlertDialogTitle>
+                <AlertDialogDescription>{t("この端末からサインアウトします。もう一度ログインできます。")}</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{t("キャンセル")}</AlertDialogCancel>
+                <AlertDialogAction onClick={() => signOut()}>{t("ログアウト")}</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </>
       ) : <p className="mt-4 text-muted-foreground">{t("ログインしていません。")}</p>}
     </section>

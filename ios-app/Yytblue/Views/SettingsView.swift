@@ -12,6 +12,7 @@ struct SettingsView: View {
     @State private var confirmsDelete = false
     @State private var deleting = false
     @State private var deleteError: String?
+    @State private var confirmsLogout = false
     var body: some View {
         Form {
             Section(L("アカウント")) {
@@ -21,6 +22,7 @@ struct SettingsView: View {
                         confirmsDelete = true
                     }
                     .disabled(deleting)
+                    Button(L("ログアウト"), role: .destructive) { confirmsLogout = true }
                     if let deleteError {
                         Text(L(deleteError)).foregroundStyle(.red)
                     }
@@ -81,6 +83,12 @@ struct SettingsView: View {
             Button(L("キャンセル"), role: .cancel) {}
         } message: {
             Text(L("投稿、プロフィール、いいね、ブックマーク、通知が削除されます。この操作は取り消せません。"))
+        }
+        .confirmationDialog(L("ログアウトしますか？"), isPresented: $confirmsLogout, titleVisibility: .visible) {
+            Button(L("ログアウト"), role: .destructive) { Task { await auth.signOut() } }
+            Button(L("キャンセル"), role: .cancel) {}
+        } message: {
+            Text(L("この端末からサインアウトします。もう一度ログインできます。"))
         }
     }
 

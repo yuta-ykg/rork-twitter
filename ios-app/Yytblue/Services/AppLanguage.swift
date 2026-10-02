@@ -91,6 +91,8 @@ private let englishMessages: [String: String] = [
     "まだ投稿がありません。": "No posts yet.",
     "70字以内で、いまの気持ちを残しましょう。": "Share how you feel in up to 70 characters.",
     "ログアウト": "Sign out",
+    "ログアウトしますか？": "Sign out?",
+    "この端末からサインアウトします。もう一度ログインできます。": "You will be signed out on this device. You can sign in again anytime.",
     "プロフィールを見る": "View profile",
     "投稿時刻": "Posted at",
     "文字数": "Characters",
