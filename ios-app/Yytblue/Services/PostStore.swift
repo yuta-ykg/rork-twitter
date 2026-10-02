@@ -74,12 +74,10 @@ final class PostStore {
     func refresh(userId: String?) async {
         currentUserId = userId
         likeError = nil
-        if DevelopmentData.isActive { posts = DevelopmentData.timeline(); return }
+        if DevelopmentData.isActive { posts = DevelopmentData.timeline().filter { RelationshipStore.shared.canView($0.userId) }; return }
         do {
             let rows: [PostRow] = try await IrukaDatabase.client
-                .from("posts")
-                .select("id, author_name, handle, initial, body, created_at, avatar_index, user_id, parent_id")
-                .order("created_at", ascending: false)
+                .rpc("get_visible_posts", params: VisiblePostsParams(expected_user_id: userId))
                 .execute()
                 .value
             var stats: [PostLikeStats] = []
@@ -135,24 +133,11 @@ final class PostStore {
             return
         }
         await syncProfile(user)
-        let profile = try? await ProfileService.fetch(ids: [user.id]).first
-        let payload = PostInsert(
-            authorName: profile?.name ?? String(user.displayName.prefix(40)),
-            handle: profile?.handle.map { "@" + $0 } ?? String(user.handle.prefix(40)),
-            initial: profile.map { String($0.name.prefix(1)) } ?? user.initial,
-            body: body,
-            isMine: true,
-            avatarIndex: 0,
-            userId: user.id
-        )
         do {
-            let _: PostRow = try await IrukaDatabase.client
-                .from("posts")
-                .insert(payload)
-                .select("id, author_name, handle, initial, body, created_at, avatar_index, user_id")
-                .single()
-                .execute()
-                .value
+            let _: [PostRow] = try await IrukaDatabase.client
+                .rpc("create_post", params: CreatePostParams(
+                    post_id: UUID(), post_body: body, expected_user_id: user.id
+                )).execute().value
             await refresh(userId: user.id)
         } catch {
             return

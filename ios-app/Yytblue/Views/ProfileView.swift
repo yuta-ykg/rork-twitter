@@ -5,17 +5,31 @@ struct ProfileView: View {
     let profileId: String
     @Bindable var store: PostStore
     @Environment(AuthManager.self) private var auth
+    @Environment(RelationshipStore.self) private var relationships
     @State private var profile: IrukaProfile?
     @State private var loading = true
     @State private var error: String?
     @State private var editing = false
     @State private var retry = 0
+    @State private var relationBusy = false
 
     private var own: Bool { auth.user?.id == profileId }
     private var userPosts: [Post] { store.timeline.filter { $0.userId == profileId } }
 
     var body: some View {
         List {
+            if !own, auth.user != nil {
+                Section {
+                    Button(relationships.isMuted(profileId) ? L("ミュートを解除") : L("ミュート")) {
+                        changeRelationship("mute", active: !relationships.isMuted(profileId))
+                    }
+                    Button(relationships.isBlocked(profileId) ? L("ブロックを解除") : L("ブロック")) {
+                        changeRelationship("block", active: !relationships.isBlocked(profileId))
+                    }
+                    .foregroundStyle(relationships.isBlocked(profileId) ? Color.primary : Color.red)
+                }
+                .disabled(relationBusy)
+            }
             if loading {
                 ProgressView(L("読み込み中…"))
             } else if let profile {
@@ -77,6 +91,20 @@ struct ProfileView: View {
                 }
                 .environment(auth)
             }
+        }
+    }
+
+    private func changeRelationship(_ kind: String, active: Bool) {
+        relationBusy = true
+        Task {
+            do {
+                try await relationships.set(targetId: profileId, kind: kind, active: active)
+                await store.refresh(userId: auth.user?.id)
+                retry += 1
+            } catch {
+                self.error = "設定を保存できませんでした。"
+            }
+            relationBusy = false
         }
     }
 }

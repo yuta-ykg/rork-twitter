@@ -4,8 +4,36 @@ struct SettingsView: View {
     @AppStorage("iruka-bottom-bar-labels") private var showBottomBarLabels = false
     @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
     @AppStorage("iruka-like-icon") private var likeIcon = LikeIcon.heart.rawValue
+    @Environment(AuthManager.self) private var auth
+    @Environment(RelationshipStore.self) private var relationships
+    @State private var pendingRelationship: String?
     var body: some View {
         Form {
+            if auth.user != nil {
+                Section(L("ミュート中")) {
+                    ForEach(relationships.rows.filter { $0.kind == "mute" }, id: \.targetId) { row in
+                        HStack {
+                            Text(row.targetName)
+                            Spacer()
+                            Button(L("解除")) { remove(row) }
+                                .disabled(pendingRelationship != nil)
+                        }
+                    }
+                }
+                Section(L("ブロック中")) {
+                    ForEach(relationships.rows.filter { $0.kind == "block" }, id: \.targetId) { row in
+                        HStack {
+                            Text(row.targetName)
+                            Spacer()
+                            Button(L("解除")) { remove(row) }
+                                .disabled(pendingRelationship != nil)
+                        }
+                    }
+                }
+                if let error = relationships.error {
+                    Text(L(error)).foregroundStyle(.red)
+                }
+            }
             Section(L("ボトムバー")) {
                 Toggle(L("ボトムバーの文字を表示"), isOn: $showBottomBarLabels)
             }
@@ -29,5 +57,17 @@ struct SettingsView: View {
         }
         .navigationTitle(L("設定"))
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func remove(_ row: RelationshipRow) {
+        pendingRelationship = row.targetId + row.kind
+        Task {
+            do {
+                try await relationships.set(targetId: row.targetId, kind: row.kind, active: false)
+            } catch {
+                relationships.error = "設定を保存できませんでした。"
+            }
+            pendingRelationship = nil
+        }
     }
 }

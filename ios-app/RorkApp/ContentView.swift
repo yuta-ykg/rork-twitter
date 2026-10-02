@@ -8,6 +8,7 @@ struct ContentView: View {
     @State private var store = PostStore()
     @State private var bookmarks = BookmarkStore()
     @State private var notifications = NotificationStore()
+    @State private var relationships = RelationshipStore.shared
     @Environment(\.scenePhase) private var scenePhase
     @State private var showsComposer = false
     @State private var showsSignIn = false
@@ -70,6 +71,8 @@ struct ContentView: View {
         .tint(palette.blue)
         .task(id: auth.user?.id) {
             bookmarks.configure(userId: auth.user?.id)
+            relationships.configure(userId: auth.user?.id)
+            await relationships.refresh()
             await bookmarks.refresh()
             if let user = auth.user {
                 await store.syncProfile(user)
@@ -132,11 +135,13 @@ struct ContentView: View {
         )) { Button("OK") { notifications.readError = nil } }
         message: { Text(L(notifications.readError ?? "")) }
         .environment(bookmarks)
+        .environment(relationships)
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { Task { await bookmarks.refresh(); await notifications.refresh() } }
+            if phase == .active { Task { await relationships.refresh(); await store.refresh(userId: auth.user?.id); await bookmarks.refresh(); await notifications.refresh() } }
         }
         .onChange(of: auth.user?.id) { _, newValue in
             bookmarks.configure(userId: newValue)
+            relationships.configure(userId: newValue)
             notifications.configure(userId: newValue)
             if newValue != nil {
                 showsSignIn = false
@@ -184,3 +189,4 @@ struct ContentView: View {
         .environment(AuthManager())
 
 }
+

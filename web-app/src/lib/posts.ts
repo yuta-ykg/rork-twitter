@@ -1,6 +1,7 @@
 import { getLanguage, t } from "@/lib/language";
 import { developerUser, isDevelopmentSession, readDevelopmentPosts, writeDevelopmentPosts, readDevelopmentProfile } from "@/lib/development";
-import { ensureProfile, fetchProfile, fetchProfiles } from "@/lib/profiles";
+import { ensureProfile, fetchProfiles } from "@/lib/profiles";
+import { hiddenDevelopmentUsers } from "@/lib/userRelationships";
 import { supabase } from "@/lib/supabase";
 
 export const MAX_CHARACTERS = 70;
@@ -63,11 +64,11 @@ const postColumns = "id, author_name, handle, initial, body, created_at, avatar_
 export async function fetchPosts(userId?: string | null): Promise<Post[]> {
   if (isDevelopmentSession()) {
     const profile = readDevelopmentProfile();
-    return sortTimeline(readDevelopmentPosts()).map((post) => ({
+    return sortTimeline(readDevelopmentPosts()).filter((post) => !hiddenDevelopmentUsers(userId).has(post.userId ?? "")).map((post) => ({
       ...post, authorName: profile.name, handle: `@${profile.handle}`, initial: Array.from(profile.name)[0] ?? "開",
     }));
   }
-  const { data, error } = await supabase.from("posts").select(postColumns).order("created_at", { ascending: false });
+  const { data, error } = await supabase.rpc("get_visible_posts", { expected_user_id: userId ?? null });
   if (error) throw error;
   const posts = (data ?? []).map((row) => toPost(row, userId));
   if (posts.length === 0) return posts;
@@ -106,25 +107,9 @@ export async function insertPost(body: string, author: Author): Promise<Post> {
   }
   const trimmed = body.trim();
   await syncProfile(author);
-  const profile = await fetchProfile(author.id);
-  const name = (profile?.name || author.name?.trim() || author.email || "あなた").slice(0, 40);
-  const local = (author.email.split("@")[0] ?? "you").replace(/[^A-Za-z0-9_]/g, "");
-  const handle = profile?.handle ? `@${profile.handle}` : `@${(local || "you").slice(0, 38)}`;
-  const { data, error } = await supabase
-    .from("posts")
-    .insert({
-      author_name: name,
-      handle,
-      initial: name.slice(0, 1),
-      body: trimmed,
-      is_mine: true,
-      avatar_index: 0,
-      user_id: author.id,
-    })
-    .select(postColumns)
-    .single();
-  if (error || !data) throw error ?? new Error("投稿できませんでした");
-  return toPost(data, author.id);
+  const { data, error } = await supabase.rpc("create_post", { post_id: crypto.randomUUID(), post_body: trimmed, expected_user_id: author.id });
+  if (error || !data?.[0]) throw error ?? new Error("投稿できませんでした");
+  return toPost(data[0], author.id);
 }
 
 export function sortTimeline(posts: Post[]): Post[] {

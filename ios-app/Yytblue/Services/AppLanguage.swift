@@ -170,6 +170,15 @@ private let englishMessages: [String: String] = [
     " 投稿": " posts",
     "文字まで": "characters maximum",
     "開発セッションではありません。": "Not a development session.",
+    "ミュート": "Mute",
+    "ミュートを解除": "Unmute",
+    "ブロック": "Block",
+    "ブロックを解除": "Unblock",
+    "ミュート中": "Muted accounts",
+    "ブロック中": "Blocked accounts",
+    "解除": "Remove",
+    "設定を読み込めませんでした。": "Could not load your settings.",
+    "設定を保存できませんでした。": "Could not save your settings.",
     "Today": "今日",
     "Yesterday": "昨日"
 ]
