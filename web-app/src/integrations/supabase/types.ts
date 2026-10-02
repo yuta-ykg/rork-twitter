@@ -132,8 +132,9 @@ export type Database = {
     Functions: {
       get_notifications: {
         Args: { expected_user_id: string; before_created_at?: string; before_id?: string }
-        Returns: { id: string; post_id: string; actor_id: string; actor_name: string; post_body: string; created_at: string; read_at: string | null; unread_count: number }[]
+        Returns: { id: string; post_id: string; post_body: string; created_at: string; read_at: string | null; like_count: number; unread_count: number }[]
       }
+      mark_post_notifications_read: { Args: { target_post_id: string; before_time: string; expected_user_id: string }; Returns: undefined }
       mark_notifications_read: { Args: { notification_ids: string[]; expected_user_id: string }; Returns: undefined }
       mark_all_notifications_read: { Args: { before_time: string; expected_user_id: string }; Returns: undefined }
       get_post_bookmarks: {
@@ -340,3 +341,4 @@ export const Constants = {
     Enums: {},
   },
 } as const
+

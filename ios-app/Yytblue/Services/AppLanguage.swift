@@ -23,6 +23,8 @@ private let englishMessages: [String: String] = [
     "ブックマークはこの端末に保存されます。": "Bookmarks are saved on this device.",
     "ボトムバー": "Bottom bar",
     "ボトムバーの文字を表示": "Show bottom bar labels",
+    "1人があなたの投稿にいいねしました。": "1 person liked your post.",
+    "{count}人があなたの投稿にいいねしました。": "{count} people liked your post.",
     "通知": "Notifications",
     "未読の通知": "Unread notifications",
     "自分の投稿へのいいねをお知らせします。": "Likes on your posts appear here.",
@@ -184,3 +186,4 @@ struct AppLanguageModifier: ViewModifier {
         content.environment(\.locale, Locale(identifier: language == "en" ? "en" : "ja"))
     }
 }
+

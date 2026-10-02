@@ -39,7 +39,7 @@ struct NotificationsView: View {
                             Circle().fill(item.readAt == nil ? Color.irukaBlue : .clear)
                                 .frame(width: 8, height: 8).padding(.top, 6)
                             VStack(alignment: .leading, spacing: 6) {
-                                Text(item.actorName + " " + L("さんがあなたの投稿にいいねしました。"))
+                                Text(L(item.likeCount == 1 ? "1人があなたの投稿にいいねしました。" : "{count}人があなたの投稿にいいねしました。").replacingOccurrences(of: "{count}", with: item.likeCount > 20 ? "20+" : String(item.likeCount)))
                                     .fontWeight(item.readAt == nil ? .semibold : .regular)
                                 Text(item.postBody).font(.subheadline).foregroundStyle(palette.secondary)
                                 Text(item.date, style: .date).font(.caption).foregroundStyle(palette.secondary)
@@ -69,3 +69,4 @@ struct NotificationsView: View {
         .refreshable { await notifications.refresh() }
     }
 }
+

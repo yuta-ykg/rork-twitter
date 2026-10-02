@@ -4,8 +4,8 @@ import { isDevelopmentSession } from "@/lib/development";
 import { supabase } from "@/lib/supabase";
 
 export type AppNotification = {
-  id: string; post_id: string; actor_id: string; actor_name: string; post_body: string;
-  created_at: string; read_at: string | null; unread_count: number;
+  id: string; post_id: string; post_body: string;
+  created_at: string; read_at: string | null; like_count: number; unread_count: number;
 };
 type Cursor = { created_at: string; id: string } | null;
 export function useNotifications() {
@@ -34,10 +34,10 @@ export function useNotifications() {
     retry: 1,
   });
   const mutation = useMutation({
-    mutationFn: async (input: { id: string } | { before: string }) => {
+    mutationFn: async (input: { id: string; before: string } | { before: string }) => {
       if (!userId || !remote) throw new Error("Login required");
       const result = "id" in input
-        ? await supabase.rpc("mark_notifications_read", { notification_ids: [input.id], expected_user_id: userId })
+        ? await supabase.rpc("mark_post_notifications_read", { target_post_id: input.id, before_time: input.before, expected_user_id: userId })
         : await supabase.rpc("mark_all_notifications_read", { before_time: input.before, expected_user_id: userId });
       if (result.error) throw result.error;
     },
@@ -49,7 +49,8 @@ export function useNotifications() {
     loading: remote && query.isPending, error: remote && query.isError,
     refresh: query.refetch, hasMore: remote && Boolean(query.hasNextPage),
     loadingMore: query.isFetchingNextPage, loadMore: query.fetchNextPage,
-    marking: mutation.isPending, markRead: (id: string) => mutation.mutateAsync({ id }),
+    marking: mutation.isPending, markRead: (id: string, before: string) => mutation.mutateAsync({ id, before }),
     markAllRead: () => rows[0] ? mutation.mutateAsync({ before: rows[0].created_at }) : Promise.resolve(),
   };
 }
+

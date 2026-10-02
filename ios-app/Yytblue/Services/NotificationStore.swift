@@ -67,9 +67,9 @@ final class NotificationStore {
         let epoch = generation
         marking = true; readError = nil
         do {
-            if let id {
-                try await IrukaDatabase.client.rpc("mark_notifications_read", params: NotificationReadParams(notification_ids: [id], expected_user_id: userId)).execute()
-            } else if let first = rows.first {
+            if let id, let row = rows.first(where: { $0.id == id }) {
+                try await IrukaDatabase.client.rpc("mark_post_notifications_read", params: NotificationReadParams(target_post_id: row.postId, before_time: row.createdAt, expected_user_id: userId)).execute()
+            } else if id == nil, let first = rows.first {
                 try await IrukaDatabase.client.rpc("mark_all_notifications_read", params: NotificationReadAllParams(before_time: first.createdAt, expected_user_id: userId)).execute()
             }
             guard generation == epoch else { return }
@@ -80,3 +80,4 @@ final class NotificationStore {
         }
     }
 }
+

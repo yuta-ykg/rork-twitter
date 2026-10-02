@@ -3,6 +3,8 @@ import { useLayoutEffect, useSyncExternalStore } from "react";
 export type Language = "ja" | "en";
 const key = "iruka-language";
 const english: Record<string, string> = {
+  "1人があなたの投稿にいいねしました。": "1 person liked your post.",
+  "{count}人があなたの投稿にいいねしました。": "{count} people liked your post.",
   "通知": "Notifications",
   "未読の通知": "Unread notifications",
   "自分の投稿へのいいねをお知らせします。": "Likes on your posts appear here.",
@@ -156,7 +158,7 @@ const english: Record<string, string> = {
   "Today": "今日",
   "Yesterday": "昨日"
 };
-const japanese: Record<string, string> = {"Oops! Page not found":"ページが見つかりません。","Return to Home":"ホームへ戻る"};
+const japanese: Record<string, string> = {"{count}人があなたの投稿にいいねしました。":"{count}人があなたの投稿にいいねしました。","Oops! Page not found":"ページが見つかりません。","Return to Home":"ホームへ戻る"};
 function storedLanguage(): Language {
   try { return localStorage.getItem(key) === "en" ? "en" : "ja"; } catch { return "ja"; }
 }
@@ -189,3 +191,4 @@ export function useLanguage() {
   useLayoutEffect(() => { document.documentElement.lang = language; }, [language]);
   return { language, setLanguage };
 }
+
