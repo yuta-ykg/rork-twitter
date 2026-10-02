@@ -6,7 +6,7 @@ import { LikeIconGlyph } from "@/hooks/useLikeIcon";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { ensureProfile, fetchProfile, saveProfile, type Profile } from "@/lib/profiles";
+import { ensureProfile, fetchProfile, saveProfile, uploadAvatar, type Profile } from "@/lib/profiles";
 import { fetchPosts, type Post } from "@/lib/posts";
 
 export default function ProfilePage() {
@@ -29,6 +29,7 @@ export default function ProfilePage() {
   const [handle, setHandle] = useState("");
   const [bio, setBio] = useState("");
   const [avatar, setAvatar] = useState("");
+  const [uploading, setUploading] = useState(false);
   const [imageFailed, setImageFailed] = useState(false);
   const [retry, setRetry] = useState(0);
 
@@ -64,6 +65,15 @@ export default function ProfilePage() {
     setName(profile.name); setHandle(profile.handle ?? "");
     setBio(profile.bio); setAvatar(profile.avatar_url ?? "");
     setError(""); setEditing(true);
+  }
+  async function pickAvatar(file?: File) {
+    if (!file || !user || uploading) return;
+    setUploading(true); setError("");
+    try {
+      const url = await uploadAvatar(file, user.id);
+      setAvatar(url); setImageFailed(false);
+    } catch (error) { setError(error instanceof Error ? error.message : "画像をアップロードできませんでした。"); }
+    finally { setUploading(false); }
   }
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -109,7 +119,22 @@ export default function ProfilePage() {
         <label>{t("表示名")}<input value={name} onChange={(event) => setName(event.target.value)} required className={inputClass} /><span className="text-sm text-muted-foreground">{t("1〜40文字")}</span></label>
         <label>{t("ユーザー名")}<input value={handle} onChange={(event) => setHandle(event.target.value.toLowerCase())} required pattern="[a-z0-9_]{3,25}" className={inputClass} /><span className="text-sm text-muted-foreground">{t("小文字の英数字と_、3〜25文字")}</span></label>
         <label>{t("自己紹介")}<textarea value={bio} onChange={(event) => setBio(event.target.value)} rows={4} className={inputClass} /><span className="text-sm text-muted-foreground">{Array.from(bio).length} / 160 {t("文字")}</span></label>
-        <label>{t("プロフィール画像URL")}<input type="url" value={avatar} onChange={(event) => setAvatar(event.target.value)} placeholder="https://" className={inputClass} /><span className="text-sm text-muted-foreground">{t("HTTPSの画像URL。空欄にすると画像を解除します。")}</span></label>
+        <div>
+          <span className="text-sm font-medium">{t("プロフィール画像")}</span>
+          <div className="mt-2 flex items-center gap-4">
+            {avatar && !imageFailed ? <img src={avatar} onError={() => setImageFailed(true)} referrerPolicy="no-referrer" alt="" className="h-16 w-16 rounded-full object-cover" /> :
+              <span className="grid h-16 w-16 place-items-center rounded-full bg-[#8ECAE6] text-xl font-bold" aria-hidden>{Array.from(name)[0] ?? "?"}</span>}
+            <div className="grid gap-1">
+              <label className="inline-flex min-h-11 cursor-pointer items-center rounded-full border border-input px-4 text-base text-[hsl(var(--brand))]">
+                {uploading ? t("アップロード中…") : t("画像を変更")}
+                <input type="file" accept="image/*" disabled={uploading} className="sr-only"
+                  onChange={(event) => { void pickAvatar(event.target.files?.[0]); event.target.value = ""; }} />
+              </label>
+              {avatar ? <button type="button" disabled={uploading} onClick={() => setAvatar("")} className="min-h-11 px-1 text-left text-sm text-muted-foreground">{t("画像を削除")}</button> : null}
+            </div>
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">{t("JPEGやPNGの画像を登録できます。")}</p>
+        </div>
         <div className="flex gap-3"><button type="submit" disabled={saving} className="min-h-11 rounded-full bg-[hsl(var(--brand))] px-6 font-semibold text-white disabled:opacity-50">{saving ? t("保存中…") : t("保存する")}</button>
           <button type="button" disabled={saving} onClick={() => { setEditing(false); setError(""); }} className="min-h-11 px-3">{t("キャンセル")}</button></div>
       </form> : null}
