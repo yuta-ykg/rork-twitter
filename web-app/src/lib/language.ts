@@ -3,6 +3,20 @@ import { useLayoutEffect, useSyncExternalStore } from "react";
 export type Language = "ja" | "en";
 const key = "iruka-language";
 const english: Record<string, string> = {
+  "{name}さんがいいねしました。": "{name} liked your post.",
+  "1人があなたの投稿にいいねしました。": "1 person liked your post.",
+  "{count}人があなたの投稿にいいねしました。": "{count} people liked your post.",
+  "通知": "Notifications",
+  "未読の通知": "Unread notifications",
+  "自分の投稿へのいいねをお知らせします。": "Likes on your posts appear here.",
+  "通知を見るにはログインしてください。": "Sign in to view notifications.",
+  "開発モードでは通知は届きません。": "Notifications are unavailable in development mode.",
+  "通知を読み込めませんでした。": "Couldn't load notifications.",
+  "通知を既読にできませんでした。": "Couldn't mark notifications as read.",
+  "すべて既読にする": "Mark all as read",
+  "まだ通知がありません。": "No notifications yet.",
+  "さんがあなたの投稿にいいねしました。": "liked your post.",
+  "もっと見る": "Load more",
   "ブックマークはアカウントに保存され、端末間で共有されます。": "Bookmarks are saved to your account and synced across devices.",
   "開発モードのブックマークはこの端末に保存されます。": "Development bookmarks are saved on this device.",
   "ブックマーク": "Bookmarks",
@@ -145,7 +159,7 @@ const english: Record<string, string> = {
   "Today": "今日",
   "Yesterday": "昨日"
 };
-const japanese: Record<string, string> = {"Oops! Page not found":"ページが見つかりません。","Return to Home":"ホームへ戻る"};
+const japanese: Record<string, string> = {"{count}人があなたの投稿にいいねしました。":"{count}人があなたの投稿にいいねしました。","Oops! Page not found":"ページが見つかりません。","Return to Home":"ホームへ戻る"};
 function storedLanguage(): Language {
   try { return localStorage.getItem(key) === "en" ? "en" : "ja"; } catch { return "ja"; }
 }
@@ -178,3 +192,4 @@ export function useLanguage() {
   useLayoutEffect(() => { document.documentElement.lang = language; }, [language]);
   return { language, setLanguage };
 }
+

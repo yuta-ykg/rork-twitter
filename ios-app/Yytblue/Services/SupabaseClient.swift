@@ -107,3 +107,46 @@ nonisolated struct ImportBookmarksParams: Encodable, Sendable {
     let post_ids: [UUID]
     let expected_user_id: String
 }
+
+nonisolated struct NotificationRow: Decodable, Identifiable, Sendable {
+    let actorName: String?
+    let isGrouped: Bool
+    let id: UUID
+    let postId: UUID
+    let likeCount: Int
+    let postBody: String
+    let createdAt: String
+    let readAt: String?
+    let unreadCount: Int
+    var date: Date {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter.date(from: createdAt) ?? ISO8601DateFormatter().date(from: createdAt) ?? .distantPast
+    }
+    enum CodingKeys: String, CodingKey {
+        case id
+        case actorName = "actor_name", isGrouped = "is_grouped"
+        case postId = "post_id", likeCount = "like_count", postBody = "post_body"
+        case createdAt = "created_at", readAt = "read_at", unreadCount = "unread_count"
+    }
+}
+nonisolated struct NotificationQueryParams: Encodable, Sendable {
+    let expected_user_id: String
+    let before_created_at: String?
+    let before_id: UUID?
+}
+nonisolated struct GroupNotificationReadParams: Encodable, Sendable {
+    let target_post_id: UUID
+    let before_time: String
+    let expected_user_id: String
+}
+nonisolated struct NotificationReadAllParams: Encodable, Sendable {
+    let before_time: String
+    let expected_user_id: String
+}
+
+
+nonisolated struct NotificationReadParams: Encodable, Sendable {
+    let notification_ids: [UUID]
+    let expected_user_id: String
+}
