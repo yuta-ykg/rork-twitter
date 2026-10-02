@@ -13,7 +13,7 @@ import { t, useLanguage } from "@/lib/language";
 import { LikeIconGlyph, useLikeIcon } from "@/hooks/useLikeIcon";
 import { isDevelopmentSession, isGuestSession } from "@/lib/development";
 import { toast } from "sonner";
-import { Bookmark, Download, Fish, House, MessageCircle, SquarePen, Settings, UserRound, X } from "lucide-react";
+import { Bookmark, Download, Fish, House, MessageCircle, Search, SquarePen, Settings, UserRound, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 
@@ -30,7 +30,7 @@ import {
   type Post,
 } from "@/lib/posts";
 
-type Tab = "home" | "mine" | "bookmarks" | "notifications";
+type Tab = "home" | "mine" | "bookmarks" | "notifications" | "search";
 
 function Avatar({ initial, index }: { initial: string; index: number }) {
   useLanguage();
@@ -211,14 +211,22 @@ function Shell({
       </header>
       <main className={`flex-1 px-5 pb-24 ${useDesktopBottomBar ? "" : "lg:pb-8"}`}>{children}</main>
       <div className={`fixed bottom-0 left-1/2 z-20 w-full max-w-[430px] -translate-x-1/2 ${useDesktopBottomBar ? "" : "lg:hidden"}`}>
-        <nav aria-label={t("メインナビゲーション")} className="grid grid-cols-5 border-t border-border/60 bg-background/70 px-3 pb-[max(8px,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl">
+        <button
+          type="button"
+          onClick={compose}
+          aria-label={t("投稿を作成")}
+          className="absolute bottom-[calc(100%+14px)] right-4 grid h-14 w-14 place-items-center rounded-full bg-[hsl(var(--brand))] text-white shadow-lg shadow-black/15 transition active:scale-90"
+        >
+          <SquarePen className="h-6 w-6" aria-hidden />
+        </button>
+        <nav aria-label={t("メインナビゲーション")} className="grid grid-cols-4 border-t border-border/60 bg-background/70 px-3 pb-[max(8px,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl">
           <Link to="/" aria-label={t("ホーム")} className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "home" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
             <House className="h-5 w-5" aria-hidden />
             {showBottomBarLabels && <span>{t("ホーム")}</span>}</Link>
-          <button type="button" onClick={compose} aria-label={t("投稿を作成")}
-            className="flex min-h-11 flex-col items-center justify-center gap-0.5 text-sm text-[hsl(var(--brand))]">
-            <SquarePen className="h-5 w-5" aria-hidden />
-            {showBottomBarLabels && <span>{t("投稿")}</span>}</button>
+          <Link to="/search" aria-label={t("検索")} className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "search" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
+            <Search className="h-5 w-5" aria-hidden />
+            {showBottomBarLabels && <span>{t("検索")}</span>}
+          </Link>
           <Link to="/bookmarks" aria-label={t("ブックマーク")} className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "bookmarks" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
             <Bookmark className="h-5 w-5" aria-hidden />
             {showBottomBarLabels && <span>{t("ブックマーク")}</span>}
@@ -372,6 +380,87 @@ export function HomePage() {
           initial={own?.initial ?? displayName(user).slice(0, 1)}
         />
       ) : null}
+    </>
+  );
+}
+
+export function SearchPage() {
+  useLanguage();
+  const { user } = useAuth();
+  const own = useOwnProfile();
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [query, setQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [retry, setRetry] = useState(0);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setError("");
+    fetchPosts(user?.id)
+      .then((next) => { if (!cancelled) setPosts(next); })
+      .catch(() => { if (!cancelled) setError("タイムラインを読み込めませんでした。"); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [user?.id, retry]);
+
+  const keyword = query.trim().toLowerCase();
+  const results = useMemo(() => {
+    if (!keyword) return [];
+    return sortTimeline(posts).filter((post) =>
+      post.body.toLowerCase().includes(keyword)
+      || post.authorName.toLowerCase().includes(keyword)
+      || post.handle.toLowerCase().includes(keyword));
+  }, [posts, keyword]);
+
+  const activeUser = useRef(user?.id);
+  activeUser.current = user?.id;
+  async function like(id: string) {
+    if (!user) { toast.error(t("いいねするにはAppleかGoogleでログインしてください。")); return; }
+    const post = posts.find((item) => item.id === id);
+    if (!post) return;
+    const userId = user.id;
+    try {
+      const state = await setPostLike(id, !post.isLiked, userId);
+      if (activeUser.current === userId) {
+        setPosts((current) => current.map((item) => item.id === id ? { ...item, ...state } : item));
+      }
+    } catch { toast.error(t("いいねを保存できませんでした。もう一度試してください。")); }
+  }
+  async function add(body: string) {
+    if (!user) return;
+    try {
+      const post = await insertPost(body, user);
+      if (activeUser.current === user.id) setPosts((current) => [post, ...current]);
+    } catch { toast.error(t("投稿できませんでした。もう一度試してください。")); }
+  }
+
+  return (
+    <>
+      <Shell tab="search" onCompose={() => setOpen(true)}>
+        <div className="pt-4">
+          <h1 className="text-[28px] font-bold">{t("検索")}</h1>
+          <div className="relative mt-3">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground" aria-hidden />
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder={t("キーワードで投稿を検索")}
+              aria-label={t("検索")}
+              className="h-11 w-full rounded-full border border-input bg-muted/60 pl-11 pr-4 text-base text-foreground outline-none placeholder:text-muted-foreground focus:border-[hsl(var(--brand))]"
+            />
+          </div>
+        </div>
+        {error ? <p role="alert" className="mt-4 text-sm text-red-500">{t(error)}</p> : null}
+        {loading ? <p role="status" className="py-10 text-muted-foreground">{t("読み込み中…")}</p> :
+          !keyword ? <p className="py-10 text-center text-muted-foreground">{t("ユーザー名や本文のキーワードで投稿を探せます。")}</p> :
+          results.length ? results.map((post) => <Row key={post.id} post={post} showAuthor onLike={() => like(post.id)} />) :
+          <p className="py-10 text-center text-muted-foreground">{t("該当する投稿がありません。")}</p>}
+      </Shell>
+      {open && user ? <ComposeSheet onClose={() => setOpen(false)} onPost={add}
+        authorName={own?.name ?? displayName(user)} handle={own?.handle ?? userHandle(user)} initial={own?.initial ?? displayName(user).slice(0, 1)} /> : null}
     </>
   );
 }

@@ -13,7 +13,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 
 import ProfilePage from "./pages/Profile";
 import AuthCallback from "./pages/AuthCallback";
-import { NotificationsPage, BookmarksPage, HomePage, MinePage, PostPage } from "./pages/Index";
+import { NotificationsPage, BookmarksPage, HomePage, MinePage, PostPage, SearchPage } from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +40,7 @@ const App = () => (
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/" element={<RequireAuth><HomePage /></RequireAuth>} />
+          <Route path="/search" element={<RequireAuth><SearchPage /></RequireAuth>} />
           <Route path="/profile/:id" element={<RequireAuth><ProfilePage /></RequireAuth>} />
           <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />
           <Route path="/notifications" element={<RequireAuth><NotificationsPage /></RequireAuth>} />

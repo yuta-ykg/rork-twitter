@@ -1,9 +1,9 @@
 import { NotificationBell } from "@/components/NotificationBell";
-import { Bookmark, Fish, House, Settings, SquarePen, UserRound } from "lucide-react";
+import { Bookmark, Fish, House, Search, Settings, SquarePen, UserRound } from "lucide-react";
 import { Link } from "react-router-dom";
 import { t, useLanguage } from "@/lib/language";
 
-export function DesktopSidebar({ tab, onCompose }: { tab: "home" | "mine" | "bookmarks" | "settings" | "notifications"; onCompose: () => void }) {
+export function DesktopSidebar({ tab, onCompose }: { tab: "home" | "mine" | "bookmarks" | "settings" | "notifications" | "search"; onCompose: () => void }) {
   useLanguage();
   return (
     <aside className="fixed bottom-0 left-[calc(50%-380px)] top-0 hidden w-[220px] border-r border-border bg-background px-4 py-6 lg:block">
@@ -11,6 +11,9 @@ export function DesktopSidebar({ tab, onCompose }: { tab: "home" | "mine" | "boo
         <nav aria-label={t("サイドナビゲーション")} className="flex flex-col gap-2">
           <Link to="/" aria-current={tab === "home" ? "page" : undefined} className={`flex min-h-12 items-center gap-3 rounded-xl px-3 ${tab === "home" ? "bg-muted text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
             <House className="h-5 w-5" aria-hidden />{t("ホーム")}
+          </Link>
+          <Link to="/search" aria-current={tab === "search" ? "page" : undefined} className={`flex min-h-12 items-center gap-3 rounded-xl px-3 ${tab === "search" ? "bg-muted text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
+            <Search className="h-5 w-5" aria-hidden />{t("検索")}
           </Link>
           <button type="button" onClick={onCompose} aria-label={t("投稿を作成")} className="flex min-h-12 items-center gap-3 rounded-xl px-3 text-[hsl(var(--brand))]">
             <SquarePen className="h-5 w-5" aria-hidden />{t("投稿")}
