@@ -352,6 +352,10 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      handle_available: {
+        Args: { candidate_handle: string; expected_user_id: string }
+        Returns: boolean
+      }
       import_post_bookmarks: {
         Args: { expected_user_id: string; post_ids: string[] }
         Returns: {

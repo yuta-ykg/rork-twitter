@@ -3,10 +3,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import { BookmarkButton } from "@/components/BookmarkButton";
 import { t, useLanguage } from "@/lib/language";
 import { LikeIconGlyph } from "@/hooks/useLikeIcon";
+import { Check, Loader2, X } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { ensureProfile, fetchProfile, saveProfile, uploadAvatar, type Profile } from "@/lib/profiles";
+import { ensureProfile, fetchHandleAvailability, fetchProfile, saveProfile, uploadAvatar, type Profile } from "@/lib/profiles";
 import { fetchPosts, type Post } from "@/lib/posts";
 
 export default function ProfilePage() {
@@ -32,6 +33,27 @@ export default function ProfilePage() {
   const [uploading, setUploading] = useState(false);
   const [imageFailed, setImageFailed] = useState(false);
   const [retry, setRetry] = useState(0);
+  const [availability, setAvailability] = useState<boolean | null>(null);
+  const [checkingHandle, setCheckingHandle] = useState(false);
+  const lengthOk = handle.length >= 3 && handle.length <= 25;
+  const charsOk = /^[a-z0-9_]*$/.test(handle);
+  const formatOk = lengthOk && charsOk;
+  const unchanged = handle.length > 0 && handle === (profile?.handle ?? "");
+  const userId = user?.id ?? "";
+
+  useEffect(() => {
+    if (!editing || !formatOk) { setAvailability(null); setCheckingHandle(false); return; }
+    if (unchanged || !userId) { setAvailability(true); setCheckingHandle(false); return; }
+    let cancelled = false;
+    setCheckingHandle(true);
+    const timer = setTimeout(() => {
+      fetchHandleAvailability(handle, userId)
+        .then((available) => { if (!cancelled) setAvailability(available); })
+        .catch(() => { if (!cancelled) setAvailability(null); })
+        .finally(() => { if (!cancelled) setCheckingHandle(false); });
+    }, 400);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [editing, formatOk, unchanged, userId, handle]);
 
   useEffect(() => {
     let cancelled = false;
@@ -117,7 +139,17 @@ export default function ProfilePage() {
       </section>
       {editing && own ? <form onSubmit={submit} className="grid gap-4 border-b border-border py-5">
         <label>{t("表示名")}<input value={name} onChange={(event) => setName(event.target.value)} required className={inputClass} /><span className="text-sm text-muted-foreground">{t("1〜40文字")}</span></label>
-        <label>{t("ユーザー名")}<input value={handle} onChange={(event) => setHandle(event.target.value.toLowerCase())} required pattern="[a-z0-9_]{3,25}" className={inputClass} /><span className="text-sm text-muted-foreground">{t("小文字の英数字と_、3〜25文字")}</span></label>
+        <label>{t("ユーザー名")}<input value={handle} onChange={(event) => setHandle(event.target.value.toLowerCase())} required autoComplete="off" spellCheck={false}
+          className={`mt-1 w-full rounded-xl border bg-background p-3 text-base ${handle && !formatOk ? "border-red-400" : "border-input"}`} />
+          <ul className="mt-2 grid gap-1 text-sm" aria-live="polite">
+            <HandleRule ok={lengthOk} touched={handle.length > 0} label={t("3〜25文字")} />
+            <HandleRule ok={charsOk} touched={handle.length > 0} label={t("小文字の英数字と_")} />
+            {formatOk && (checkingHandle || availability !== null) ? <li className={`flex items-center gap-1 ${availability === false ? "text-red-600" : availability === true ? "text-emerald-600" : "text-muted-foreground"}`}>
+              {availability === false ? <X className="h-4 w-4" aria-hidden /> : availability === true ? <Check className="h-4 w-4" aria-hidden /> : <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
+              <span>{availability === false ? t("このユーザー名は既に使われています。") : availability === true ? t("利用できるユーザー名です。") : t("確認中…")}</span>
+            </li> : null}
+          </ul>
+        </label>
         <label>{t("自己紹介")}<textarea value={bio} onChange={(event) => setBio(event.target.value)} rows={4} className={inputClass} /><span className="text-sm text-muted-foreground">{Array.from(bio).length} / 160 {t("文字")}</span></label>
         <div>
           <span className="text-sm font-medium">{t("プロフィール画像")}</span>
@@ -135,7 +167,7 @@ export default function ProfilePage() {
           </div>
           <p className="mt-1 text-sm text-muted-foreground">{t("JPEGやPNGの画像を登録できます。")}</p>
         </div>
-        <div className="flex gap-3"><button type="submit" disabled={saving} className="min-h-11 rounded-full bg-[hsl(var(--brand))] px-6 font-semibold text-white disabled:opacity-50">{saving ? t("保存中…") : t("保存する")}</button>
+        <div className="flex gap-3"><button type="submit" disabled={saving || !formatOk || availability === false || checkingHandle} className="min-h-11 rounded-full bg-[hsl(var(--brand))] px-6 font-semibold text-white disabled:opacity-50">{saving ? t("保存中…") : t("保存する")}</button>
           <button type="button" disabled={saving} onClick={() => { setEditing(false); setError(""); }} className="min-h-11 px-3">{t("キャンセル")}</button></div>
       </form> : null}
       <section className="pt-5"><h2 className="mb-2 text-lg font-semibold">{t("投稿")}</h2>
@@ -143,4 +175,13 @@ export default function ProfilePage() {
       </section>
     </>}
   </div>;
+}
+
+function HandleRule({ ok, touched, label }: { ok: boolean; touched: boolean; label: string }) {
+  const Icon = ok ? Check : X;
+  const color = ok ? "text-emerald-600" : touched ? "text-red-600" : "text-muted-foreground";
+  return <li className={`flex items-center gap-1 ${color}`}>
+    <Icon className="h-4 w-4" aria-hidden />
+    <span>{label}</span>
+  </li>;
 }

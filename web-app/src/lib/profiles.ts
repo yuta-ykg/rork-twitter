@@ -15,6 +15,14 @@ export async function fetchProfiles(ids: string[]): Promise<Profile[]> {
 export async function fetchProfile(id: string): Promise<Profile | null> {
   return (await fetchProfiles([id]))[0] ?? null;
 }
+
+/** ユーザー名が他のユーザーで未使用か確認する。ローカルセッションは常に利用可、確認に失敗したらnull。 */
+export async function fetchHandleAvailability(handle: string, userId: string): Promise<boolean | null> {
+  if (isDevelopmentSession()) return true;
+  const { data, error } = await supabase.rpc("handle_available", { expected_user_id: userId, candidate_handle: handle });
+  if (error) return null;
+  return Boolean(data);
+}
 export async function ensureProfile(author: { id: string; email: string; name?: string; picture?: string }) {
   if (isDevelopmentSession()) return;
   const { error } = await supabase.rpc("ensure_profile", {
