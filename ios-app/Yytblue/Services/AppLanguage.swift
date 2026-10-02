@@ -179,6 +179,16 @@ private let englishMessages: [String: String] = [
     "解除": "Remove",
     "設定を読み込めませんでした。": "Could not load your settings.",
     "設定を保存できませんでした。": "Could not save your settings.",
+    "アカウント": "Account",
+    "メールアドレス": "Email",
+    "ログインしていません。": "You are not signed in.",
+    "未設定": "Not set",
+    "アカウントを削除": "Delete account",
+    "アカウントを削除しますか？": "Delete this account?",
+    "投稿、プロフィール、いいね、ブックマーク、通知が削除されます。この操作は取り消せません。": "Your posts, profile, likes, bookmarks, and notifications will be deleted. This cannot be undone.",
+    "削除中…": "Deleting…",
+    "削除する": "Delete",
+    "アカウントを削除できませんでした。": "Couldn't delete the account.",
     "Today": "今日",
     "Yesterday": "昨日"
 ]

@@ -1,3 +1,5 @@
+import PostgREST
+import Supabase
 import SwiftUI
 
 struct SettingsView: View {
@@ -7,8 +9,25 @@ struct SettingsView: View {
     @Environment(AuthManager.self) private var auth
     @Environment(RelationshipStore.self) private var relationships
     @State private var pendingRelationship: String?
+    @State private var confirmsDelete = false
+    @State private var deleting = false
+    @State private var deleteError: String?
     var body: some View {
         Form {
+            Section(L("アカウント")) {
+                if let user = auth.user {
+                    LabeledContent(L("メールアドレス"), value: user.email.isEmpty ? L("未設定") : user.email)
+                    Button(deleting ? L("削除中…") : L("アカウントを削除"), role: .destructive) {
+                        confirmsDelete = true
+                    }
+                    .disabled(deleting)
+                    if let deleteError {
+                        Text(L(deleteError)).foregroundStyle(.red)
+                    }
+                } else {
+                    Text(L("ログインしていません。")).foregroundStyle(.secondary)
+                }
+            }
             if auth.user != nil {
                 Section(L("ミュート中")) {
                     ForEach(relationships.rows.filter { $0.kind == "mute" }, id: \.targetId) { row in
@@ -57,6 +76,37 @@ struct SettingsView: View {
         }
         .navigationTitle(L("設定"))
         .navigationBarTitleDisplayMode(.inline)
+        .confirmationDialog(L("アカウントを削除しますか？"), isPresented: $confirmsDelete, titleVisibility: .visible) {
+            Button(L("削除する"), role: .destructive) { deleteAccount() }
+            Button(L("キャンセル"), role: .cancel) {}
+        } message: {
+            Text(L("投稿、プロフィール、いいね、ブックマーク、通知が削除されます。この操作は取り消せません。"))
+        }
+    }
+
+    private func deleteAccount() {
+        guard let user = auth.user, !deleting else { return }
+        deleting = true
+        deleteError = nil
+        Task {
+            defer { deleting = false }
+            do {
+                if DevelopmentData.isActive {
+                    UserDefaults.standard.removeObject(forKey: "iruka-development-posts")
+                    UserDefaults.standard.removeObject(forKey: "iruka-development-profile")
+                    UserDefaults.standard.removeObject(forKey: "iruka-relationships-" + user.id)
+                    UserDefaults.standard.removeObject(forKey: "iruka:bookmarks:development:\(user.id)")
+                } else {
+                    try await IrukaDatabase.client
+                        .rpc("delete_account", params: DeleteAccountParams(expected_user_id: user.id))
+                        .execute()
+                    UserDefaults.standard.removeObject(forKey: "iruka:bookmarks:account:\(user.id)")
+                }
+                await auth.signOut()
+            } catch {
+                self.deleteError = "アカウントを削除できませんでした。"
+            }
+        }
     }
 
     private func remove(_ row: RelationshipRow) {
@@ -70,4 +120,8 @@ struct SettingsView: View {
             pendingRelationship = nil
         }
     }
+}
+
+nonisolated struct DeleteAccountParams: Encodable, Sendable {
+    let expected_user_id: String
 }

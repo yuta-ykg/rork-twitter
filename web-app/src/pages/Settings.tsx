@@ -1,4 +1,9 @@
 import { useEffect, useState } from "react";
+import { deleteAccount } from "@/lib/account";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useAuth } from "@/hooks/useAuth";
 import { listUserRelationships, setUserRelationship, type UserRelationship } from "@/lib/userRelationships";
 import { DesktopSidebar } from "@/components/DesktopSidebar";
@@ -12,7 +17,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { themeOptions, useTheme, type Theme } from "@/hooks/useTheme";
 
 export default function SettingsPage() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  const [deleting, setDeleting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   const [relationships, setRelationships] = useState<UserRelationship[]>([]);
   const [relationshipError, setRelationshipError] = useState("");
   const [relationshipBusy, setRelationshipBusy] = useState(false);
@@ -32,6 +40,47 @@ export default function SettingsPage() {
       <h1 className="text-lg font-semibold">{t("設定")}</h1>
     </header>
     <section className="py-6">
+      <h2 className="text-xl font-semibold">{t("アカウント")}</h2>
+      {user ? (
+        <>
+          <p className="mt-4 text-sm text-muted-foreground">{t("メールアドレス")}</p>
+          <p className="mt-1 break-all text-base">{user.email || t("未設定")}</p>
+          {deleteError ? <p role="alert" className="mt-3 text-sm text-red-600">{t(deleteError)}</p> : null}
+          <AlertDialog open={confirmOpen} onOpenChange={(open) => { if (!deleting) setConfirmOpen(open); }}>
+            <AlertDialogTrigger asChild>
+              <button type="button" disabled={deleting}
+                className="mt-4 min-h-11 rounded-full border border-red-200 px-4 text-base font-semibold text-red-600 disabled:opacity-50">
+                {deleting ? t("削除中…") : t("アカウントを削除")}
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{t("アカウントを削除しますか？")}</AlertDialogTitle>
+                <AlertDialogDescription>{t("投稿、プロフィール、いいね、ブックマーク、通知が削除されます。この操作は取り消せません。")}</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={deleting}>{t("キャンセル")}</AlertDialogCancel>
+                <AlertDialogAction disabled={deleting} className="bg-red-600 text-white hover:bg-red-700"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    if (!user || deleting) return;
+                    const userId = user.id;
+                    setDeleting(true);
+                    setDeleteError("");
+                    void deleteAccount(userId)
+                      .then(() => { setConfirmOpen(false); signOut(); })
+                      .catch(() => { setConfirmOpen(false); setDeleteError("アカウントを削除できませんでした。"); })
+                      .finally(() => setDeleting(false));
+                  }}>
+                  {deleting ? t("削除中…") : t("削除する")}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </>
+      ) : <p className="mt-4 text-muted-foreground">{t("ログインしていません。")}</p>}
+    </section>
+    <section className="border-t border-border py-6">
       <h2 id="theme-label" className="text-xl font-semibold">{t("外観")}</h2>
       <p className="mb-5 mt-2 text-base text-muted-foreground">{t("システムを選ぶと端末の外観設定に合わせて切り替わります。")}</p>
       <RadioGroup aria-labelledby="theme-label" value={theme} onValueChange={(value) => setTheme(value as Theme)}>
