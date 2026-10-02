@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Fish } from "lucide-react";
 
+import { AppleMark, GoogleMark } from "@/components/BrandMarks";
 import { useAuth } from "@/hooks/useAuth";
 import { t, useLanguage } from "@/lib/language";
 
@@ -35,7 +36,12 @@ export default function LoginPage() {
           onClick={() => void signIn("google")}
           className="h-[52px] w-full rounded-full bg-[hsl(var(--brand))] text-[17px] font-semibold text-white transition active:scale-[0.98] disabled:opacity-40"
         >
-          {isSigningIn ? t("ログイン中…") : t("Googleで続ける")}
+          <span className="flex items-center justify-center gap-3">
+            <span className="grid h-7 w-7 place-items-center rounded-full bg-white">
+              <GoogleMark className="h-[18px] w-[18px]" />
+            </span>
+            {isSigningIn ? t("ログイン中…") : t("Googleで続ける")}
+          </span>
         </button>
         <button
           type="button"
@@ -43,7 +49,10 @@ export default function LoginPage() {
           onClick={() => void signIn("apple")}
           className="h-[52px] w-full rounded-full bg-black text-[17px] font-semibold text-white disabled:opacity-40"
         >
-          {t("Appleで続ける")}
+          <span className="flex items-center justify-center gap-3">
+            <AppleMark className="h-5 w-5" />
+            {t("Appleで続ける")}
+          </span>
         </button>
         <button
           type="button"

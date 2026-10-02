@@ -27,10 +27,14 @@ struct SignInView: View {
             Button {
                 Task { await auth.signIn(provider: "google") }
             } label: {
-                Text(L("Googleで続ける"))
-                    .font(.system(size: 17, weight: .semibold))
-                    .frame(maxWidth: .infinity)
-                    .frame(minHeight: 52)
+                HStack(spacing: 10) {
+                    GoogleMark()
+                        .frame(width: 22, height: 22)
+                    Text(L("Googleで続ける"))
+                }
+                .font(.system(size: 17, weight: .semibold))
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: 52)
             }
             .buttonStyle(.borderedProminent)
             .tint(Color.irukaBlue)
