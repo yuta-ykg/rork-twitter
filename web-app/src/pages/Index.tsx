@@ -1,3 +1,4 @@
+import { exportPostPdf } from "@/lib/postPdf";
 import { ReplyComposer } from "@/components/ReplyComposer";
 import { NotificationBell } from "@/components/NotificationBell";
 import { useNotifications, type AppNotification } from "@/hooks/useNotifications";
@@ -10,7 +11,7 @@ import { t, useLanguage } from "@/lib/language";
 import { LikeIconGlyph, useLikeIcon } from "@/hooks/useLikeIcon";
 import { isDevelopmentSession } from "@/lib/development";
 import { toast } from "sonner";
-import { Bookmark, Fish, House, MessageCircle, SquarePen, Settings, UserRound, X } from "lucide-react";
+import { Bookmark, Download, Fish, House, MessageCircle, SquarePen, Settings, UserRound, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 
@@ -474,7 +475,13 @@ export function PostPage() {
       </div>
       {post.parentId && <Link to={`/post/${post.parentId}`} className="inline-flex min-h-11 items-center text-[hsl(var(--brand))]">{t("返信先の投稿")}</Link>}
       <p className="mt-5 text-2xl font-semibold leading-snug">{post.body}</p>
-      <div className="mt-3 flex items-center gap-2"><LikeButton post={post} onClick={like} /><BookmarkButton postId={post.id} /></div>
+      <div className="mt-3 flex items-center gap-2">
+        <LikeButton post={post} onClick={like} /><BookmarkButton postId={post.id} />
+        <button type="button" onClick={() => { if (!exportPostPdf(post)) toast.error(t("PDFを開けませんでした。")); }}
+          aria-label={t("PDFとして出力")} className="grid min-h-11 min-w-11 place-items-center text-muted-foreground">
+          <Download className="h-5 w-5" aria-hidden />
+        </button>
+      </div>
       <div className="mt-6 grid grid-cols-2 border-t border-border pt-4">
         <div>
           <p className="text-[13px] text-muted-foreground">{t("投稿時刻")}</p>

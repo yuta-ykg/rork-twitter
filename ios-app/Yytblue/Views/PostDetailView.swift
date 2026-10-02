@@ -5,6 +5,8 @@ struct PostDetailView: View {
     @Environment(AuthManager.self) private var auth
     let initialPost: Post
     @Bindable var store: PostStore
+    @State private var exportedPDF: ExportedPostPDF?
+    @State private var pdfError = false
 
     private var post: Post {
         store.posts.first(where: { $0.id == initialPost.id }) ?? initialPost
@@ -44,6 +46,11 @@ struct PostDetailView: View {
                 HStack(spacing: 8) {
                     LikeButton(post: post) { store.toggleLike(id: post.id) }
                     BookmarkButton(postId: post.id)
+                    Button {
+                        do { exportedPDF = ExportedPostPDF(url: try PostPDFExporter.create(post)) }
+                        catch { pdfError = true }
+                    } label: { Image(systemName: "square.and.arrow.up").frame(minWidth: 44, minHeight: 44) }
+                    .accessibilityLabel(L("PDFとして出力"))
                 }
 
                 Divider()
@@ -72,6 +79,8 @@ struct PostDetailView: View {
         .background(Color.white)
         .task(id: post.id) { await store.refresh(userId: auth.user?.id) }
         .refreshable { await store.refresh(userId: auth.user?.id) }
+        .sheet(item: $exportedPDF) { file in PostPDFShareSheet(url: file.url) }
+        .alert(L("PDFを作成できませんでした。"), isPresented: $pdfError) { Button("OK") { pdfError = false } }
         .navigationTitle(L("投稿"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)

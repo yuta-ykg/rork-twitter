@@ -3,6 +3,8 @@ import { useLayoutEffect, useSyncExternalStore } from "react";
 export type Language = "ja" | "en";
 const key = "iruka-language";
 const english: Record<string, string> = {
+  "PDFとして出力": "Export as PDF",
+  "PDFを開けませんでした。": "Could not open the PDF preview.",
   "返信": "Replies",
   "返信する": "Reply",
   "返信本文": "Reply text",
