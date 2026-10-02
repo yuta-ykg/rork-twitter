@@ -25,6 +25,7 @@ private let englishMessages: [String: String] = [
     "ボトムバーの文字を表示": "Show bottom bar labels",
     "1人があなたの投稿にいいねしました。": "1 person liked your post.",
     "{count}人があなたの投稿にいいねしました。": "{count} people liked your post.",
+    "{name}さんがいいねしました。": "{name} liked your post.",
     "通知": "Notifications",
     "未読の通知": "Unread notifications",
     "自分の投稿へのいいねをお知らせします。": "Likes on your posts appear here.",

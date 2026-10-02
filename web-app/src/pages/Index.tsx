@@ -1,5 +1,5 @@
 import { NotificationBell } from "@/components/NotificationBell";
-import { useNotifications } from "@/hooks/useNotifications";
+import { useNotifications, type AppNotification } from "@/hooks/useNotifications";
 import { DesktopSidebar } from "@/components/DesktopSidebar";
 import { useDesktopNavigation } from "@/hooks/useDesktopNavigation";
 import { useBottomBarLabels } from "@/hooks/useBottomBarLabels";
@@ -548,8 +548,8 @@ export function NotificationsPage() {
     try { const post = await insertPost(body, user); navigate(`/post/${post.id}`); }
     catch { toast.error(t("投稿できませんでした。もう一度試してください。")); }
   }
-  async function openNotification(id: string, postId: string, before: string) {
-    try { await notifications.markRead(id, before); navigate(`/post/${postId}`); }
+  async function openNotification(item: AppNotification) {
+    try { await notifications.markRead(item); navigate(`/post/${item.post_id}`); }
     catch { toast.error(t("通知を既読にできませんでした。")); }
   }
   return <>
@@ -567,12 +567,12 @@ export function NotificationsPage() {
         notifications.error ? <div className="py-6"><p role="alert">{t("通知を読み込めませんでした。")}</p><button type="button" onClick={() => void notifications.refresh()} className="min-h-11 text-[hsl(var(--brand))]">{t("再読み込み")}</button></div> :
         notifications.rows.length ? <>
           {notifications.rows.map((item) => <button type="button" key={item.id} disabled={notifications.marking}
-            onClick={() => void openNotification(item.id, item.post_id, item.created_at)}
+            onClick={() => void openNotification(item)}
             className={`flex min-h-20 w-full gap-3 border-b border-border px-3 py-4 text-left disabled:opacity-50 ${item.read_at ? "" : "bg-muted/60"}`}>
             <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[hsl(var(--brand))]" style={{ opacity: item.read_at ? 0 : 1 }} aria-hidden />
             <span className="min-w-0">
               {!item.read_at && <span className="sr-only">{t("未読の通知")}: </span>}
-              <span className="block font-medium">{item.like_count === 1 ? t("1人があなたの投稿にいいねしました。") : t("{count}人があなたの投稿にいいねしました。").replace("{count}", item.like_count > 20 ? "20+" : String(item.like_count))}</span>
+              <span className="block font-medium">{item.is_grouped ? t("{count}人があなたの投稿にいいねしました。").replace("{count}", "20+") : t("{name}さんがいいねしました。").replace("{name}", item.actor_name ?? t("ユーザー"))}</span>
               <span className="mt-1 block break-words text-sm text-muted-foreground">{item.post_body}</span>
               <time dateTime={item.created_at} className="mt-2 block text-xs text-muted-foreground">{timeLabel(item.created_at)}</time>
             </span>

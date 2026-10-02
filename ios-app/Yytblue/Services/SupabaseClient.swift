@@ -109,6 +109,8 @@ nonisolated struct ImportBookmarksParams: Encodable, Sendable {
 }
 
 nonisolated struct NotificationRow: Decodable, Identifiable, Sendable {
+    let actorName: String?
+    let isGrouped: Bool
     let id: UUID
     let postId: UUID
     let likeCount: Int
@@ -123,6 +125,7 @@ nonisolated struct NotificationRow: Decodable, Identifiable, Sendable {
     }
     enum CodingKeys: String, CodingKey {
         case id
+        case actorName = "actor_name", isGrouped = "is_grouped"
         case postId = "post_id", likeCount = "like_count", postBody = "post_body"
         case createdAt = "created_at", readAt = "read_at", unreadCount = "unread_count"
     }
@@ -132,7 +135,7 @@ nonisolated struct NotificationQueryParams: Encodable, Sendable {
     let before_created_at: String?
     let before_id: UUID?
 }
-nonisolated struct NotificationReadParams: Encodable, Sendable {
+nonisolated struct GroupNotificationReadParams: Encodable, Sendable {
     let target_post_id: UUID
     let before_time: String
     let expected_user_id: String
@@ -142,3 +145,8 @@ nonisolated struct NotificationReadAllParams: Encodable, Sendable {
     let expected_user_id: String
 }
 
+
+nonisolated struct NotificationReadParams: Encodable, Sendable {
+    let notification_ids: [UUID]
+    let expected_user_id: String
+}

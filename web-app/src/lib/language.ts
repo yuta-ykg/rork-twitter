@@ -3,6 +3,7 @@ import { useLayoutEffect, useSyncExternalStore } from "react";
 export type Language = "ja" | "en";
 const key = "iruka-language";
 const english: Record<string, string> = {
+  "{name}さんがいいねしました。": "{name} liked your post.",
   "1人があなたの投稿にいいねしました。": "1 person liked your post.",
   "{count}人があなたの投稿にいいねしました。": "{count} people liked your post.",
   "通知": "Notifications",

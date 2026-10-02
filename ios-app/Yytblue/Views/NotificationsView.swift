@@ -39,7 +39,7 @@ struct NotificationsView: View {
                             Circle().fill(item.readAt == nil ? Color.irukaBlue : .clear)
                                 .frame(width: 8, height: 8).padding(.top, 6)
                             VStack(alignment: .leading, spacing: 6) {
-                                Text(L(item.likeCount == 1 ? "1人があなたの投稿にいいねしました。" : "{count}人があなたの投稿にいいねしました。").replacingOccurrences(of: "{count}", with: item.likeCount > 20 ? "20+" : String(item.likeCount)))
+                                Text(item.isGrouped ? L("{count}人があなたの投稿にいいねしました。").replacingOccurrences(of: "{count}", with: "20+") : L("{name}さんがいいねしました。").replacingOccurrences(of: "{name}", with: item.actorName ?? L("ユーザー")))
                                     .fontWeight(item.readAt == nil ? .semibold : .regular)
                                 Text(item.postBody).font(.subheadline).foregroundStyle(Color.irukaSecondary)
                                 Text(item.date, style: .date).font(.caption).foregroundStyle(Color.irukaSecondary)

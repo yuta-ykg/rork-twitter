@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 
 export type AppNotification = {
   id: string; post_id: string; post_body: string;
-  created_at: string; read_at: string | null; like_count: number; unread_count: number;
+  created_at: string; read_at: string | null; like_count: number; unread_count: number; actor_name: string | null; is_grouped: boolean;
 };
 type Cursor = { created_at: string; id: string } | null;
 export function useNotifications() {
@@ -34,10 +34,12 @@ export function useNotifications() {
     retry: 1,
   });
   const mutation = useMutation({
-    mutationFn: async (input: { id: string; before: string } | { before: string }) => {
+    mutationFn: async (input: { row: AppNotification } | { before: string }) => {
       if (!userId || !remote) throw new Error("Login required");
-      const result = "id" in input
-        ? await supabase.rpc("mark_post_notifications_read", { target_post_id: input.id, before_time: input.before, expected_user_id: userId })
+      const result = "row" in input
+        ? input.row.is_grouped
+          ? await supabase.rpc("mark_post_notifications_read", { target_post_id: input.row.post_id, before_time: input.row.created_at, expected_user_id: userId })
+          : await supabase.rpc("mark_notifications_read", { notification_ids: [input.row.id], expected_user_id: userId })
         : await supabase.rpc("mark_all_notifications_read", { before_time: input.before, expected_user_id: userId });
       if (result.error) throw result.error;
     },
@@ -49,7 +51,7 @@ export function useNotifications() {
     loading: remote && query.isPending, error: remote && query.isError,
     refresh: query.refetch, hasMore: remote && Boolean(query.hasNextPage),
     loadingMore: query.isFetchingNextPage, loadMore: query.fetchNextPage,
-    marking: mutation.isPending, markRead: (id: string, before: string) => mutation.mutateAsync({ id, before }),
+    marking: mutation.isPending, markRead: (row: AppNotification) => mutation.mutateAsync({ row }),
     markAllRead: () => rows[0] ? mutation.mutateAsync({ before: rows[0].created_at }) : Promise.resolve(),
   };
 }
