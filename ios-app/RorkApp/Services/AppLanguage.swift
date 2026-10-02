@@ -36,6 +36,8 @@ private let englishMessages: [String: String] = [
     "返信は1〜70文字で入力してください。": "Replies must contain 1–70 characters.",
     "まだ返信がありません。": "No replies yet.",
     "送信中…": "Sending…",
+    "PDFとして出力": "Export as PDF",
+    "PDFを作成できませんでした。": "Could not create the PDF.",
     "通知": "Notifications",
     "未読の通知": "Unread notifications",
     "自分の投稿へのいいねをお知らせします。": "Likes on your posts appear here.",
