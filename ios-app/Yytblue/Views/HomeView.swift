@@ -10,16 +10,25 @@ struct HomeView: View {
     var body: some View {
         List {
             Section {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(L("いま、みんなが書いている"))
-                        .font(.system(size: 28, weight: .bold))
-                        .foregroundStyle(Color.irukaInk)
-                    Text(L("70字までの短い投稿"))
-                        .font(.system(size: 16))
-                        .foregroundStyle(Color.irukaSecondary)
+                Button {
+                    if auth.user == nil { showsSignIn = true } else { showsComposer = true }
+                } label: {
+                    HStack(spacing: 12) {
+                        Text(auth.user?.initial ?? "い")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(Color.irukaInk.opacity(0.7))
+                            .frame(width: 36, height: 36)
+                            .background(Color.irukaBlue.opacity(0.12), in: Circle())
+                        Text(L("いまどうしてる？"))
+                            .font(.system(size: 17))
+                            .foregroundStyle(Color.irukaSecondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .padding(.vertical, 4)
                 }
+                .buttonStyle(.plain)
                 .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 12, trailing: 20))
+                .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
             }
 
             ForEach(store.timeline) { post in

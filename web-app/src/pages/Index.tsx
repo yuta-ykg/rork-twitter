@@ -319,8 +319,22 @@ export function HomePage() {
   return (
     <>
       <Shell tab="home" onCompose={() => (user ? setOpen(true) : setNeedsSignIn(true))}>
-        <h1 className="pt-4 text-[28px] font-bold leading-tight">{t("いま、みんなが書いている")}</h1>
-        <p className="mb-2 mt-1 text-base text-muted-foreground">{t("70字までの短い投稿")}</p>
+        {user ? (
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="mt-3 flex w-full items-center gap-3 rounded-2xl border border-input px-4 py-3 text-left transition active:scale-[0.99]"
+          >
+            <span
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-sm font-semibold text-[rgba(15,20,25,0.7)]"
+              style={{ backgroundColor: avatarFills[0] }}
+              aria-hidden
+            >
+              {displayName(user).slice(0, 1)}
+            </span>
+            <span className="text-base text-muted-foreground">{t("いまどうしてる？")}</span>
+          </button>
+        ) : null}
         {error ? <p className="mb-2 text-sm text-red-500">{error}</p> : null}
         {needsSignIn && !user ? (
           <SignInPanel title={t("ログインしてはじめる")} message={t("投稿するには、GoogleかAppleで入ってください。")} />
