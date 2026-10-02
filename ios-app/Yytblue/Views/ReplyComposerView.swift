@@ -34,7 +34,7 @@ struct ReplyComposerView: View {
                                 guard auth.user?.id == user.id else { pending = false; return }
                                 draft = ""; replyId = UUID()
                             } catch {
-                                if auth.user?.id == user.id { error = "返信を保存できませんでした。" }
+                                if auth.user?.id == user.id { self.error = "返信を保存できませんでした。" }
                             }
                             pending = false
                         }

@@ -87,7 +87,7 @@ final class BookmarkStore {
         } catch {
             guard generation == epoch else { return }
             loading = false
-            error = "ブックマークを読み込めませんでした。"
+            self.error = "ブックマークを読み込めませんでした。"
         }
     }
 
@@ -119,7 +119,7 @@ final class BookmarkStore {
                 ids = rows.map(\.postId)
                 error = nil
             } catch {
-                if generation == epoch { error = "ブックマークを保存できませんでした。" }
+                if generation == epoch { self.error = "ブックマークを保存できませんでした。" }
             }
         }
     }

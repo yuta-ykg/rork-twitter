@@ -1,5 +1,7 @@
 import Foundation
 import Observation
+import PostgREST
+import Supabase
 
 nonisolated struct RelationshipRow: Decodable, Sendable {
     let targetId: String
