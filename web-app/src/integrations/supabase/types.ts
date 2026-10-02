@@ -58,6 +58,7 @@ export type Database = {
       }
       posts: {
         Row: {
+          parent_id: string | null
           author_name: string
           avatar_index: number
           body: string
@@ -71,6 +72,7 @@ export type Database = {
         Insert: {
           author_name: string
           avatar_index?: number
+          parent_id?: string | null
           body: string
           created_at?: string
           handle: string
@@ -82,6 +84,7 @@ export type Database = {
         Update: {
           author_name?: string
           avatar_index?: number
+          parent_id?: string | null
           body?: string
           created_at?: string
           handle?: string
@@ -90,7 +93,7 @@ export type Database = {
           is_mine?: boolean
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [{ foreignKeyName: "posts_parent_id_fkey"; columns: ["parent_id"]; isOneToOne: false; referencedRelation: "posts"; referencedColumns: ["id"] }]
       }
       profiles: {
         Row: {
@@ -130,6 +133,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_reply: { Args: { reply_id: string; target_post_id: string; reply_body: string; expected_user_id: string }; Returns: Database["public"]["Tables"]["posts"]["Row"][] }
       get_notifications: {
         Args: { expected_user_id: string; before_created_at?: string; before_id?: string }
         Returns: { id: string; post_id: string; post_body: string; created_at: string; read_at: string | null; like_count: number; unread_count: number; actor_name: string | null; is_grouped: boolean }[]
