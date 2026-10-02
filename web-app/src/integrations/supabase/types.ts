@@ -18,23 +18,73 @@ export type Database = {
   }
   public: {
     Tables: {
-      user_relationships: {
-        Row: { user_id: string; target_id: string; kind: string; created_at: string }
-        Insert: { user_id: string; target_id: string; kind: string; created_at?: string }
-        Update: { user_id?: string; target_id?: string; kind?: string; created_at?: string }
-        Relationships: []
-      }
       notifications: {
-        Row: { id: string; recipient_id: string; actor_id: string; post_id: string; created_at: string; read_at: string | null }
-        Insert: { id?: string; recipient_id: string; actor_id: string; post_id: string; created_at?: string; read_at?: string | null }
-        Update: { id?: string; recipient_id?: string; actor_id?: string; post_id?: string; created_at?: string; read_at?: string | null }
-        Relationships: [{ foreignKeyName: "notifications_post_id_fkey"; columns: ["post_id"]; isOneToOne: false; referencedRelation: "posts"; referencedColumns: ["id"] }]
+        Row: {
+          actor_id: string
+          created_at: string
+          id: string
+          post_id: string
+          read_at: string | null
+          recipient_id: string
+        }
+        Insert: {
+          actor_id: string
+          created_at?: string
+          id?: string
+          post_id: string
+          read_at?: string | null
+          recipient_id: string
+        }
+        Update: {
+          actor_id?: string
+          created_at?: string
+          id?: string
+          post_id?: string
+          read_at?: string | null
+          recipient_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_post_id_actor_id_fkey"
+            columns: ["post_id", "actor_id"]
+            isOneToOne: false
+            referencedRelation: "post_likes"
+            referencedColumns: ["post_id", "user_id"]
+          },
+          {
+            foreignKeyName: "notifications_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       post_bookmarks: {
-        Row: { created_at: string; post_id: string; user_id: string }
-        Insert: { created_at?: string; post_id: string; user_id: string }
-        Update: { created_at?: string; post_id?: string; user_id?: string }
-        Relationships: [{ foreignKeyName: "post_bookmarks_post_id_fkey"; columns: ["post_id"]; isOneToOne: false; referencedRelation: "posts"; referencedColumns: ["id"] }]
+        Row: {
+          created_at: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_bookmarks_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       post_likes: {
         Row: {
@@ -64,7 +114,6 @@ export type Database = {
       }
       posts: {
         Row: {
-          parent_id: string | null
           author_name: string
           avatar_index: number
           body: string
@@ -73,33 +122,42 @@ export type Database = {
           id: string
           initial: string
           is_mine: boolean
+          parent_id: string | null
           user_id: string | null
         }
         Insert: {
           author_name: string
           avatar_index?: number
-          parent_id?: string | null
           body: string
           created_at?: string
           handle: string
           id?: string
           initial: string
           is_mine?: boolean
+          parent_id?: string | null
           user_id?: string | null
         }
         Update: {
           author_name?: string
           avatar_index?: number
-          parent_id?: string | null
           body?: string
           created_at?: string
           handle?: string
           id?: string
           initial?: string
           is_mine?: boolean
+          parent_id?: string | null
           user_id?: string | null
         }
-        Relationships: [{ foreignKeyName: "posts_parent_id_fkey"; columns: ["parent_id"]; isOneToOne: false; referencedRelation: "posts"; referencedColumns: ["id"] }]
+        Relationships: [
+          {
+            foreignKeyName: "posts_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -134,35 +192,82 @@ export type Database = {
         }
         Relationships: []
       }
+      user_relationships: {
+        Row: {
+          created_at: string
+          kind: string
+          target_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          kind: string
+          target_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          kind?: string
+          target_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      get_visible_posts: { Args: { expected_user_id?: string | null }; Returns: Database["public"]["Tables"]["posts"]["Row"][] }
-      create_post: { Args: { post_id: string; post_body: string; expected_user_id: string }; Returns: Database["public"]["Tables"]["posts"]["Row"][] }
-      get_user_relationship: { Args: { target_user_id: string; expected_user_id: string }; Returns: { is_muted: boolean; is_blocked: boolean }[] }
-      list_user_relationships: { Args: { expected_user_id: string }; Returns: { target_id: string; kind: string; target_name: string; target_handle: string | null }[] }
-      set_user_relationship: { Args: { target_user_id: string; relation_kind: string; active: boolean; expected_user_id: string }; Returns: { is_muted: boolean; is_blocked: boolean }[] }
-      create_reply: { Args: { reply_id: string; target_post_id: string; reply_body: string; expected_user_id: string }; Returns: Database["public"]["Tables"]["posts"]["Row"][] }
-      get_notifications: {
-        Args: { expected_user_id: string; before_created_at?: string; before_id?: string }
-        Returns: { id: string; post_id: string; post_body: string; created_at: string; read_at: string | null; like_count: number; unread_count: number; actor_name: string | null; is_grouped: boolean }[]
+      can_view_account: {
+        Args: { author_id: string; viewer_id: string }
+        Returns: boolean
       }
-      mark_post_notifications_read: { Args: { target_post_id: string; before_time: string; expected_user_id: string }; Returns: undefined }
-      mark_notifications_read: { Args: { notification_ids: string[]; expected_user_id: string }; Returns: undefined }
-      mark_all_notifications_read: { Args: { before_time: string; expected_user_id: string }; Returns: undefined }
-      get_post_bookmarks: {
-        Args: { expected_user_id: string }
-        Returns: { post_id: string; created_at: string }[]
+      create_post: {
+        Args: { expected_user_id: string; post_body: string; post_id: string }
+        Returns: {
+          author_name: string
+          avatar_index: number
+          body: string
+          created_at: string
+          handle: string
+          id: string
+          initial: string
+          is_mine: boolean
+          parent_id: string | null
+          user_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "posts"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
-      set_post_bookmark: {
-        Args: { expected_user_id: string; saved: boolean; target_post_id: string }
-        Returns: { post_id: string; created_at: string }[]
-      }
-      import_post_bookmarks: {
-        Args: { expected_user_id: string; post_ids: string[] }
-        Returns: { post_id: string; created_at: string }[]
+      create_reply: {
+        Args: {
+          expected_user_id: string
+          reply_body: string
+          reply_id: string
+          target_post_id: string
+        }
+        Returns: {
+          author_name: string
+          avatar_index: number
+          body: string
+          created_at: string
+          handle: string
+          id: string
+          initial: string
+          is_mine: boolean
+          parent_id: string | null
+          user_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "posts"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       ensure_profile: {
         Args: {
@@ -172,6 +277,31 @@ export type Database = {
           profile_name: string
         }
         Returns: undefined
+      }
+      get_notifications: {
+        Args: {
+          before_created_at?: string
+          before_id?: string
+          expected_user_id: string
+        }
+        Returns: {
+          actor_name: string
+          created_at: string
+          id: string
+          is_grouped: boolean
+          like_count: number
+          post_body: string
+          post_id: string
+          read_at: string
+          unread_count: number
+        }[]
+      }
+      get_post_bookmarks: {
+        Args: { expected_user_id: string }
+        Returns: {
+          created_at: string
+          post_id: string
+        }[]
       }
       get_post_likes: {
         Args: { post_ids: string[] }
@@ -193,6 +323,70 @@ export type Database = {
           post_count: number
         }[]
       }
+      get_user_relationship: {
+        Args: { expected_user_id: string; target_user_id: string }
+        Returns: {
+          is_blocked: boolean
+          is_muted: boolean
+        }[]
+      }
+      get_visible_posts: {
+        Args: { expected_user_id?: string }
+        Returns: {
+          author_name: string
+          avatar_index: number
+          body: string
+          created_at: string
+          handle: string
+          id: string
+          initial: string
+          is_mine: boolean
+          parent_id: string | null
+          user_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "posts"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      import_post_bookmarks: {
+        Args: { expected_user_id: string; post_ids: string[] }
+        Returns: {
+          created_at: string
+          post_id: string
+        }[]
+      }
+      is_blocked_pair: {
+        Args: { first_id: string; second_id: string }
+        Returns: boolean
+      }
+      list_user_relationships: {
+        Args: { expected_user_id: string }
+        Returns: {
+          kind: string
+          target_handle: string
+          target_id: string
+          target_name: string
+        }[]
+      }
+      mark_all_notifications_read: {
+        Args: { before_time: string; expected_user_id: string }
+        Returns: undefined
+      }
+      mark_notifications_read: {
+        Args: { expected_user_id: string; notification_ids: string[] }
+        Returns: undefined
+      }
+      mark_post_notifications_read: {
+        Args: {
+          before_time: string
+          expected_user_id: string
+          target_post_id: string
+        }
+        Returns: undefined
+      }
       save_profile: {
         Args: {
           expected_user_id: string
@@ -211,6 +405,17 @@ export type Database = {
           post_count: number
         }[]
       }
+      set_post_bookmark: {
+        Args: {
+          expected_user_id: string
+          saved: boolean
+          target_post_id: string
+        }
+        Returns: {
+          created_at: string
+          post_id: string
+        }[]
+      }
       set_post_like: {
         Args: {
           expected_user_id: string
@@ -221,6 +426,18 @@ export type Database = {
           is_liked: boolean
           like_count: number
           post_id: string
+        }[]
+      }
+      set_user_relationship: {
+        Args: {
+          active: boolean
+          expected_user_id: string
+          relation_kind: string
+          target_user_id: string
+        }
+        Returns: {
+          is_blocked: boolean
+          is_muted: boolean
         }[]
       }
       user_id: { Args: never; Returns: string }
@@ -356,4 +573,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-
