@@ -1,3 +1,6 @@
+import { DesktopSidebar } from "@/components/DesktopSidebar";
+import { useDesktopNavigation } from "@/hooks/useDesktopNavigation";
+import { useBottomBarLabels } from "@/hooks/useBottomBarLabels";
 import { BookmarkButton } from "@/components/BookmarkButton";
 import { useBookmarks } from "@/hooks/useBookmarks";
 import { t, useLanguage } from "@/lib/language";
@@ -6,7 +9,7 @@ import { isDevelopmentSession } from "@/lib/development";
 import { toast } from "sonner";
 import { Bookmark, Fish, House, SquarePen, Settings, UserRound, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 
 import { displayName, useAuth, userHandle } from "@/hooks/useAuth";
 import {
@@ -174,12 +177,23 @@ function Shell({
   useLanguage();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { showBottomBarLabels } = useBottomBarLabels();
+  const { useDesktopBottomBar } = useDesktopNavigation();
+  useEffect(() => {
+    if (location.state?.compose === true) {
+      navigate(location.pathname, { replace: true, state: null });
+      if (!user) navigate("/mine");
+      else onCompose();
+    }
+  }, [location.state, location.pathname, navigate, user, onCompose]);
   function compose() {
     if (!user) { navigate("/mine"); return; }
     onCompose();
   }
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col bg-background text-foreground">
+    <div className={`mx-auto flex min-h-dvh w-full max-w-[430px] flex-col bg-background text-foreground ${useDesktopBottomBar ? "" : "lg:max-w-[760px] lg:pl-[220px]"}`}>
+      {!useDesktopBottomBar && <DesktopSidebar tab={tab} onCompose={compose} />}
       <header className="sticky top-0 z-10 border-b border-border/80 bg-background/75 px-5 py-3 backdrop-blur-xl">
         <div className="flex items-center justify-between">
           <Wordmark />
@@ -189,23 +203,23 @@ function Shell({
         </div>
         {isDevelopmentSession() ? <p className="mt-1 text-sm text-muted-foreground">{t("開発モード・このブラウザに保存")}</p> : null}
       </header>
-      <main className="flex-1 px-5 pb-24">{children}</main>
-      <div className="fixed bottom-0 left-1/2 z-20 w-full max-w-[430px] -translate-x-1/2">
+      <main className={`flex-1 px-5 pb-24 ${useDesktopBottomBar ? "" : "lg:pb-8"}`}>{children}</main>
+      <div className={`fixed bottom-0 left-1/2 z-20 w-full max-w-[430px] -translate-x-1/2 ${useDesktopBottomBar ? "" : "lg:hidden"}`}>
         <nav aria-label={t("メインナビゲーション")} className="grid grid-cols-4 border-t border-border/60 bg-background/70 px-6 pb-[max(8px,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl">
-          <Link to="/" className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "home" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
-            <House className="h-5 w-5" />
-            {t("ホーム")}</Link>
+          <Link to="/" aria-label={t("ホーム")} className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "home" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
+            <House className="h-5 w-5" aria-hidden />
+            {showBottomBarLabels && <span>{t("ホーム")}</span>}</Link>
           <button type="button" onClick={compose} aria-label={t("投稿を作成")}
             className="flex min-h-11 flex-col items-center justify-center gap-0.5 text-sm text-[hsl(var(--brand))]">
             <SquarePen className="h-5 w-5" aria-hidden />
-            {t("投稿")}</button>
-          <Link to="/bookmarks" className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "bookmarks" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
+            {showBottomBarLabels && <span>{t("投稿")}</span>}</button>
+          <Link to="/bookmarks" aria-label={t("ブックマーク")} className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "bookmarks" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
             <Bookmark className="h-5 w-5" aria-hidden />
-            {t("ブックマーク")}
+            {showBottomBarLabels && <span>{t("ブックマーク")}</span>}
           </Link>
-          <Link to="/mine" className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "mine" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
-            <UserRound className="h-5 w-5" />
-            {t("自分")}</Link>
+          <Link to="/mine" aria-label={t("自分")} className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "mine" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
+            <UserRound className="h-5 w-5" aria-hidden />
+            {showBottomBarLabels && <span>{t("自分")}</span>}</Link>
         </nav>
       </div>
     </div>
