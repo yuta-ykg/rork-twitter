@@ -2,7 +2,9 @@ import SwiftUI
 
 struct HomeView: View {
     @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
+    @AppStorage("iruka-timeline-mode") private var timelineMode = "recommended"
     @Environment(AuthManager.self) private var auth
+    @Environment(BookmarkStore.self) private var bookmarks
     @Bindable var store: PostStore
     @Binding var showsComposer: Bool
     @Binding var showsSignIn: Bool
@@ -31,7 +33,22 @@ struct HomeView: View {
                 .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
             }
 
-            ForEach(store.timeline) { post in
+            Section {
+                Picker(L("タイムラインの表示順"), selection: $timelineMode) {
+                    Text(L("おすすめ")).tag("recommended")
+                    Text(L("新着順")).tag("latest")
+                }
+                .pickerStyle(.segmented)
+                if timelineMode == "recommended" {
+                    Text(L("いいね・ブックマーク・自分の投稿を手がかりに、話題の近い投稿を優先します。"))
+                        .font(.caption)
+                        .foregroundStyle(Color.irukaSecondary)
+                }
+            }
+            .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+
+            ForEach(timeline) { post in
                 VStack(alignment: .leading, spacing: 0) {
                     PostRowView(post: post)
                     HStack(spacing: 8) {
@@ -57,6 +74,11 @@ struct HomeView: View {
             }
         }
 
+    }
+
+    private var timeline: [Post] {
+        guard timelineMode != "latest" else { return store.timeline }
+        return TimelineRecommender.rank(posts: store.posts, bookmarkedIds: Set(bookmarks.ids))
     }
 
 }
@@ -134,4 +156,3 @@ struct MineView: View {
 
     }
 }
-

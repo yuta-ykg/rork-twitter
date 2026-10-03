@@ -53,6 +53,10 @@ func formatDate(_ date: Date, includeTime: Bool = true) -> String {
 }
 
 private let englishMessages: [String: String] = [
+  "おすすめ": "For you",
+  "新着順": "Latest",
+  "タイムラインの表示順": "Timeline order",
+  "いいね・ブックマーク・自分の投稿を手がかりに、話題の近い投稿を優先します。": "Recommendations use topics from your likes, bookmarks, and posts.",
   "コミュニティ、メンバー情報、すべての投稿が削除されます。この操作は取り消せません。": "The community, memberships and all its posts will be deleted. This cannot be undone.",
   "コミュニティ": "Communities",
   "誰でも閲覧・参加できます。投稿するには参加が必要です。": "Anyone can view and join. Join to post.",
@@ -343,6 +347,10 @@ private let englishMessages: [String: String] = [
     "Yesterday": "昨日"
 ]
 private let koreanMessages: [String: String] = [
+  "おすすめ": "추천",
+  "新着順": "최신순",
+  "タイムラインの表示順": "타임라인 정렬",
+  "いいね・ブックマーク・自分の投稿を手がかりに、話題の近い投稿を優先します。": "좋아요, 북마크, 내 게시물의 주제를 바탕으로 추천합니다.",
   "コミュニティ、メンバー情報、すべての投稿が削除されます。この操作は取り消せません。": "커뮤니티, 멤버 정보, 모든 게시물이 삭제됩니다. 이 작업은 되돌릴 수 없습니다.",
   "コミュニティ": "커뮤니티", "誰でも閲覧・参加できます。投稿するには参加が必要です。": "누구나 보고 참여할 수 있습니다. 게시하려면 먼저 참여하세요.",
   "コミュニティを利用するにはAppleかGoogleでログインしてください。": "커뮤니티를 이용하려면 Apple 또는 Google로 로그인하세요.",
@@ -385,6 +393,10 @@ private let koreanExtraMessages: [String: String] = [
     "設定からいつでもこのガイドを開けます。": "설정에서 언제든 이 안내를 열 수 있습니다.",
 ]
 private let simplifiedChineseMessages: [String: String] = [
+    "おすすめ": "为你推荐",
+    "新着順": "最新",
+    "タイムラインの表示順": "时间线排序",
+    "いいね・ブックマーク・自分の投稿を手がかりに、話題の近い投稿を優先します。": "根据你点赞、收藏和发帖的主题进行推荐。",
     "コミュニティ、メンバー情報、すべての投稿が削除されます。この操作は取り消せません。": "社区、成员信息和所有帖子都会被删除，此操作无法撤销。",
     "コミュニティ": "社区",
     "誰でも閲覧・参加できます。投稿するには参加が必要です。": "任何人都可以查看和加入。加入后才能发帖。",

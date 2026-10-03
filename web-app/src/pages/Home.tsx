@@ -3,9 +3,18 @@ import { toast } from "sonner";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/hooks/authContext";
 import { displayName, userHandle } from "@/hooks/authUser";
-import { avatarFills, fetchPosts, insertPost, sortTimeline, setPostLike, type Post } from "@/lib/posts";
+import { avatarFills, fetchPosts, insertPost, setPostLike, type Post } from "@/lib/posts";
+import { rankTimeline, type TimelineMode } from "@/lib/recommendations";
+import { useBookmarks } from "@/hooks/useBookmarks";
 import { Shell, Row, ComposeSheet, SignInPanel } from "@/pages/IndexShared";
 import { useOwnProfile } from "@/hooks/useOwnProfile";
+
+const timelineModeKey = "iruka-timeline-mode";
+
+function storedTimelineMode(): TimelineMode {
+  try { return localStorage.getItem(timelineModeKey) === "latest" ? "latest" : "recommended"; }
+  catch { return "recommended"; }
+}
 
 export default function HomePage() {
   useLanguage();
@@ -15,7 +24,14 @@ export default function HomePage() {
   const [needsSignIn, setNeedsSignIn] = useState(false);
   const own = useOwnProfile();
   const [error, setError] = useState("");
-  const timeline = useMemo(() => sortTimeline(posts), [posts]);
+  const { ids: bookmarkedIds } = useBookmarks(user?.id);
+  const [timelineMode, setTimelineMode] = useState<TimelineMode>(storedTimelineMode);
+  const timeline = useMemo(() => rankTimeline(posts, bookmarkedIds, timelineMode), [posts, bookmarkedIds, timelineMode]);
+
+  function chooseTimelineMode(mode: TimelineMode) {
+    setTimelineMode(mode);
+    try { localStorage.setItem(timelineModeKey, mode); } catch { /* Keep the selected mode for this visit. */ }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -73,6 +89,24 @@ export default function HomePage() {
         {needsSignIn && !user ? (
           <SignInPanel title={t("ログインしてはじめる")} message={t("投稿するには、GoogleかAppleで入ってください。")} />
         ) : null}
+        <section className="py-3" aria-label={t("タイムラインの表示順")}>
+          <div className="grid grid-cols-2 rounded-full bg-muted p-1" role="group" aria-label={t("タイムラインの表示順")}>
+            {(["recommended", "latest"] as const).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                aria-pressed={timelineMode === mode}
+                onClick={() => chooseTimelineMode(mode)}
+                className={`min-h-10 rounded-full px-3 text-sm font-medium transition ${timelineMode === mode ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
+              >
+                {t(mode === "recommended" ? "おすすめ" : "新着順")}
+              </button>
+            ))}
+          </div>
+          {timelineMode === "recommended" ? (
+            <p className="px-2 pt-2 text-xs text-muted-foreground">{t("いいね・ブックマーク・自分の投稿を手がかりに、話題の近い投稿を優先します。")}</p>
+          ) : null}
+        </section>
         {timeline.map((post) => (
           <Row key={post.id} post={post} showAuthor onLike={() => like(post.id)} />
         ))}
