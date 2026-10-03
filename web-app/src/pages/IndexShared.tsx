@@ -16,6 +16,9 @@ import { MAX_CHARACTERS, avatarFills, type Post } from "@/lib/posts";
 import { PollDraftEditor } from "@/components/PollDraftEditor";
 import { PostPollCard } from "@/components/PostPollCard";
 import { isPollDraftValid, type PollDraft } from "@/lib/polls";
+import { DiagnosisDraftEditor } from "@/components/DiagnosisDraftEditor";
+import { isDiagnosisDraftValid, newDiagnosisDraft, type DiagnosisDraft } from "@/lib/diagnoses";
+import { PostDiagnosisCard } from "@/components/PostDiagnosisCard";
 
 type Tab = "home" | "mine" | "bookmarks" | "notifications" | "search" | "lists" | "communities";
 
@@ -93,7 +96,7 @@ export function ComposeSheet({
   initial,
 }: {
   onClose: () => void;
-  onPost: (body: string, poll: PollDraft | null) => void;
+  onPost: (body: string, poll: PollDraft | null, diagnosis: DiagnosisDraft | null) => void;
   authorName: string;
   handle: string;
   initial: string;
@@ -101,8 +104,9 @@ export function ComposeSheet({
   useLanguage();
   const [draft, setDraft] = useState("");
   const [poll, setPoll] = useState<PollDraft | null>(null);
+  const [diagnosis, setDiagnosis] = useState<DiagnosisDraft | null>(null);
   const count = draft.length;
-  const canPost = draft.trim().length > 0 && count <= MAX_CHARACTERS && isPollDraftValid(poll);
+  const canPost = draft.trim().length > 0 && count <= MAX_CHARACTERS && isPollDraftValid(poll) && isDiagnosisDraftValid(diagnosis);
 
   return (
     <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/30 sm:items-center" role="presentation">
@@ -143,14 +147,21 @@ export function ComposeSheet({
         <p className={`mt-3 text-right font-mono text-[15px] ${count >= MAX_CHARACTERS ? "text-red-500" : "text-muted-foreground"}`}>
           {count} / {MAX_CHARACTERS}
         </p>
-        <PollDraftEditor value={poll} onChange={setPoll} />
+        <div className="mt-3">
+          <button type="button" aria-pressed={Boolean(diagnosis)}
+            onClick={() => { setDiagnosis((current) => current ? null : newDiagnosisDraft()); setPoll(null); }}
+            className={`min-h-11 rounded-full border px-4 text-sm font-semibold ${diagnosis ? "border-[hsl(var(--brand))] text-[hsl(var(--brand))]" : "border-input text-muted-foreground"}`}>
+            {t(diagnosis ? "診断を外す" : "診断を作る")}
+          </button>
+        </div>
+        {diagnosis ? <DiagnosisDraftEditor value={diagnosis} onChange={setDiagnosis} /> : <PollDraftEditor value={poll} onChange={setPoll} />}
         <div className="mt-4">
           <PostButton
             label={t("投稿する")}
             disabled={!canPost}
             onClick={() => {
               if (!canPost) return;
-              onPost(draft, poll);
+              onPost(draft, poll, diagnosis);
               onClose();
             }}
           />
@@ -245,6 +256,7 @@ export function Shell({
 
 export function Row({ post, showAuthor, onLike }: { post: Post; showAuthor: boolean; onLike: () => void | Promise<void> }) {
   useLanguage();
+  const navigate = useNavigate();
   return (
     <div className="border-b border-border py-3">
     {post.parentId && <Link to={`/post/${post.parentId}`} className="mb-2 inline-flex min-h-11 items-center text-sm text-muted-foreground">{t("返信先の投稿")}</Link>}
@@ -260,6 +272,7 @@ export function Row({ post, showAuthor, onLike }: { post: Post; showAuthor: bool
         ) : <span className="block text-base font-semibold">{post.authorName}</span>) : null}
         <Link to={`/post/${post.id}`} className="block text-base leading-snug">{post.body}</Link>
         {post.poll ? <PostPollCard postId={post.id} initialPoll={post.poll} /> : null}
+        {post.diagnosis ? <PostDiagnosisCard diagnosis={post.diagnosis} onShared={(shared) => navigate(`/post/${shared.id}`)} /> : null}
       </div>
     </div>
     <div className="ml-[58px] flex items-center gap-2"><LikeButton post={post} onClick={onLike} /><BookmarkButton postId={post.id} /><Link to={`/post/${post.id}`} aria-label={t("返信")} className="grid min-h-11 min-w-11 place-items-center text-muted-foreground"><MessageCircle className="h-5 w-5" aria-hidden /></Link></div>

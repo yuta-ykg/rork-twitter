@@ -4,6 +4,7 @@ import { ensureProfile, fetchProfiles } from "@/lib/profiles";
 import { hiddenDevelopmentUsers } from "@/lib/userRelationships";
 import { supabase } from "@/lib/supabase";
 import { fetchPostPolls, isPollDraftValid, pollFromDraft, type PollDraft, type PostPoll } from "@/lib/polls";
+import { fetchPostDiagnoses, isDiagnosisDraftValid, type DiagnosisDraft, type PostDiagnosis } from "@/lib/diagnoses";
 
 export const MAX_CHARACTERS = 70;
 
@@ -23,6 +24,7 @@ export type Post = {
   isLiked?: boolean;
   likeCount?: number;
   poll?: PostPoll | null;
+  diagnosis?: PostDiagnosis | null;
 };
 
 type Row = {
@@ -74,10 +76,11 @@ export async function fetchPosts(userId?: string | null): Promise<Post[]> {
   if (error) throw error;
   const posts = (data ?? []).map((row) => toPost(row, userId));
   if (posts.length === 0) return posts;
-  const [{ data: stats, error: likesError }, profiles, polls] = await Promise.all([
+  const [{ data: stats, error: likesError }, profiles, polls, diagnoses] = await Promise.all([
     supabase.rpc("get_post_likes", { post_ids: posts.map((post) => post.id) }),
     fetchProfiles(posts.flatMap((post) => post.userId ? [post.userId] : [])),
     fetchPostPolls(posts.map((post) => post.id), userId),
+    fetchPostDiagnoses(posts.map((post) => post.id), userId),
   ]);
   if (likesError) throw likesError;
   const profileById = new Map(profiles.map((profile) => [profile.id, profile]));
@@ -90,7 +93,8 @@ export async function fetchPosts(userId?: string | null): Promise<Post[]> {
       handle: profile?.handle ? `@${profile.handle}` : post.handle,
       initial: (profile?.name ?? post.authorName).slice(0, 1),
       likeCount: Number(stat?.like_count ?? 0), isLiked: Boolean(userId && stat?.is_liked),
-      poll: polls.get(post.id) ?? null };
+      poll: polls.get(post.id) ?? null,
+      diagnosis: diagnoses.get(post.id) ?? null };
   });
 }
 
@@ -98,8 +102,9 @@ export async function syncProfile(author: Author): Promise<void> {
   await ensureProfile(author);
 }
 
-export async function insertPost(body: string, author: Author, pollDraft: PollDraft | null = null): Promise<Post> {
+export async function insertPost(body: string, author: Author, pollDraft: PollDraft | null = null, diagnosisDraft: DiagnosisDraft | null = null): Promise<Post> {
   if (!isPollDraftValid(pollDraft)) throw new Error("投票の入力内容を確認してください。");
+  if (!isDiagnosisDraftValid(diagnosisDraft) || (pollDraft && diagnosisDraft)) throw new Error("診断の入力内容を確認してください。");
   if (isDevelopmentSession()) {
     const trimmed = body.trim();
     if (!trimmed || Array.from(trimmed).length > MAX_CHARACTERS) throw new Error("投稿は1〜70文字で入力してください。");
@@ -107,14 +112,30 @@ export async function insertPost(body: string, author: Author, pollDraft: PollDr
     const post: Post = { id: crypto.randomUUID(), userId: localUser().id, authorName: profile.name,
       handle: `@${profile.handle}`, initial: Array.from(profile.name)[0] ?? "開", body: trimmed,
       createdAt: new Date().toISOString(), isMine: true, avatarIndex: 0, isLiked: false, likeCount: 0,
-      poll: pollDraft ? pollFromDraft(pollDraft) : null };
+      poll: pollDraft ? pollFromDraft(pollDraft) : null,
+      diagnosis: diagnosisDraft ? {
+        ...diagnosisDraft, id: crypto.randomUUID(), creatorId: localUser().id, resultIndex: null, result: null,
+      } : null };
     writeDevelopmentPosts([post, ...readDevelopmentPosts()]);
     return post;
   }
   const trimmed = body.trim();
   await syncProfile(author);
   const postId = crypto.randomUUID();
-  const request = pollDraft ? supabase.rpc("create_post_with_poll", {
+  const diagnosisId = diagnosisDraft ? crypto.randomUUID() : null;
+  const request = diagnosisDraft ? supabase.rpc("create_post_with_diagnosis", {
+    post_id: postId,
+    post_body: trimmed,
+    diagnosis_id: diagnosisId!,
+    diagnosis_title: diagnosisDraft.title.trim(),
+    diagnosis_description: diagnosisDraft.description.trim(),
+    diagnosis_outcomes: diagnosisDraft.outcomes.map((outcome) => ({ title: outcome.title.trim(), description: outcome.description.trim() })),
+    diagnosis_questions: diagnosisDraft.questions.map((question) => ({
+      prompt: question.prompt.trim(),
+      options: question.options.map((option) => ({ text: option.text.trim(), result_index: option.resultIndex })),
+    })),
+    expected_user_id: author.id,
+  }) : pollDraft ? supabase.rpc("create_post_with_poll", {
     post_id: postId,
     post_body: trimmed,
     poll_kind: pollDraft.kind,
@@ -131,6 +152,38 @@ export async function insertPost(body: string, author: Author, pollDraft: PollDr
   if (error || !data?.[0]) throw error ?? new Error("投稿できませんでした");
   const post = toPost(data[0], author.id);
   if (pollDraft) post.poll = (await fetchPostPolls([post.id], author.id)).get(post.id) ?? null;
+  if (diagnosisDraft) post.diagnosis = (await fetchPostDiagnoses([post.id], author.id)).get(post.id) ?? null;
+  return post;
+}
+
+export async function shareDiagnosisResultPost(diagnosis: PostDiagnosis, resultIndex: number, author: Author): Promise<Post> {
+  const outcome = diagnosis.outcomes[resultIndex];
+  if (!outcome) throw new Error("診断結果が見つかりません。");
+  const body = Array.from(`診断結果：${outcome.title}（${diagnosis.title}）`).slice(0, MAX_CHARACTERS).join("");
+  const diagnosisWithResult = { ...diagnosis, resultIndex, result: outcome };
+  if (isDevelopmentSession()) {
+    const profile = readDevelopmentProfile();
+    const post: Post = {
+      id: crypto.randomUUID(), userId: localUser().id, authorName: profile.name,
+      handle: `@${profile.handle}`, initial: Array.from(profile.name)[0] ?? "開", body,
+      createdAt: new Date().toISOString(), isMine: true, avatarIndex: 0, isLiked: false, likeCount: 0,
+      diagnosis: diagnosisWithResult,
+    };
+    writeDevelopmentPosts([post, ...readDevelopmentPosts()]);
+    return post;
+  }
+  await syncProfile(author);
+  const postId = crypto.randomUUID();
+  const { data, error } = await supabase.rpc("create_diagnosis_result_post", {
+    post_id: postId,
+    post_body: body,
+    diagnosis_id: diagnosis.id,
+    result_index: resultIndex,
+    expected_user_id: author.id,
+  });
+  if (error || !data?.[0]) throw error ?? new Error("診断結果を投稿できませんでした。");
+  const post = toPost(data[0], author.id);
+  post.diagnosis = diagnosisWithResult;
   return post;
 }
 

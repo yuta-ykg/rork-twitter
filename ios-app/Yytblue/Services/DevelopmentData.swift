@@ -125,6 +125,7 @@ enum DevelopmentData {
             post.likedByMe = old.isLiked
             post.storedLikeCount = old.likeCount
             post.poll = old.poll
+            post.diagnosis = old.diagnosis
             return post
         }
     }

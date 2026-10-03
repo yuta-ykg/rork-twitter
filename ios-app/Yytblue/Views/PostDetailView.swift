@@ -57,6 +57,9 @@ struct PostDetailView: View {
                 if let poll = post.poll {
                     PostPollCard(postId: post.id, initialPoll: poll, store: store)
                 }
+                if let diagnosis = post.diagnosis {
+                    PostDiagnosisCard(initialDiagnosis: diagnosis, store: store)
+                }
 
                 HStack(spacing: 8) {
                     LikeButton(post: post) { store.toggleLike(id: post.id) }

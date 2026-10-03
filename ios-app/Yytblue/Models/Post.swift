@@ -17,6 +17,7 @@ nonisolated struct Post: Identifiable, Codable, Hashable, Sendable {
     var likedByMe: Bool? = nil
     var storedLikeCount: Int? = nil
     var poll: PostPoll? = nil
+    var diagnosis: PostDiagnosis? = nil
 
     var isLiked: Bool { likedByMe ?? false }
     var likeCount: Int { max(0, storedLikeCount ?? 0) }
@@ -131,6 +132,136 @@ nonisolated struct PollDraft: Hashable, Sendable {
                            feedback: kind == .quiz ? option.feedback.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty : nil,
                            voteCount: nil, selected: false)
         })
+    }
+}
+
+nonisolated struct DiagnosisOutcome: Codable, Hashable, Sendable, Identifiable {
+    var id: String { title }
+    let title: String
+    let description: String
+}
+
+nonisolated struct DiagnosisAnswer: Codable, Hashable, Sendable, Identifiable {
+    var id: String { "\(text)-\(resultIndex)" }
+    let text: String
+    let resultIndex: Int
+
+    enum CodingKeys: String, CodingKey {
+        case text
+        case resultIndex = "result_index"
+    }
+}
+
+nonisolated struct DiagnosisQuestion: Codable, Hashable, Sendable, Identifiable {
+    var id: String { prompt }
+    let prompt: String
+    let options: [DiagnosisAnswer]
+}
+
+nonisolated struct PostDiagnosis: Codable, Hashable, Sendable {
+    let id: UUID
+    let creatorId: String
+    let title: String
+    let diagnosisDescription: String
+    let outcomes: [DiagnosisOutcome]
+    let questions: [DiagnosisQuestion]
+    let resultIndex: Int?
+    let result: DiagnosisOutcome?
+
+    enum CodingKeys: String, CodingKey {
+        case id, title, outcomes, questions, result
+        case creatorId = "creator_id"
+        case diagnosisDescription = "description"
+        case resultIndex = "result_index"
+    }
+
+    func withResult(_ index: Int) -> PostDiagnosis {
+        PostDiagnosis(id: id, creatorId: creatorId, title: title, diagnosisDescription: diagnosisDescription,
+                      outcomes: outcomes, questions: questions, resultIndex: index,
+                      result: outcomes.indices.contains(index) ? outcomes[index] : nil)
+    }
+}
+
+nonisolated struct DiagnosisOutcomeDraft: Hashable, Sendable, Identifiable {
+    let id: UUID
+    var title: String
+    var description: String
+
+    init(id: UUID = UUID(), title: String = "", description: String = "") {
+        self.id = id
+        self.title = title
+        self.description = description
+    }
+}
+
+nonisolated struct DiagnosisAnswerDraft: Hashable, Sendable, Identifiable {
+    let id: UUID
+    var text: String
+    var resultIndex: Int
+
+    init(id: UUID = UUID(), text: String = "", resultIndex: Int = 0) {
+        self.id = id
+        self.text = text
+        self.resultIndex = resultIndex
+    }
+}
+
+nonisolated struct DiagnosisQuestionDraft: Hashable, Sendable, Identifiable {
+    let id: UUID
+    var prompt: String
+    var options: [DiagnosisAnswerDraft]
+
+    init(id: UUID = UUID(), prompt: String = "", options: [DiagnosisAnswerDraft] = [DiagnosisAnswerDraft(), DiagnosisAnswerDraft()]) {
+        self.id = id
+        self.prompt = prompt
+        self.options = options
+    }
+}
+
+nonisolated struct DiagnosisDraft: Hashable, Sendable {
+    var title: String
+    var description: String
+    var outcomes: [DiagnosisOutcomeDraft]
+    var questions: [DiagnosisQuestionDraft]
+
+    static var empty: DiagnosisDraft {
+        DiagnosisDraft(title: "", description: "", outcomes: [DiagnosisOutcomeDraft(), DiagnosisOutcomeDraft()],
+                       questions: [DiagnosisQuestionDraft()])
+    }
+
+    var isValid: Bool {
+        guard (1...60).contains(title.trimmingCharacters(in: .whitespacesAndNewlines).count), description.count <= 160,
+              (2...6).contains(outcomes.count), (1...10).contains(questions.count) else { return false }
+        guard outcomes.allSatisfy({
+            (1...40).contains($0.title.trimmingCharacters(in: .whitespacesAndNewlines).count) && $0.description.count <= 160
+        }) else { return false }
+        return questions.allSatisfy { question in
+            (1...120).contains(question.prompt.trimmingCharacters(in: .whitespacesAndNewlines).count) &&
+            (2...6).contains(question.options.count) && question.options.allSatisfy { answer in
+                (1...60).contains(answer.text.trimmingCharacters(in: .whitespacesAndNewlines).count) &&
+                outcomes.indices.contains(answer.resultIndex)
+            }
+        }
+    }
+
+    var encodedOutcomes: [DiagnosisOutcome] {
+        outcomes.map { DiagnosisOutcome(title: $0.title.trimmingCharacters(in: .whitespacesAndNewlines),
+                                        description: $0.description.trimmingCharacters(in: .whitespacesAndNewlines)) }
+    }
+
+    var encodedQuestions: [DiagnosisQuestion] {
+        questions.map { question in
+            DiagnosisQuestion(prompt: question.prompt.trimmingCharacters(in: .whitespacesAndNewlines),
+                options: question.options.map { DiagnosisAnswer(text: $0.text.trimmingCharacters(in: .whitespacesAndNewlines), resultIndex: $0.resultIndex) })
+        }
+    }
+
+    func makeDiagnosis(id: UUID = UUID(), creatorId: String) -> PostDiagnosis {
+        let cleanOutcomes = encodedOutcomes
+        return PostDiagnosis(id: id, creatorId: creatorId,
+            title: title.trimmingCharacters(in: .whitespacesAndNewlines),
+            diagnosisDescription: description.trimmingCharacters(in: .whitespacesAndNewlines),
+            outcomes: cleanOutcomes, questions: encodedQuestions, resultIndex: nil, result: nil)
     }
 }
 

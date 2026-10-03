@@ -33,6 +33,9 @@ struct PostRowView: View {
                 if let poll = post.poll {
                     PostPollCard(postId: post.id, initialPoll: poll, store: store)
                 }
+                if let diagnosis = post.diagnosis {
+                    PostDiagnosisCard(initialDiagnosis: diagnosis, store: store)
+                }
             }
             Spacer(minLength: 0)
         }
@@ -49,6 +52,156 @@ struct PostRowView: View {
                 .accessibilityLabel(L("プロフィール"))
         } else {
             content()
+        }
+    }
+}
+
+struct PostDiagnosisCard: View {
+    @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
+    @Environment(AuthManager.self) private var auth
+    let initialDiagnosis: PostDiagnosis
+    let store: PostStore
+    @State private var diagnosis: PostDiagnosis
+    @State private var questionIndex = 0
+    @State private var scores: [Int]
+    @State private var resultIndex: Int?
+    @State private var isShowingSharedResult: Bool
+    @State private var isSharing = false
+    @State private var shareMessage: String?
+
+    init(initialDiagnosis: PostDiagnosis, store: PostStore) {
+        self.initialDiagnosis = initialDiagnosis
+        self.store = store
+        _diagnosis = State(initialValue: initialDiagnosis)
+        _scores = State(initialValue: Array(repeating: 0, count: initialDiagnosis.outcomes.count))
+        _resultIndex = State(initialValue: initialDiagnosis.resultIndex)
+        _isShowingSharedResult = State(initialValue: initialDiagnosis.resultIndex != nil)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 11) {
+            HStack {
+                Label(L("診断"), systemImage: "sparkles")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(Color.irukaBlue)
+                Spacer()
+                Text("\(diagnosis.questions.count) \(L("問"))")
+                    .font(.system(size: 12))
+                    .foregroundStyle(Color.irukaSecondary)
+            }
+            Text(diagnosis.title)
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(Color.irukaInk)
+            if !diagnosis.diagnosisDescription.isEmpty {
+                Text(diagnosis.diagnosisDescription)
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color.irukaSecondary)
+            }
+            Text(L("遊び・エンタメ用の診断です。医療や病気の判定には使わないでください。"))
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(Color.orange)
+
+            if let resultIndex, diagnosis.outcomes.indices.contains(resultIndex) {
+                resultView(diagnosis.outcomes[resultIndex], isSharedResult: isShowingSharedResult)
+            } else if diagnosis.questions.indices.contains(questionIndex) {
+                let question = diagnosis.questions[questionIndex]
+                Text("\(L("質問")) \(questionIndex + 1) / \(diagnosis.questions.count)")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Color.irukaSecondary)
+                Text(question.prompt)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Color.irukaInk)
+                ForEach(Array(question.options.enumerated()), id: \.offset) { item in
+                    let answer = item.element
+                    Button { choose(answer.resultIndex) } label: {
+                        Text(answer.text)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(Color.irukaInk)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(11)
+                            .background(Color.irukaField, in: RoundedRectangle(cornerRadius: 10))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .padding(12)
+        .background(Color.white, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Color.irukaHairline, lineWidth: 1))
+        .onChange(of: initialDiagnosis) { _, updated in
+            diagnosis = updated
+            scores = Array(repeating: 0, count: updated.outcomes.count)
+            questionIndex = 0
+            resultIndex = updated.resultIndex
+            isShowingSharedResult = updated.resultIndex != nil
+        }
+        .alert(L("診断"), isPresented: Binding(get: { shareMessage != nil }, set: { if !$0 { shareMessage = nil } })) {
+            Button("OK") { shareMessage = nil }
+        } message: { Text(L(shareMessage ?? "")) }
+    }
+
+    private func resultView(_ outcome: DiagnosisOutcome, isSharedResult: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 9) {
+            Text(L(isSharedResult ? "この投稿者の結果" : "あなたの診断結果"))
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(Color.irukaSecondary)
+            Text(outcome.title)
+                .font(.system(size: 20, weight: .bold))
+                .foregroundStyle(Color.irukaInk)
+            if !outcome.description.isEmpty {
+                Text(outcome.description)
+                    .font(.system(size: 14))
+                    .foregroundStyle(Color.irukaInk)
+            }
+            if !isSharedResult {
+                Button(action: shareResult) {
+                    Text(L(isSharing ? "投稿中…" : "結果を投稿で共有"))
+                        .font(.system(size: 14, weight: .semibold))
+                        .frame(maxWidth: .infinity, minHeight: 42)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Color.irukaBlue)
+                .disabled(isSharing)
+            }
+            Button(L(isSharedResult ? "診断をやってみる" : "もう一度遊ぶ"), action: restart)
+                .font(.system(size: 13, weight: .semibold))
+        }
+        .padding(11)
+        .background(Color.irukaField, in: RoundedRectangle(cornerRadius: 11))
+    }
+
+    private func choose(_ index: Int) {
+        guard scores.indices.contains(index) else { return }
+        scores[index] += 1
+        if questionIndex + 1 == diagnosis.questions.count {
+            let highest = scores.max() ?? 0
+            resultIndex = scores.firstIndex(of: highest) ?? 0
+        } else {
+            questionIndex += 1
+        }
+    }
+
+    private func restart() {
+        questionIndex = 0
+        scores = Array(repeating: 0, count: diagnosis.outcomes.count)
+        resultIndex = nil
+        isShowingSharedResult = false
+    }
+
+    private func shareResult() {
+        guard let resultIndex, let user = auth.user else {
+            shareMessage = "結果を共有するにはログインしてください。"
+            return
+        }
+        isSharing = true
+        Task {
+            do {
+                _ = try await store.shareDiagnosisResult(diagnosis, resultIndex: resultIndex, user: user)
+                shareMessage = "診断結果を投稿しました。"
+            } catch {
+                shareMessage = "診断結果を投稿できませんでした。"
+            }
+            isSharing = false
         }
     }
 }

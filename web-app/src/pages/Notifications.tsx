@@ -10,6 +10,7 @@ import { insertPost, timeLabel } from "@/lib/posts";
 import { Shell, ComposeSheet, SignInPanel } from "@/pages/IndexShared";
 import { useOwnProfile } from "@/hooks/useOwnProfile";
 import type { PollDraft } from "@/lib/polls";
+import type { DiagnosisDraft } from "@/lib/diagnoses";
 
 export default function NotificationsPage() {
   useLanguage();
@@ -18,9 +19,9 @@ export default function NotificationsPage() {
   const own = useOwnProfile();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  async function add(body: string, poll: PollDraft | null) {
+  async function add(body: string, poll: PollDraft | null, diagnosis: DiagnosisDraft | null) {
     if (!user) return;
-    try { const post = await insertPost(body, user, poll); navigate(`/post/${post.id}`); }
+    try { const post = await insertPost(body, user, poll, diagnosis); navigate(`/post/${post.id}`); }
     catch { toast.error(t("投稿できませんでした。もう一度試してください。")); }
   }
   async function openNotification(item: AppNotification) {

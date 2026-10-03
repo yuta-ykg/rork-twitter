@@ -187,6 +187,40 @@ nonisolated struct SubmitPostPollResponseParams: Encodable, Sendable {
     let expected_user_id: String
 }
 
+nonisolated struct CreatePostWithDiagnosisParams: Encodable, Sendable {
+    let post_id: UUID
+    let post_body: String
+    let diagnosis_id: UUID
+    let diagnosis_title: String
+    let diagnosis_description: String
+    let diagnosis_outcomes: [DiagnosisOutcome]
+    let diagnosis_questions: [DiagnosisQuestion]
+    let expected_user_id: String
+}
+
+nonisolated struct GetPostDiagnosesParams: Encodable, Sendable {
+    let requested_post_ids: [UUID]
+    let expected_user_id: String?
+}
+
+nonisolated struct CreateDiagnosisResultPostParams: Encodable, Sendable {
+    let post_id: UUID
+    let post_body: String
+    let diagnosis_id: UUID
+    let result_index: Int
+    let expected_user_id: String
+}
+
+nonisolated struct PostDiagnosisRow: Decodable, Sendable {
+    let postId: UUID
+    let diagnosis: PostDiagnosis
+
+    enum CodingKeys: String, CodingKey {
+        case postId = "post_id"
+        case diagnosis
+    }
+}
+
 nonisolated struct PostPollRow: Decodable, Sendable {
     let postId: UUID
     let poll: PostPoll

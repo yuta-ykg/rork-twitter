@@ -12,6 +12,7 @@ import { SearchSupportNotice } from "@/components/SearchSupportNotice";
 import { CrimePreventionNotice } from "@/components/CrimePreventionNotice";
 import { ConsumerProtectionNotice } from "@/components/ConsumerProtectionNotice";
 import type { PollDraft } from "@/lib/polls";
+import type { DiagnosisDraft } from "@/lib/diagnoses";
 
 export default function SearchPage() {
   useLanguage();
@@ -57,10 +58,10 @@ export default function SearchPage() {
       }
     } catch { toast.error(t("いいねを保存できませんでした。もう一度試してください。")); }
   }
-  async function add(body: string, poll: PollDraft | null) {
+  async function add(body: string, poll: PollDraft | null, diagnosis: DiagnosisDraft | null) {
     if (!user) return;
     try {
-      const post = await insertPost(body, user, poll);
+      const post = await insertPost(body, user, poll, diagnosis);
       if (activeUser.current === user.id) setPosts((current) => [post, ...current]);
     } catch { toast.error(t("投稿できませんでした。もう一度試してください。")); }
   }

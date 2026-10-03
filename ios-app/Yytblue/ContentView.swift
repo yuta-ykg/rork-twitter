@@ -46,9 +46,9 @@ struct ContentView: View {
                 authorName: auth.user?.displayName ?? "あなた",
                 handle: auth.user?.handle ?? "@you",
                 initial: auth.user?.initial ?? "あ"
-            ) { body, poll in
+            ) { body, poll, diagnosis in
                 guard let user = auth.user else { return }
-                store.add(body: body, poll: poll, user: user)
+                store.add(body: body, poll: poll, diagnosis: diagnosis, user: user)
             }
         }
         .alert(L("投稿"), isPresented: Binding(

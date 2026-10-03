@@ -9,6 +9,7 @@ import { fetchPosts, insertPost, setPostLike, type Post } from "@/lib/posts";
 import { Shell, Row, ComposeSheet, SignInPanel } from "@/pages/IndexShared";
 import { useOwnProfile } from "@/hooks/useOwnProfile";
 import type { PollDraft } from "@/lib/polls";
+import type { DiagnosisDraft } from "@/lib/diagnoses";
 
 export default function BookmarksPage() {
   useLanguage();
@@ -44,11 +45,11 @@ export default function BookmarksPage() {
       if (activeUser.current === userId) setPosts((current) => current.map((item) => item.id === post.id ? { ...item, ...state } : item));
     } catch { toast.error(t("いいねを保存できませんでした。もう一度試してください。")); }
   }
-  async function add(body: string, poll: PollDraft | null) {
+  async function add(body: string, poll: PollDraft | null, diagnosis: DiagnosisDraft | null) {
     if (!user) return;
     const userId = user.id;
     try {
-      const post = await insertPost(body, user, poll);
+      const post = await insertPost(body, user, poll, diagnosis);
       if (activeUser.current === userId) setPosts((current) => [post, ...current]);
     } catch { toast.error(t("投稿できませんでした。もう一度試してください。")); }
   }

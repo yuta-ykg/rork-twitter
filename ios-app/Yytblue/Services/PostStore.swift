@@ -28,11 +28,44 @@ final class PostStore {
         return mine.filter { $0.createdAt >= start }.count
     }
 
-    func add(body: String, poll: PollDraft? = nil, user: AuthManager.User) {
+    func add(body: String, poll: PollDraft? = nil, diagnosis: DiagnosisDraft? = nil, user: AuthManager.User) {
         let trimmed = body.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, trimmed.count <= PostLimits.maxCharacters,
-              poll?.isValid ?? true else { return }
-        Task { await insert(trimmed, poll: poll, user: user) }
+              poll?.isValid ?? true, diagnosis?.isValid ?? true,
+              poll == nil || diagnosis == nil else { return }
+        Task { await insert(trimmed, poll: poll, diagnosis: diagnosis, user: user) }
+    }
+
+    func shareDiagnosisResult(_ diagnosis: PostDiagnosis, resultIndex: Int, user: AuthManager.User) async throws -> Post {
+        guard diagnosis.outcomes.indices.contains(resultIndex) else { throw NSError(domain: "Diagnosis", code: 1) }
+        let outcome = diagnosis.outcomes[resultIndex]
+        let shareText = String("診断結果：\(outcome.title)（\(diagnosis.title)）".prefix(PostLimits.maxCharacters))
+        let postId = UUID()
+        if DevelopmentData.isActive {
+            let profile = DevelopmentData.profile()
+            let post = Post(id: postId, authorName: profile.name, handle: "@" + (profile.handle ?? "developer"),
+                initial: String(profile.name.prefix(1)), body: shareText, createdAt: Date(), isMine: true,
+                avatarIndex: 0, userId: DevelopmentData.userId, avatarUrl: profile.avatarUrl,
+                diagnosis: diagnosis.withResult(resultIndex))
+            posts.insert(post, at: 0)
+            DevelopmentData.save(posts: posts)
+            return post
+        }
+        guard currentUserId == user.id else { throw NSError(domain: "Diagnosis", code: 2) }
+        let rows: [PostRow] = try await IrukaDatabase.client
+            .rpc("create_diagnosis_result_post", params: CreateDiagnosisResultPostParams(
+                post_id: postId, post_body: shareText, diagnosis_id: diagnosis.id,
+                result_index: resultIndex, expected_user_id: user.id
+            )).execute().value
+        guard let row = rows.first else { throw NSError(domain: "Diagnosis", code: 3) }
+        await refresh(userId: user.id)
+        if let post = posts.first(where: { $0.id == postId }) { return post }
+        let post = Post(id: row.id, authorName: user.displayName, handle: user.handle, initial: user.initial,
+            body: row.body, createdAt: row.createdAt, isMine: true, avatarIndex: row.avatarIndex,
+            userId: row.userId, parentId: row.parentId, avatarUrl: user.picture,
+            diagnosis: diagnosis.withResult(resultIndex))
+        posts.insert(post, at: 0)
+        return post
     }
 
     func submitPoll(postId: UUID, optionIds: [UUID], userId: String?) async throws -> PostPoll {
@@ -117,6 +150,7 @@ final class PostStore {
                 .value
             var stats: [PostLikeStats] = []
             var pollRows: [PostPollRow] = []
+            var diagnosisRows: [PostDiagnosisRow] = []
             if !rows.isEmpty {
                 stats = try await IrukaDatabase.client
                     .rpc("get_post_likes", params: LikeStatsParams(post_ids: rows.map(\.id)))
@@ -125,12 +159,17 @@ final class PostStore {
                     .rpc("get_post_polls", params: GetPostPollsParams(
                         requested_post_ids: rows.map(\.id), expected_user_id: userId
                     )).execute().value
+                diagnosisRows = try await IrukaDatabase.client
+                    .rpc("get_post_diagnoses", params: GetPostDiagnosesParams(
+                        requested_post_ids: rows.map(\.id), expected_user_id: userId
+                    )).execute().value
             }
             let profiles = try await ProfileService.fetch(ids: rows.compactMap(\.userId))
             guard currentUserId == userId else { return }
             let profileById = Dictionary(uniqueKeysWithValues: profiles.map { ($0.id, $0) })
             let likes = Dictionary(uniqueKeysWithValues: stats.map { ($0.postId, $0) })
             let polls = Dictionary(uniqueKeysWithValues: pollRows.map { ($0.postId, $0.poll) })
+            let diagnoses = Dictionary(uniqueKeysWithValues: diagnosisRows.map { ($0.postId, $0.diagnosis) })
             posts = rows.map { row in
                 let profile = row.userId.flatMap { profileById[$0] }
                 var post = Post(
@@ -151,6 +190,7 @@ final class PostStore {
                     post.storedLikeCount = like.likeCount
                 }
                 post.poll = polls[row.id]
+                post.diagnosis = diagnoses[row.id]
                 return post
             }
         } catch {
@@ -163,21 +203,31 @@ final class PostStore {
         try? await ProfileService.ensure(user)
     }
 
-    private func insert(_ body: String, poll: PollDraft?, user: AuthManager.User) async {
+    private func insert(_ body: String, poll: PollDraft?, diagnosis: DiagnosisDraft?, user: AuthManager.User) async {
         if user.id == DevelopmentData.userId && !DevelopmentData.isActive { return }
         if DevelopmentData.isActive {
             let profile = DevelopmentData.profile()
             let post = Post(id: UUID(), authorName: profile.name, handle: "@" + (profile.handle ?? "developer"),
                             initial: String(profile.name.prefix(1)), body: body, createdAt: Date(),
                             isMine: true, avatarIndex: 0, userId: DevelopmentData.userId, avatarUrl: profile.avatarUrl,
-                            poll: poll?.makePoll())
+                            poll: poll?.makePoll(), diagnosis: diagnosis?.makeDiagnosis(creatorId: DevelopmentData.userId))
             posts.insert(post, at: 0)
             DevelopmentData.save(posts: posts)
             return
         }
         await syncProfile(user)
         do {
-            if let poll {
+            if let diagnosis {
+                let _: [PostRow] = try await IrukaDatabase.client
+                    .rpc("create_post_with_diagnosis", params: CreatePostWithDiagnosisParams(
+                        post_id: UUID(), post_body: body, diagnosis_id: UUID(),
+                        diagnosis_title: diagnosis.title.trimmingCharacters(in: .whitespacesAndNewlines),
+                        diagnosis_description: diagnosis.description.trimmingCharacters(in: .whitespacesAndNewlines),
+                        diagnosis_outcomes: diagnosis.encodedOutcomes,
+                        diagnosis_questions: diagnosis.encodedQuestions,
+                        expected_user_id: user.id
+                    )).execute().value
+            } else if let poll {
                 let _: [PostRow] = try await IrukaDatabase.client
                     .rpc("create_post_with_poll", params: CreatePostWithPollParams(
                         post_id: UUID(), post_body: body, poll_kind: poll.kind.rawValue,

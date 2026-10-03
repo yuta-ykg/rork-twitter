@@ -144,6 +144,21 @@ export type Database = {
           { foreignKeyName: "post_polls_post_id_fkey"; columns: ["post_id"]; isOneToOne: true; referencedRelation: "posts"; referencedColumns: ["id"] },
         ]
       }
+      user_diagnoses: {
+        Row: { created_at: string; creator_id: string; description: string; id: string; outcomes: Json; questions: Json; title: string }
+        Insert: { created_at?: string; creator_id: string; description?: string; id?: string; outcomes: Json; questions: Json; title: string }
+        Update: { created_at?: string; creator_id?: string; description?: string; id?: string; outcomes?: Json; questions?: Json; title?: string }
+        Relationships: []
+      }
+      post_diagnosis_links: {
+        Row: { created_at: string; diagnosis_id: string; post_id: string; result_index: number | null }
+        Insert: { created_at?: string; diagnosis_id: string; post_id: string; result_index?: number | null }
+        Update: { created_at?: string; diagnosis_id?: string; post_id?: string; result_index?: number | null }
+        Relationships: [
+          { foreignKeyName: "post_diagnosis_links_diagnosis_id_fkey"; columns: ["diagnosis_id"]; isOneToOne: false; referencedRelation: "user_diagnoses"; referencedColumns: ["id"] },
+          { foreignKeyName: "post_diagnosis_links_post_id_fkey"; columns: ["post_id"]; isOneToOne: true; referencedRelation: "posts"; referencedColumns: ["id"] },
+        ]
+      }
       posts: {
         Row: {
           author_name: string
@@ -299,6 +314,47 @@ export type Database = {
         }[]
         SetofOptions: { from: "*"; to: "posts"; isOneToOne: false; isSetofReturn: true }
       }
+      create_post_with_diagnosis: {
+        Args: {
+          diagnosis_description: string
+          diagnosis_id: string
+          diagnosis_outcomes: Json
+          diagnosis_questions: Json
+          diagnosis_title: string
+          expected_user_id: string
+          post_body: string
+          post_id: string
+        }
+        Returns: {
+          author_name: string
+          avatar_index: number
+          body: string
+          created_at: string
+          handle: string
+          id: string
+          initial: string
+          is_mine: boolean
+          parent_id: string | null
+          user_id: string | null
+        }[]
+        SetofOptions: { from: "*"; to: "posts"; isOneToOne: false; isSetofReturn: true }
+      }
+      create_diagnosis_result_post: {
+        Args: { diagnosis_id: string; expected_user_id: string; post_body: string; post_id: string; result_index: number }
+        Returns: {
+          author_name: string
+          avatar_index: number
+          body: string
+          created_at: string
+          handle: string
+          id: string
+          initial: string
+          is_mine: boolean
+          parent_id: string | null
+          user_id: string | null
+        }[]
+        SetofOptions: { from: "*"; to: "posts"; isOneToOne: false; isSetofReturn: true }
+      }
       create_reply: {
         Args: {
           expected_user_id: string
@@ -379,6 +435,10 @@ export type Database = {
           post_id: string
           response_count: number
         }[]
+      }
+      get_post_diagnoses: {
+        Args: { expected_user_id?: string | null; requested_post_ids: string[] }
+        Returns: { diagnosis: Json; post_id: string }[]
       }
       get_public_profiles: {
         Args: { profile_ids: string[] }

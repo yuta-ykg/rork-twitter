@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/authContext";
 import { fetchPosts, timeLabel, setPostLike, type Post } from "@/lib/posts";
 import { Row, LikeButton, Avatar } from "@/pages/IndexShared";
 import { PostPollCard } from "@/components/PostPollCard";
+import { PostDiagnosisCard } from "@/components/PostDiagnosisCard";
 
 export default function PostPage() {
   useLanguage();
@@ -83,6 +84,7 @@ export default function PostPage() {
       {post.parentId && <Link to={`/post/${post.parentId}`} className="inline-flex min-h-11 items-center text-[hsl(var(--brand))]">{t("返信先の投稿")}</Link>}
       <p className="mt-5 text-2xl font-semibold leading-snug">{post.body}</p>
       {post.poll ? <PostPollCard postId={post.id} initialPoll={post.poll} /> : null}
+      {post.diagnosis ? <PostDiagnosisCard diagnosis={post.diagnosis} onShared={(shared) => navigate(`/post/${shared.id}`)} /> : null}
       <div className="mt-3 flex items-center gap-2">
         <LikeButton post={post} onClick={like} /><BookmarkButton postId={post.id} />
         <button type="button" onClick={() => { if (!exportPostPdf(post)) toast.error(t("PDFを開けませんでした。")); }}
