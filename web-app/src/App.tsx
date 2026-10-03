@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { t } from "@/lib/language";
 import LoginPage from "./pages/Login";
 import SettingsPage from "./pages/Settings";
+import FeatureGuidePage from "./pages/FeatureGuide";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import type { ReactNode } from "react";
@@ -51,6 +52,7 @@ const App = () => (
           <Route path="/search" element={<RequireAuth><SearchPage /></RequireAuth>} />
           <Route path="/profile/:id" element={<RequireAuth><ProfilePage /></RequireAuth>} />
           <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />
+          <Route path="/guide" element={<RequireAuth><FeatureGuidePage /></RequireAuth>} />
           <Route path="/notifications" element={<RequireAuth><NotificationsPage /></RequireAuth>} />
           <Route path="/bookmarks" element={<RequireAuth><BookmarksPage /></RequireAuth>} />
           <Route path="/mine" element={<RequireAuth><MinePage /></RequireAuth>} />

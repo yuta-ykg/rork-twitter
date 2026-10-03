@@ -77,6 +77,13 @@ struct SettingsView: View {
                 }
                 .pickerStyle(.inline)
             }
+            Section {
+                NavigationLink {
+                    FeatureGuideView()
+                } label: {
+                    Label(L("機能ガイド"), systemImage: "book.closed")
+                }
+            }
             Section(L("いいねアイコン")) {
                 Picker(L("アイコン"), selection: $likeIcon) {
                     ForEach(LikeIcon.allCases) { icon in

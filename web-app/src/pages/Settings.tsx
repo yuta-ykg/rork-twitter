@@ -146,6 +146,12 @@ export default function SettingsPage() {
         </label>)}
       </RadioGroup>
     </section>
+    <section className="border-t border-border py-6">
+      <Link to="/guide" className="flex min-h-14 items-center justify-between rounded-xl border border-border bg-card px-4 py-3 text-base">
+        <span className="font-semibold">{t("機能ガイド")}</span>
+        <span aria-hidden className="text-muted-foreground">›</span>
+      </Link>
+    </section>
     {user && <section className="border-t border-border py-6">
       <h2 className="mb-4 text-xl font-semibold">{t("ミュート・ブロック中のアカウント")}</h2>
       {relationshipError && <p role="alert" className="text-red-600">{t(relationshipError)}</p>}
