@@ -71,6 +71,9 @@ struct HomeView: View {
             }
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 14) {
+                    NavigationLink { RankingsView(store: store) } label: {
+                        Image(systemName: "chart.bar").accessibilityLabel(L("ランキング"))
+                    }
                     NavigationLink { DiagnosisLibraryView(store: store) } label: {
                         Image(systemName: "sparkles").accessibilityLabel(L("診断を探す"))
                     }

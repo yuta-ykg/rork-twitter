@@ -8,7 +8,7 @@ import { LikeIconGlyph } from "@/hooks/useLikeIcon";
 import { useLikeIcon } from "@/hooks/likeIconState";
 import { useDateDisplay } from "@/lib/dateDisplay";
 import { isDevelopmentSession, isGuestSession } from "@/lib/development";
-import { Bookmark, List, Fish, House, MessageCircle, Search, SquarePen, Settings, UserRound, UsersRound, X, Sparkles } from "lucide-react";
+import { Bookmark, List, Fish, House, MessageCircle, Search, SquarePen, Settings, UserRound, UsersRound, X, Sparkles, Trophy } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/authContext";
@@ -20,7 +20,7 @@ import { DiagnosisDraftEditor } from "@/components/DiagnosisDraftEditor";
 import { isDiagnosisDraftValid, newDiagnosisDraft, type DiagnosisDraft } from "@/lib/diagnoses";
 import { PostDiagnosisCard } from "@/components/PostDiagnosisCard";
 
-type Tab = "home" | "mine" | "bookmarks" | "notifications" | "search" | "lists" | "communities" | "diagnoses";
+type Tab = "home" | "mine" | "bookmarks" | "notifications" | "search" | "lists" | "communities" | "diagnoses" | "rankings";
 
 export function Avatar({ initial, index }: { initial: string; index: number }) {
   useLanguage();
@@ -205,6 +205,9 @@ export function Shell({
         <div className="flex items-center justify-between">
           <Wordmark />
           <div className="flex items-center">
+          <Link to="/rankings" aria-label={t("ランキング")} aria-current={tab === "rankings" ? "page" : undefined} className={`grid min-h-11 min-w-11 place-items-center ${tab === "rankings" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
+            <Trophy className="h-5 w-5" aria-hidden />
+          </Link>
           <Link to="/diagnoses" aria-label={t("診断を探す")} aria-current={tab === "diagnoses" ? "page" : undefined} className={`grid min-h-11 min-w-11 place-items-center ${tab === "diagnoses" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
             <Sparkles className="h-5 w-5" aria-hidden />
           </Link>
