@@ -11,6 +11,32 @@ enum AppLanguage: String, CaseIterable, Identifiable {
 }
 
 private let englishMessages: [String: String] = [
+  "リスト": "Lists",
+  "リストを作成": "Create list",
+  "リストを編集": "Edit list",
+  "リストを削除": "Delete list",
+  "リストを削除しますか？": "Delete this list?",
+  "リストとメンバー設定が削除されます。投稿は削除されません。": "The list and its membership settings will be deleted. Posts will remain.",
+  "リスト名（1〜40文字）": "List name (1–40 characters)",
+  "説明（160文字まで）": "Description (up to 160 characters)",
+  "メンバー": "Members",
+  "ユーザーを検索": "Search users",
+  "ユーザー名・表示名": "Username or display name",
+  "追加": "Add",
+  "リストから削除": "Remove from list",
+  "リストの投稿": "List posts",
+  "まだリストがありません。": "No lists yet.",
+  "ユーザーを追加すると投稿が表示されます。": "Add users to see their posts.",
+  "リストはこの端末に保存されます。": "Lists are saved on this device.",
+  "リストは自分だけに表示され、端末間で共有されます。": "Lists are private to you and synced across devices.",
+  "リストが見つかりません。": "List not found.",
+  "リストを読み込めませんでした。": "Could not load lists.",
+  "リストを保存できませんでした。": "Could not save the list.",
+  "リストを保存・読み込みできませんでした。": "Could not save or load lists.",
+  "ユーザーを検索できませんでした。": "Could not search users.",
+  "ユーザーが見つかりません。": "User not found.",
+  "リスト名は1〜40文字、説明は160文字以内で入力してください。": "List names must contain 1–40 characters and descriptions at most 160 characters.",
+
     "ブックマークはアカウントに保存され、端末間で共有されます。": "Bookmarks are saved to your account and synced across devices.",
     "開発モードのブックマークはこの端末に保存されます。": "Development bookmarks are saved on this device.",
     "ブックマーク": "Bookmarks",
@@ -224,4 +250,5 @@ struct AppLanguageModifier: ViewModifier {
         content.environment(\.locale, Locale(identifier: language == "en" ? "en" : "ja"))
     }
 }
+
 

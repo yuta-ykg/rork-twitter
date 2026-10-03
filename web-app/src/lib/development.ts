@@ -9,6 +9,7 @@ export const developerUser = { id: "00000000-0000-4000-8000-000000000001", email
 type SessionRecord = { kind: "dev" | "guest"; startedAt: number; id: string };
 const sessionKey = "iruka:development-session";
 const postsKey = "iruka:development-posts";
+const guestListOwnerKey = "iruka:guest-list-owner";
 const profileKey = "iruka:development-profile";
 
 function readSession(): SessionRecord | null {
@@ -47,7 +48,9 @@ export function startDevelopmentSession(): void {
 /** Starts a device-local guest session; data is deleted after GUEST_TTL_DAYS unless carried over. */
 export function startGuestSession(): { id: string; email: string; name: string } {
   clearLocalData();
-  writeSession({ kind: "guest", startedAt: Date.now(), id: crypto.randomUUID() });
+  const id = crypto.randomUUID();
+  localStorage.setItem(guestListOwnerKey, id);
+  writeSession({ kind: "guest", startedAt: Date.now(), id });
   return localUser();
 }
 export function endDevelopmentSession(): void {
@@ -55,6 +58,9 @@ export function endDevelopmentSession(): void {
 }
 /** Deletes device-local posts and profile data (guest sessions only). */
 export function clearLocalData(): void {
+  const guestId = localStorage.getItem(guestListOwnerKey);
+  if (guestId) localStorage.removeItem(`iruka:lists:${encodeURIComponent(guestId)}`);
+  localStorage.removeItem(guestListOwnerKey);
   localStorage.removeItem(postsKey);
   localStorage.removeItem(profileKey);
 }
@@ -98,3 +104,4 @@ export function writeDevelopmentProfile(profile: Profile): void {
   if (!isDevelopmentSession() || profile.id !== localUser().id) throw new Error("ローカルセッションではありません。");
   localStorage.setItem(profileKey, JSON.stringify(profile));
 }
+

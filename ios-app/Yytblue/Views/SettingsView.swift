@@ -105,6 +105,7 @@ struct SettingsView: View {
             defer { deleting = false }
             do {
                 if DevelopmentData.isActive {
+                    UserDefaults.standard.removeObject(forKey: "iruka-lists:\(user.id)")
                     UserDefaults.standard.removeObject(forKey: "iruka-development-posts")
                     UserDefaults.standard.removeObject(forKey: "iruka-development-profile")
                     UserDefaults.standard.removeObject(forKey: "iruka-relationships-" + user.id)
@@ -138,3 +139,4 @@ struct SettingsView: View {
 nonisolated struct DeleteAccountParams: Encodable, Sendable {
     let expected_user_id: String
 }
+

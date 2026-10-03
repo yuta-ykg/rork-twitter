@@ -1,3 +1,4 @@
+import ListsPage from "./pages/Lists";
 import { LikeIconProvider } from "@/hooks/useLikeIcon";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { useAuth } from "@/hooks/useAuth";
@@ -40,6 +41,8 @@ const App = () => (
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/" element={<RequireAuth><HomePage /></RequireAuth>} />
+          <Route path="/lists" element={<RequireAuth><ListsPage /></RequireAuth>} />
+          <Route path="/lists/:id" element={<RequireAuth><ListsPage /></RequireAuth>} />
           <Route path="/search" element={<RequireAuth><SearchPage /></RequireAuth>} />
           <Route path="/profile/:id" element={<RequireAuth><ProfilePage /></RequireAuth>} />
           <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />
@@ -58,3 +61,4 @@ const App = () => (
 );
 
 export default App;
+

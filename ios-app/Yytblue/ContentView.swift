@@ -5,6 +5,7 @@ struct ContentView: View {
     @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
     @Environment(AuthManager.self) private var auth
     @State private var store = PostStore()
+    @State private var lists = UserListStore()
     @State private var bookmarks = BookmarkStore()
     @State private var notifications = NotificationStore()
     @State private var relationships = RelationshipStore.shared
@@ -14,7 +15,7 @@ struct ContentView: View {
     @State private var selectedTab: MainTab = .home
     @State private var composeAfterLogin = false
 
-    private enum MainTab: Hashable { case home, compose, mine, bookmarks, notifications, settings }
+    private enum MainTab: Hashable { case home, compose, mine, bookmarks, notifications, lists, settings }
 
     var body: some View {
         Group {
@@ -95,12 +96,18 @@ struct ContentView: View {
             set: { if !$0 { notifications.readError = nil } }
         )) { Button("OK") { notifications.readError = nil } }
         message: { Text(L(notifications.readError ?? "")) }
+        .environment(lists)
+        .task(id: auth.user?.id) {
+            lists.configure(userId: auth.user?.id)
+            await lists.refresh()
+        }
         .environment(bookmarks)
         .environment(relationships)
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { Task { await relationships.refresh(); await store.refresh(userId: auth.user?.id); await bookmarks.refresh(); await notifications.refresh() } }
+            if phase == .active { Task { await relationships.refresh(); await store.refresh(userId: auth.user?.id); await bookmarks.refresh(); await notifications.refresh(); await lists.refresh() } }
         }
         .onChange(of: auth.user?.id) { _, newValue in
+            lists.configure(userId: newValue)
             bookmarks.configure(userId: newValue)
             relationships.configure(userId: newValue)
             notifications.configure(userId: newValue)
@@ -157,6 +164,13 @@ struct ContentView: View {
                             ProfileView(profileId: route.id, store: store)
                         }
             }
+            Tab(L("リスト"), systemImage: "list.bullet.rectangle", value: MainTab.lists) {
+                NavigationStack {
+                    UserListsView(store: store)
+                        .navigationDestination(for: Post.self) { post in PostDetailView(initialPost: post, store: store) }
+                        .navigationDestination(for: ProfileRoute.self) { route in ProfileView(profileId: route.id, store: store) }
+                }
+            }
             Tab(L("設定"), systemImage: "gearshape", value: MainTab.settings) {
                 NavigationStack { SettingsView() }
             }
@@ -169,6 +183,7 @@ struct ContentView: View {
                 bottomBarButton(.mine, title: "自分", symbol: "person.fill")
                 bottomBarButton(.bookmarks, title: "ブックマーク", symbol: "bookmark.fill")
                 bottomBarButton(.notifications, title: "通知", symbol: "bell.fill")
+                bottomBarButton(.lists, title: "リスト", symbol: "list.bullet.rectangle")
                 bottomBarButton(.settings, title: "設定", symbol: "gearshape")
             }
             .padding(.horizontal, 8)
@@ -216,3 +231,4 @@ struct ContentView: View {
     ContentView()
         .environment(AuthManager())
 }
+

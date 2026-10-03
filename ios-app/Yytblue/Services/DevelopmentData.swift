@@ -39,9 +39,11 @@ enum DevelopmentData {
     }
     /// 端末ローカルのゲストセッションを開始する。データは引き継がない限り30日で削除される。
     static func startGuest() {
+        if let guest = guestSession() { UserDefaults.standard.removeObject(forKey: "iruka-lists:\(guest.id)") }
         UserDefaults.standard.removeObject(forKey: "iruka-development-posts")
         UserDefaults.standard.removeObject(forKey: "iruka-development-profile")
         let session = GuestSession(id: UUID().uuidString, startedAt: Date())
+        UserDefaults.standard.set(session.id, forKey: "iruka-guest-list-owner")
         if let data = try? JSONEncoder().encode(session) {
             UserDefaults.standard.set(data, forKey: "iruka-guest-session")
         }
@@ -52,6 +54,10 @@ enum DevelopmentData {
     }
     /// ゲストの投稿・プロフィール・セッションをすべて削除する。
     static func clearGuestData() {
+        if let owner = UserDefaults.standard.string(forKey: "iruka-guest-list-owner") {
+            UserDefaults.standard.removeObject(forKey: "iruka-lists:\(owner)")
+        }
+        UserDefaults.standard.removeObject(forKey: "iruka-guest-list-owner")
         end()
         UserDefaults.standard.removeObject(forKey: "iruka-development-posts")
         UserDefaults.standard.removeObject(forKey: "iruka-development-profile")
@@ -122,3 +128,4 @@ enum DevelopmentData {
         }
     }
 }
+
