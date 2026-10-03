@@ -7,6 +7,8 @@ import { displayName, userHandle } from "@/hooks/authUser";
 import { fetchPosts, insertPost, sortTimeline, setPostLike, type Post } from "@/lib/posts";
 import { Shell, Row, ComposeSheet } from "@/pages/IndexShared";
 import { useOwnProfile } from "@/hooks/useOwnProfile";
+import { isSupportSearchQuery } from "@/lib/safetySearch";
+import { SearchSupportNotice } from "@/components/SearchSupportNotice";
 
 export default function SearchPage() {
   useLanguage();
@@ -77,6 +79,7 @@ export default function SearchPage() {
             />
           </div>
         </div>
+        {isSupportSearchQuery(query) ? <SearchSupportNotice /> : null}
         {error ? <p role="alert" className="mt-4 text-sm text-red-500">{t(error)}</p> : null}
         {loading ? <p role="status" className="py-10 text-muted-foreground">{t("読み込み中…")}</p> :
           !keyword ? <p className="py-10 text-center text-muted-foreground">{t("ユーザー名や本文のキーワードで投稿を探せます。")}</p> :

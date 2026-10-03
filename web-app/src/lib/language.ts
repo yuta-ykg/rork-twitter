@@ -3,6 +3,10 @@ import { useLayoutEffect, useSyncExternalStore } from "react";
 export type Language = "ja" | "en" | "ko" | "zh-CN" | "zh-TW";
 const key = "iruka-language";
 const english: Record<string, string> = {
+  "少しでもつらさを感じているなら、ひとりで抱えなくて大丈夫です。": "If you're hurting, you don't have to face it alone.",
+  "この検索がご自身の気持ちに関係している場合は、信頼できる人に今の気持ちを伝えてみてください。": "If this search relates to how you're feeling, consider telling someone you trust what you're going through.",
+  "今すぐ自分や誰かの安全を保てないと感じる場合は、地域の緊急サービスに連絡するか、近くにいる人に助けを求めてください。": "If you or someone else may be in immediate danger, contact local emergency services or ask someone nearby for help now.",
+  "日本の相談窓口（厚生労働省）を見る": "View Japan's Ministry of Health support resources",
   "おすすめ": "For you",
   "新着順": "Latest",
   "タイムラインの表示順": "Timeline order",
@@ -323,6 +327,10 @@ const english: Record<string, string> = {
   "Yesterday": "昨日"
 };
 const korean: Record<string, string> = {
+  "少しでもつらさを感じているなら、ひとりで抱えなくて大丈夫です。": "힘들다면 혼자 감당하지 않아도 괜찮습니다.",
+  "この検索がご自身の気持ちに関係している場合は、信頼できる人に今の気持ちを伝えてみてください。": "이 검색이 지금의 마음과 관련이 있다면, 믿을 수 있는 사람에게 현재 느끼는 감정을 이야기해 보세요.",
+  "今すぐ自分や誰かの安全を保てないと感じる場合は、地域の緊急サービスに連絡するか、近くにいる人に助けを求めてください。": "지금 자신이나 다른 사람의 안전이 위태롭다면 현지 긴급기관에 연락하거나 가까운 사람에게 바로 도움을 요청하세요.",
+  "日本の相談窓口（厚生労働省）を見る": "일본 후생노동성 상담 안내 보기",
   "おすすめ": "추천",
   "新着順": "최신순",
   "タイムラインの表示順": "타임라인 정렬",
@@ -369,6 +377,10 @@ const koreanExtraMessages: Record<string, string> = {
   "設定からいつでもこのガイドを開けます。": "설정에서 언제든 이 안내를 열 수 있습니다.",
 };
 const simplifiedChinese: Record<string, string> = {
+  "少しでもつらさを感じているなら、ひとりで抱えなくて大丈夫です。": "如果你感到难受，不必独自承受。",
+  "この検索がご自身の気持ちに関係している場合は、信頼できる人に今の気持ちを伝えてみてください。": "如果这次搜索与你的感受有关，可以试着告诉一位你信任的人此刻的心情。",
+  "今すぐ自分や誰かの安全を保てないと感じる場合は、地域の緊急サービスに連絡するか、近くにいる人に助けを求めてください。": "如果你或他人正面临紧急危险，请立即联系当地紧急服务，或向身边的人求助。",
+  "日本の相談窓口（厚生労働省）を見る": "查看日本厚生劳动省的咨询资源",
   "おすすめ": "为你推荐",
   "新着順": "最新",
   "タイムラインの表示順": "时间线排序",
