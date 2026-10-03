@@ -3,6 +3,10 @@ import { useLayoutEffect, useSyncExternalStore } from "react";
 export type Language = "ja" | "en" | "ko" | "zh-CN" | "zh-TW";
 const key = "iruka-language";
 const english: Record<string, string> = {
+  "不審な求人や犯罪への勧誘には注意してください。": "Be cautious of suspicious job offers and recruitment into crime.",
+  "仕事内容が不明な高額報酬の募集や、荷物・現金の受け取り、口座や携帯電話の提供を求める依頼には応じず、個人情報も送らないでください。": "Avoid offers with unclear duties that promise unusually high pay, or ask you to collect packages or cash, or provide a bank account or phone. Do not share personal information.",
+  "すでに応募した、脅されている、被害に遭った場合は、やり取りを消さず、警察や信頼できる人に相談してください。身の危険が差し迫っている場合は、地域の警察・緊急窓口に連絡してください。": "If you already responded, are being threatened, or have been harmed, keep the messages and contact the police or someone you trust. If anyone is in immediate danger, contact local police or emergency services.",
+  "警察庁「闇バイト」注意情報を見る": "View Japan National Police Agency information on illegal recruitment",
   "少しでもつらさを感じているなら、ひとりで抱えなくて大丈夫です。": "If you're hurting, you don't have to face it alone.",
   "この検索がご自身の気持ちに関係している場合は、信頼できる人に今の気持ちを伝えてみてください。": "If this search relates to how you're feeling, consider telling someone you trust what you're going through.",
   "今すぐ自分や誰かの安全を保てないと感じる場合は、地域の緊急サービスに連絡するか、近くにいる人に助けを求めてください。": "If you or someone else may be in immediate danger, contact local emergency services or ask someone nearby for help now.",
@@ -327,6 +331,10 @@ const english: Record<string, string> = {
   "Yesterday": "昨日"
 };
 const korean: Record<string, string> = {
+  "不審な求人や犯罪への勧誘には注意してください。": "수상한 구인이나 범죄 가담 권유에 주의하세요.",
+  "仕事内容が不明な高額報酬の募集や、荷物・現金の受け取り、口座や携帯電話の提供を求める依頼には応じず、個人情報も送らないでください。": "업무 내용이 불분명한 고액 보수 구인이나 물품·현금 수령, 계좌·휴대전화 제공 요청에 응하지 말고 개인정보도 보내지 마세요.",
+  "すでに応募した、脅されている、被害に遭った場合は、やり取りを消さず、警察や信頼できる人に相談してください。身の危険が差し迫っている場合は、地域の警察・緊急窓口に連絡してください。": "이미 지원했거나 협박을 받거나 피해를 입었다면 대화 기록을 지우지 말고 경찰이나 믿을 수 있는 사람에게 상담하세요. 신변에 급박한 위험이 있으면 현지 경찰이나 긴급기관에 연락하세요.",
+  "警察庁「闇バイト」注意情報を見る": "일본 경찰청의 불법 구인 주의 정보 보기",
   "少しでもつらさを感じているなら、ひとりで抱えなくて大丈夫です。": "힘들다면 혼자 감당하지 않아도 괜찮습니다.",
   "この検索がご自身の気持ちに関係している場合は、信頼できる人に今の気持ちを伝えてみてください。": "이 검색이 지금의 마음과 관련이 있다면, 믿을 수 있는 사람에게 현재 느끼는 감정을 이야기해 보세요.",
   "今すぐ自分や誰かの安全を保てないと感じる場合は、地域の緊急サービスに連絡するか、近くにいる人に助けを求めてください。": "지금 자신이나 다른 사람의 안전이 위태롭다면 현지 긴급기관에 연락하거나 가까운 사람에게 바로 도움을 요청하세요.",
@@ -377,6 +385,10 @@ const koreanExtraMessages: Record<string, string> = {
   "設定からいつでもこのガイドを開けます。": "설정에서 언제든 이 안내를 열 수 있습니다.",
 };
 const simplifiedChinese: Record<string, string> = {
+  "不審な求人や犯罪への勧誘には注意してください。": "请警惕可疑招聘和诱骗参与犯罪的招募。",
+  "仕事内容が不明な高額報酬の募集や、荷物・現金の受け取り、口座や携帯電話の提供を求める依頼には応じず、個人情報も送らないでください。": "不要回应工作内容不明却承诺高额报酬，或要求代收包裹、现金以及提供银行账户或手机的招聘，也不要发送个人信息。",
+  "すでに応募した、脅されている、被害に遭った場合は、やり取りを消さず、警察や信頼できる人に相談してください。身の危険が差し迫っている場合は、地域の警察・緊急窓口に連絡してください。": "如果你已经应聘、受到威胁或遭受损害，请保留相关对话，并向警方或信任的人求助。如有人正面临紧迫危险，请联系当地警方或紧急服务。",
+  "警察庁「闇バイト」注意情報を見る": "查看日本警察厅关于非法招募的警示信息",
   "少しでもつらさを感じているなら、ひとりで抱えなくて大丈夫です。": "如果你感到难受，不必独自承受。",
   "この検索がご自身の気持ちに関係している場合は、信頼できる人に今の気持ちを伝えてみてください。": "如果这次搜索与你的感受有关，可以试着告诉一位你信任的人此刻的心情。",
   "今すぐ自分や誰かの安全を保てないと感じる場合は、地域の緊急サービスに連絡するか、近くにいる人に助けを求めてください。": "如果你或他人正面临紧急危险，请立即联系当地紧急服务，或向身边的人求助。",
