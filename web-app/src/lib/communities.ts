@@ -9,8 +9,8 @@ export type Community = { id: string; owner_id: string; name: string; descriptio
 export type CommunityRole = "owner" | "moderator" | "member";
 export type CommunityMember = { id: string; name: string; handle: string | null; status: "joined" | "removed"; is_owner: boolean; role: CommunityRole };
 export type CommunityPost = { id: string; user_id: string; body: string; created_at: string; author_name: string; handle: string | null };
-export type CommunitySnapshot = { community: Community; membership: "joined" | "removed" | null; role: CommunityRole | null; members: CommunityMember[]; posts: CommunityPost[]; has_more: boolean };
-export type CommunityOperation = "create" | "update" | "delete" | "join" | "leave" | "promote" | "demote" | "remove" | "restore" | "post" | "delete_post";
+export type CommunitySnapshot = { community: Community; membership: "joined" | "removed" | null; role: CommunityRole | null; members: CommunityMember[]; pinned_post: CommunityPost | null; posts: CommunityPost[]; has_more: boolean };
+export type CommunityOperation = "create" | "update" | "delete" | "join" | "leave" | "promote" | "demote" | "remove" | "restore" | "post" | "pin_post" | "unpin_post" | "delete_post";
 type CommunityDatabase = Omit<Database, "public"> & { public: Omit<Database["public"], "Functions"> & { Functions: Database["public"]["Functions"] & {
   find_communities: { Args: { keyword: string; joined_only: boolean }; Returns: Community[] };
   get_community: { Args: { target_community_id: string; before_created_at?: string; before_id?: string }; Returns: CommunitySnapshot | null };

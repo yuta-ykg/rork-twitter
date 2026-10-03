@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { isDevelopmentSession } from "@/lib/development";
 import { t, useLanguage } from "@/lib/language";
-import { findCommunities, getCommunity, manageCommunity, type Community, type CommunityOperation, type CommunitySnapshot } from "@/lib/communities";
+import { findCommunities, getCommunity, manageCommunity, type Community, type CommunityOperation, type CommunityPost, type CommunitySnapshot } from "@/lib/communities";
 import { timeLabel } from "@/lib/posts";
 import { Shell } from "./Index";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription,
@@ -58,7 +58,7 @@ export default function CommunitiesPage() {
     try {
       const next = await manageCommunity(user, operation, targetId, { name, description,
         memberId: ["promote", "demote", "remove", "restore"].includes(operation) ? target : undefined,
-        postId: operation === "post" ? postId.current : operation === "delete_post" ? target : undefined, body: draft });
+        postId: operation === "post" ? postId.current : ["pin_post", "unpin_post", "delete_post"].includes(operation) ? target : undefined, body: draft });
       if (active.current !== epoch) return;
       setSnapshot(next); setDeleting(null); setEditing(false);
       if (operation === "post") { setDraft(""); postId.current = crypto.randomUUID(); }
@@ -75,11 +75,21 @@ export default function CommunitiesPage() {
     try { const next = await getCommunity(id, cursor);
       if (active.current !== epoch) return;
       if (!next) { setSnapshot(null); return; }
-      setSnapshot((old) => !old ? next : { ...next, posts: [...old.posts, ...next.posts.filter((post) => !old.posts.some((item) => item.id === post.id))] });
+      setSnapshot((old) => !old ? next : { ...next, posts: [...old.posts, ...next.posts.filter((post) => !old.posts.some((item) => item.id === post.id))]
+        .filter((post) => post.id !== next.pinned_post?.id) });
     } catch { if (active.current === epoch) setError(t("コミュニティを読み込めませんでした。")); }
     finally { if (active.current === epoch) setLoadingMore(false); }
   }
   function edit() { setName(community?.name ?? ""); setDescription(community?.description ?? ""); setEditing(true); }
+  function renderPost(post: CommunityPost, pinned = false) {
+    return <article key={post.id} className={pinned ? "my-3 rounded border border-[hsl(var(--brand))] p-4" : "border-b py-4"}>
+      {pinned && <p className="mb-2 text-sm font-semibold text-[hsl(var(--brand))]">{t("固定された投稿")}</p>}
+      <p className="font-semibold">{post.author_name} {post.handle && <span className="font-normal text-muted-foreground">@{post.handle}</span>}</p>
+      <p className="my-2 whitespace-pre-wrap break-words">{post.body}</p><time dateTime={post.created_at} className="text-sm text-muted-foreground">{timeLabel(post.created_at)}</time>
+      {canUse && canModerate && <button disabled={busy || loadingMore} className="ml-3 min-h-11 text-[hsl(var(--brand))]" aria-label={`${t(pinned ? "固定を解除" : "投稿を固定")}: ${post.body}`} onClick={() => void mutate(pinned ? "unpin_post" : "pin_post", post.id)}>{t(pinned ? "固定を解除" : "投稿を固定")}</button>}
+      {canUse && (canModerate || post.user_id === userId) && <button disabled={busy || loadingMore} className="ml-3 min-h-11 text-red-600" aria-label={`${t("投稿を削除")}: ${post.body}`} onClick={() => setDeleting({ operation: "delete_post", target: post.id })}>{t("投稿を削除")}</button>}
+    </article>;
+  }
   return <Shell tab="communities" onCompose={() => navigate("/", { state: { compose: true } })}>
     <div className="flex items-center justify-between gap-3 py-4"><h1 className="break-words text-2xl font-bold">{community?.name ?? t("コミュニティ")}</h1><Link className="min-h-11 content-center underline" to={id ? "/communities" : "/"}>{t("戻る")}</Link></div>
     <p className="mb-4 text-sm text-muted-foreground">{t("誰でも閲覧・参加できます。投稿するには参加が必要です。")}</p>
@@ -120,10 +130,9 @@ export default function CommunitiesPage() {
           <button disabled={busy || loadingMore || !draft.trim() || Array.from(draft.trim()).length > 70} className="min-h-11 rounded-full bg-[hsl(var(--brand))] px-5 text-white">{t(busy ? "送信中…" : "投稿する")}</button>
         </form>}
         <h2 className="mt-6 text-lg font-semibold">{t("コミュニティの投稿")}</h2>
-        {snapshot?.posts.map((post) => <article key={post.id} className="border-b py-4"><p className="font-semibold">{post.author_name} {post.handle && <span className="font-normal text-muted-foreground">@{post.handle}</span>}</p><p className="my-2 whitespace-pre-wrap break-words">{post.body}</p><time dateTime={post.created_at} className="text-sm text-muted-foreground">{timeLabel(post.created_at)}</time>
-          {canUse && (canModerate || post.user_id === userId) && <button disabled={busy || loadingMore} className="ml-3 min-h-11 text-red-600" aria-label={`${t("投稿を削除")}: ${post.body}`} onClick={() => setDeleting({ operation: "delete_post", target: post.id })}>{t("投稿を削除")}</button>}
-        </article>)}
-        {!snapshot?.posts.length && <p className="py-6 text-muted-foreground">{t("まだ投稿がありません。")}</p>}
+        {snapshot?.pinned_post && renderPost(snapshot.pinned_post, true)}
+        {snapshot?.posts.map((post) => renderPost(post))}
+        {!snapshot?.pinned_post && !snapshot?.posts.length && <p className="py-6 text-muted-foreground">{t("まだ投稿がありません。")}</p>}
         {snapshot?.has_more && <button disabled={loadingMore || busy} className="min-h-11 w-full underline" onClick={() => void loadMore()}>{t(loadingMore ? "読み込み中…" : "もっと見る")}</button>}
       </>}
       {editing && canUse && <form className="my-4 space-y-3 rounded border p-3" onSubmit={(event) => { event.preventDefault(); void mutate(id ? "update" : "create"); }}>

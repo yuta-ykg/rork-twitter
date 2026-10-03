@@ -16,9 +16,10 @@ create index community_members_user_idx on public.community_members(user_id,comm
 create table public.community_posts (
  id uuid primary key, community_id uuid not null references public.communities(id) on delete cascade,
  user_id text not null, body text not null check(char_length(btrim(body,E' \t\n\r')) between 1 and 70),
- created_at timestamptz not null default now()
+ is_pinned boolean not null default false, created_at timestamptz not null default now()
 );
 create index community_posts_timeline_idx on public.community_posts(community_id,created_at desc,id desc);
+create unique index community_posts_one_pin_idx on public.community_posts(community_id) where is_pinned;
 alter table public.communities enable row level security;
 alter table public.community_members enable row level security;
 alter table public.community_posts enable row level security;
@@ -44,7 +45,7 @@ $$;
 
 create function public.get_community(target_community_id uuid,before_created_at timestamptz default null,before_id uuid default null)
 returns jsonb language plpgsql stable security definer set search_path='' as $$
-declare caller text:=public.user_id(); selected public.communities; members jsonb; posts jsonb; has_more boolean;
+declare caller text:=public.user_id(); selected public.communities; members jsonb; pinned_post jsonb; posts jsonb; has_more boolean;
  membership text; member_role text; caller_role text;
 begin
  if (before_created_at is null)<>(before_id is null) then raise exception 'Invalid cursor' using errcode='22023'; end if;
@@ -60,11 +61,16 @@ begin
  from public.community_members m join public.profiles p on p.id::text=m.user_id
  where m.community_id=selected.id and public.can_view_account(caller,m.user_id)
   and (m.status='joined' or caller_role in ('owner','moderator'));
+ select to_jsonb(pin) into pinned_post from (
+  select p.id,p.user_id,p.body,p.created_at,coalesce(a.name,'ユーザー') as author_name,a.handle
+  from public.community_posts p left join public.profiles a on a.id::text=p.user_id
+  where p.community_id=selected.id and p.is_pinned and public.can_view_account(caller,p.user_id)
+ ) pin;
  with page as (
   select p.id,p.user_id,p.body,p.created_at,coalesce(a.name,'ユーザー') as author_name,a.handle,
    row_number() over(order by p.created_at desc,p.id desc) as position
   from public.community_posts p left join public.profiles a on a.id::text=p.user_id
-  where p.community_id=selected.id and public.can_view_account(caller,p.user_id)
+  where p.community_id=selected.id and not p.is_pinned and public.can_view_account(caller,p.user_id)
    and (before_created_at is null or (p.created_at,p.id)<(before_created_at,before_id))
   order by p.created_at desc,p.id desc limit 51
  )
@@ -73,7 +79,7 @@ begin
  return jsonb_build_object('community',jsonb_build_object('id',selected.id,'owner_id',selected.owner_id,
   'name',selected.name,'description',selected.description,'is_member',coalesce(membership='joined',false),
   'member_count',(select count(*) from public.community_members m where m.community_id=selected.id and m.status='joined')),
-  'membership',membership,'role',caller_role,'members',members,'posts',posts,'has_more',has_more);
+  'membership',membership,'role',caller_role,'members',members,'pinned_post',pinned_post,'posts',posts,'has_more',has_more);
 end;
 $$;
 
@@ -85,7 +91,7 @@ declare caller text:=public.user_id(); selected public.communities; member_statu
  target_role text; author_id text;
 begin
  if caller is null or caller='' or caller is distinct from expected_user_id then raise exception 'Login required' using errcode='42501'; end if;
- if operation is null or operation not in ('create','update','delete','join','leave','promote','demote','remove','restore','post','delete_post') then
+ if operation is null or operation not in ('create','update','delete','join','leave','promote','demote','remove','restore','post','pin_post','unpin_post','delete_post') then
   raise exception 'Invalid operation' using errcode='22023';
  end if;
  -- Lock profiles before communities so account deletion cannot leave orphan rows.
@@ -104,7 +110,7 @@ begin
   if operation in ('join','post') and public.is_blocked_pair(caller,selected.owner_id) then raise exception 'Blocked account' using errcode='42501'; end if;
   select m.status,m.role into member_status,member_role from public.community_members m where m.community_id=selected.id and m.user_id=caller;
   if operation in ('update','delete','promote','demote') and selected.owner_id<>caller then raise exception 'Owner required' using errcode='42501'; end if;
-  if operation in ('remove','restore') and selected.owner_id<>caller
+  if operation in ('remove','restore','pin_post','unpin_post') and selected.owner_id<>caller
     and (member_status is distinct from 'joined' or member_role is distinct from 'moderator') then
    raise exception 'Moderator required' using errcode='42501';
   end if;
@@ -141,6 +147,15 @@ begin
     if not exists(select 1 from public.community_posts p where p.id=target_post_id and p.community_id=selected.id and p.user_id=caller and p.body=post_body) then
      raise exception 'Post ID already used' using errcode='23505';
     end if;
+   when 'pin_post' then
+    if target_post_id is null then raise exception 'Invalid post' using errcode='22023'; end if;
+    update public.community_posts set is_pinned=false where community_id=selected.id and is_pinned;
+    update public.community_posts set is_pinned=true where id=target_post_id and community_id=selected.id;
+    if not found then raise exception 'Post not found' using errcode='P0002'; end if;
+   when 'unpin_post' then
+    update public.community_posts set is_pinned=false
+     where id=target_post_id and community_id=selected.id and is_pinned;
+    if not found then raise exception 'Pinned post not found' using errcode='P0002'; end if;
    when 'delete_post' then
     select p.user_id into author_id from public.community_posts p where p.id=target_post_id and p.community_id=selected.id;
     if not found then raise exception 'Post not found' using errcode='P0002'; end if;

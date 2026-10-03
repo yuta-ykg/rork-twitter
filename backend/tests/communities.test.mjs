@@ -53,6 +53,7 @@ test('public communities enforce membership, ownership, moderation, pagination a
     await assert.rejects(invoke('bob','post',{post:postId,body:'Different'}),/Post ID already used/);
     for (const op of ['update','delete','promote','demote']) await assert.rejects(invoke('bob',op,{member:'carol'}),/Owner required/);
     for (const op of ['remove','restore']) await assert.rejects(invoke('bob',op,{member:'carol'}),/Moderator required/);
+    await assert.rejects(invoke('bob','pin_post',{post:postId}),/Moderator required/);
     await db.exec("set test.user_id='carol';");
     await assert.rejects(invoke('carol','delete_post',{post:postId}),/Author or moderator required/);
     await db.exec("reset role; insert into public.test_mutes values('carol','bob'); set role anon;");
@@ -69,11 +70,19 @@ test('public communities enforce membership, ownership, moderation, pagination a
     await invoke('carol','join');
     await invoke('carol','post',{post:secondPostId,body:'Carol post'});
     await db.exec("set test.user_id='bob';");
+    await invoke('bob','pin_post',{post:secondPostId});
+    let pinned=await read(); assert.equal(pinned.pinned_post.id,secondPostId); assert.equal(pinned.posts.some(post=>post.id===secondPostId),false);
+    await invoke('bob','pin_post',{post:postId});
+    pinned=await read(); assert.equal(pinned.pinned_post.id,postId); assert.equal(pinned.posts.some(post=>post.id===secondPostId),true);
+    await invoke('bob','unpin_post',{post:postId});
+    assert.equal((await read()).pinned_post,null);
+    await assert.rejects(invoke('bob','unpin_post',{post:postId}),/Pinned post not found/);
     await invoke('bob','remove',{member:'carol'});
     assert.equal((await read()).members.find(member=>member.id==='carol').status,'removed');
     await invoke('bob','restore',{member:'carol'});
+    await invoke('bob','pin_post',{post:secondPostId});
     await invoke('bob','delete_post',{post:secondPostId});
-    assert.equal((await read()).posts.some(post=>post.id===secondPostId),false);
+    assert.equal((await read()).pinned_post,null); assert.equal((await read()).posts.some(post=>post.id===secondPostId),false);
     await db.exec("set test.user_id='alice';");
     await invoke('alice','promote',{member:'carol'});
     await db.exec("set test.user_id='bob';");

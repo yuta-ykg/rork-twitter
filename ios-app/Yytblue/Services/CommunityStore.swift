@@ -37,9 +37,10 @@ nonisolated struct CommunitySnapshot: Decodable, Sendable {
     let membership: String?
     let role: String?
     let members: [CommunityMember]
+    let pinnedPost: CommunityPost?
     var posts: [CommunityPost]
     let hasMore: Bool
-    enum CodingKeys: String, CodingKey { case community, membership, role, members, posts; case hasMore = "has_more" }
+    enum CodingKeys: String, CodingKey { case community, membership, role, members, posts; case pinnedPost = "pinned_post", hasMore = "has_more" }
 }
 nonisolated struct CommunitySearchParams: Encodable, Sendable { let keyword: String; let joined_only: Bool }
 nonisolated struct CommunityReadParams: Encodable, Sendable { let target_community_id: UUID; let before_created_at: String?; let before_id: UUID? }
@@ -93,7 +94,10 @@ final class CommunityStore {
             var result: CommunitySnapshot? = try await IrukaDatabase.client.rpc("get_community", params: CommunityReadParams(
                 target_community_id: id, before_created_at: cursor?.createdAt, before_id: cursor?.id)).execute().value
             guard generation == epoch, !Task.isCancelled else { return }
-            if more, let old = snapshot?.posts, let new = result?.posts { result?.posts = old + new.filter { post in !old.contains { $0.id == post.id } } }
+            if more, let old = snapshot?.posts, let new = result?.posts {
+                result?.posts = old + new.filter { post in !old.contains { $0.id == post.id } }
+                if let pinnedId = result?.pinnedPost?.id { result?.posts.removeAll { $0.id == pinnedId } }
+            }
             snapshot = result
         } catch { if generation == epoch && !Task.isCancelled { self.error = "コミュニティを読み込めませんでした。" } }
     }

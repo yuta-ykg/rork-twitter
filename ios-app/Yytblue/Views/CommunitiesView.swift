@@ -104,18 +104,9 @@ struct CommunityDetailView: View {
                     }
                 }
                 Section(L("コミュニティの投稿")) {
-                    ForEach(snapshot.posts) { post in
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(post.authorName).font(.headline)
-                            if let handle = post.handle { Text("@" + handle).font(.caption).foregroundStyle(.secondary) }
-                            Text(post.body)
-                            if let date = Self.date(post.createdAt) { Text(date, style: .date).font(.caption).foregroundStyle(.secondary) }
-                            if !DevelopmentData.isActive && (canModerate || auth.user?.id == post.userId) {
-                                Button(L("投稿を削除"), role: .destructive) { confirmation = CommunityConfirmation(operation: "delete_post", postId: post.id) }.disabled(store.busy)
-                            }
-                        }
-                    }
-                    if snapshot.posts.isEmpty { Text(L("まだ投稿がありません。")) }
+                    if let post = snapshot.pinnedPost { postRow(post, pinned: true) }
+                    ForEach(snapshot.posts) { post in postRow(post, pinned: false) }
+                    if snapshot.pinnedPost == nil && snapshot.posts.isEmpty { Text(L("まだ投稿がありません。")) }
                     if snapshot.hasMore { Button(L("もっと見る")) { Task { await store.load(id, more: true) } }.disabled(store.busy) }
                 }
             } else if !store.loading && store.error == nil { Text(L("コミュニティが見つかりません。")) }
@@ -131,6 +122,21 @@ struct CommunityDetailView: View {
                 confirmation = nil
             }
         } message: { Text(L(confirmation?.operation == "remove" ? "管理者またはモデレーターが復帰させるまで、このメンバーは参加・投稿できなくなります。" : confirmation?.operation == "delete" ? "コミュニティ、メンバー情報、すべての投稿が削除されます。この操作は取り消せません。" : "この操作は取り消せません。")) }
+    }
+    private func postRow(_ post: CommunityPost, pinned: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if pinned { Text(L("固定された投稿")).font(.caption).bold().foregroundStyle(Color.accentColor) }
+            Text(post.authorName).font(.headline)
+            if let handle = post.handle { Text("@" + handle).font(.caption).foregroundStyle(.secondary) }
+            Text(post.body)
+            if let date = Self.date(post.createdAt) { Text(date, style: .date).font(.caption).foregroundStyle(.secondary) }
+            if !DevelopmentData.isActive && canModerate {
+                Button(L(pinned ? "固定を解除" : "投稿を固定")) { perform(pinned ? "unpin_post" : "pin_post", postId: post.id) }.disabled(store.busy)
+            }
+            if !DevelopmentData.isActive && (canModerate || auth.user?.id == post.userId) {
+                Button(L("投稿を削除"), role: .destructive) { confirmation = CommunityConfirmation(operation: "delete_post", postId: post.id) }.disabled(store.busy)
+            }
+        }
     }
     private func perform(_ operation: String, memberId: String? = nil, postId: UUID? = nil) {
         guard let user = auth.user else { return }

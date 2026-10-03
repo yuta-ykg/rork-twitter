@@ -14,6 +14,10 @@ Owners can edit the name/description, appoint or remove moderators, remove or
 restore members, delete any community post, and delete the community. Moderators
 can remove or restore regular members and delete any community post. They cannot
 appoint moderators, manage another moderator, edit the community, or delete it.
+Owners and moderators can pin one community post. Pinning another post replaces
+the existing pin; unpinning returns it to its chronological position. The pinned
+post is shown separately above the timeline and is removed from the pin when the
+post itself is deleted.
 Authors can delete their own posts. Removing a member also clears their moderator
 role and prevents rejoining and posting until an owner or moderator restores them.
 Leaving does not clear a removal restriction. Removed users can still read a
@@ -54,8 +58,8 @@ length validation, post/community deletion, joining/leaving and anonymous readin
 
 SQL: `npm ci && npm test` in `backend`. PGlite applies the actual migration and
 checks authorization, direct-table denial, idempotent creation/posting, owner and
-moderator restrictions, promotion/demotion, removal/restoration, mute/block
-filtering, pagination and cleanup.
+moderator restrictions, promotion/demotion, pin replacement/removal,
+removal/restoration, mute/block filtering, pagination and cleanup.
 Existing identity and relationship helpers use fixtures; live auth is not tested.
 
 iOS: build the Yytblue scheme and run `CommunityTests` in Xcode. Confirm discovery,

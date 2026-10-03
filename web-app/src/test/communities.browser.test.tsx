@@ -17,7 +17,7 @@ beforeEach(() => {
   fixtures.read.mockImplementation(async () => structuredClone(fixtures.snapshot));
   fixtures.manage.mockImplementation(async (author, operation, id, input) => {
     if (operation === "create") fixtures.snapshot = { community: { id, owner_id: author.id, name: input.name, description: input.description, member_count: 1, is_member: true },
-      membership: "joined", role: "owner", members: [{ id: author.id, name: "Alice", handle: "alice", status: "joined", is_owner: true, role: "owner" }], posts: [], has_more: false };
+      membership: "joined", role: "owner", members: [{ id: author.id, name: "Alice", handle: "alice", status: "joined", is_owner: true, role: "owner" }], pinned_post: null, posts: [], has_more: false };
     const snapshot = fixtures.snapshot!;
     if (operation === "update") { snapshot.community.name = input.name; snapshot.community.description = input.description; }
     if (operation === "join") { snapshot.membership = "joined"; snapshot.role = "member"; snapshot.community.is_member = true; snapshot.community.member_count++; }
@@ -31,7 +31,12 @@ beforeEach(() => {
       if (member) { member.status = operation === "remove" ? "removed" : "joined"; if (operation === "remove") member.role = "member"; }
     }
     if (operation === "post") snapshot.posts.unshift({ id: input.postId, user_id: author.id, body: input.body, created_at: "2026-10-03T00:00:00Z", author_name: "Alice", handle: "alice" });
-    if (operation === "delete_post") snapshot.posts = snapshot.posts.filter((post) => post.id !== input.postId);
+    if (operation === "pin_post") {
+      const post = snapshot.posts.find((item) => item.id === input.postId);
+      if (post) { if (snapshot.pinned_post) snapshot.posts.unshift(snapshot.pinned_post); snapshot.pinned_post = post; snapshot.posts = snapshot.posts.filter((item) => item.id !== post.id); }
+    }
+    if (operation === "unpin_post" && snapshot.pinned_post?.id === input.postId) { snapshot.posts.unshift(snapshot.pinned_post); snapshot.pinned_post = null; }
+    if (operation === "delete_post") { snapshot.posts = snapshot.posts.filter((post) => post.id !== input.postId); if (snapshot.pinned_post?.id === input.postId) snapshot.pinned_post = null; }
     if (operation === "delete") fixtures.snapshot = null;
     return structuredClone(fixtures.snapshot);
   });
@@ -66,7 +71,7 @@ test("an owner can create, post, edit and delete a community", async () => {
 test("a member joins before posting and loses the composer after leaving", async () => {
   fixtures.user = { id: "bob", email: "bob@example.test" };
   const id = "00000000-0000-4000-8000-000000000001";
-  fixtures.snapshot = { community: { id, owner_id: "alice", name: "読書部", description: "本の感想", member_count: 1, is_member: false }, membership: null, role: null, members: [], posts: [], has_more: false };
+  fixtures.snapshot = { community: { id, owner_id: "alice", name: "読書部", description: "本の感想", member_count: 1, is_member: false }, membership: null, role: null, members: [], pinned_post: null, posts: [], has_more: false };
   history.replaceState(null,"",`/communities/${id}`);
   const screen = await render(<App />);
   await expect.element(screen.getByRole("button", { name: "参加する", exact: true })).toBeVisible();
@@ -82,10 +87,12 @@ test("anonymous visitors read posts without membership or moderation controls", 
   fixtures.user = null;
   const id = "00000000-0000-4000-8000-000000000001";
   fixtures.snapshot = { community: { id, owner_id: "alice", name: "読書部", description: "本の感想", member_count: 1, is_member: false }, membership: null, role: null, members: [],
-    posts: [{ id: "post", user_id: "alice", author_name: "Alice", handle: "alice", body: "おすすめの本", created_at: "2026-10-03T00:00:00Z" }], has_more: false };
+    pinned_post: { id: "post", user_id: "alice", author_name: "Alice", handle: "alice", body: "おすすめの本", created_at: "2026-10-03T00:00:00Z" }, posts: [], has_more: false };
   history.replaceState(null,"",`/communities/${id}`);
   const screen = await render(<App />);
   await expect.element(screen.getByText("おすすめの本", { exact: true })).toBeVisible();
+  await expect.element(screen.getByText("固定された投稿", { exact: true })).toBeVisible();
+  await expect.element(screen.getByRole("button", { name: "固定を解除: おすすめの本", exact: true })).not.toBeInTheDocument();
   await expect.element(screen.getByRole("button", { name: "参加する", exact: true })).not.toBeInTheDocument();
   await expect.element(screen.getByRole("button", { name: "コミュニティを削除", exact: true })).not.toBeInTheDocument();
   expect(fixtures.manage).not.toHaveBeenCalled();
@@ -93,7 +100,7 @@ test("anonymous visitors read posts without membership or moderation controls", 
 });
 test("a failed post keeps the draft and reuses its ID on retry", async () => {
   const id = "00000000-0000-4000-8000-000000000001";
-  fixtures.snapshot = { community: { id, owner_id: "alice", name: "読書部", description: "本の感想", member_count: 1, is_member: true }, membership: "joined", role: "owner", members: [], posts: [], has_more: false };
+  fixtures.snapshot = { community: { id, owner_id: "alice", name: "読書部", description: "本の感想", member_count: 1, is_member: true }, membership: "joined", role: "owner", members: [], pinned_post: null, posts: [], has_more: false };
   fixtures.manage.mockRejectedValueOnce(new Error("投稿できませんでした。"));
   history.replaceState(null,"",`/communities/${id}`);
   const screen = await render(<App />);
@@ -114,7 +121,7 @@ test("an owner appoints moderators and a moderator can manage members and posts"
       { id: "alice", name: "Alice", handle: "alice", status: "joined", is_owner: true, role: "owner" },
       { id: "bob", name: "Bob", handle: "bob", status: "joined", is_owner: false, role: "member" },
       { id: "carol", name: "Carol", handle: "carol", status: "joined", is_owner: false, role: "member" },
-    ], posts: [{ id: "post", user_id: "carol", author_name: "Carol", handle: "carol", body: "管理対象", created_at: "2026-10-03T00:00:00Z" }], has_more: false };
+    ], pinned_post: null, posts: [{ id: "post", user_id: "carol", author_name: "Carol", handle: "carol", body: "管理対象", created_at: "2026-10-03T00:00:00Z" }], has_more: false };
   history.replaceState(null,"",`/communities/${id}`);
   let screen = await render(<App />);
   await screen.getByLabelText("メンバー一覧", { exact: true }).click();
@@ -132,6 +139,11 @@ test("an owner appoints moderators and a moderator can manage members and posts"
   await expect.element(screen.getByRole("button", { name: "コミュニティを編集", exact: true })).not.toBeInTheDocument();
   await expect.element(screen.getByRole("button", { name: "モデレーターにする", exact: true })).not.toBeInTheDocument();
   await expect.element(screen.getByRole("button", { name: "メンバーを除外", exact: true })).toBeVisible();
+  await screen.getByRole("button", { name: "投稿を固定: 管理対象", exact: true }).click();
+  await expect.element(screen.getByText("固定された投稿", { exact: true })).toBeVisible();
+  await screen.getByRole("button", { name: "固定を解除: 管理対象", exact: true }).click();
+  await expect.element(screen.getByText("固定された投稿", { exact: true })).not.toBeInTheDocument();
+  await screen.getByRole("button", { name: "投稿を固定: 管理対象", exact: true }).click();
   await screen.getByRole("button", { name: "投稿を削除: 管理対象", exact: true }).click();
   await screen.getByRole("button", { name: "実行する", exact: true }).click();
   await expect.element(screen.getByText("管理対象", { exact: true })).not.toBeInTheDocument();
