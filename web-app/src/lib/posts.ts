@@ -128,13 +128,14 @@ export function thisWeekCount(posts: Post[]): number {
 
 export function timeLabel(iso: string): string {
   const date = new Date(iso);
-  const time = date.toLocaleTimeString(getLanguage() === "en" ? "en-US" : "ja-JP", { hour: "numeric", minute: "2-digit" });
+  const locale = getLanguage() === "en" ? "en-US" : getLanguage() === "ko" ? "ko-KR" : "ja-JP";
+  const time = date.toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit" });
   const today = new Date();
   const yesterday = new Date();
   yesterday.setDate(today.getDate() - 1);
   if (date.toDateString() === today.toDateString()) return `${t("今朝")} ${time}`;
   if (date.toDateString() === yesterday.toDateString()) return `${t("昨日")} ${time}`;
-  return date.toLocaleString(getLanguage() === "en" ? "en-US" : "ja-JP", { month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" });
+  return date.toLocaleString(locale, { month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" });
 }
 
 export async function setPostLike(id: string, liked: boolean, userId: string) {

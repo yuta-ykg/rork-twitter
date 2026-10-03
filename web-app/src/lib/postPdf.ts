@@ -41,7 +41,8 @@ export function exportPostPdf(post: Post): boolean {
   addText(article, "p", post.authorName, "name");
   addText(article, "p", post.handle, "handle");
   addText(article, "p", post.body, "body");
-  addText(article, "time", new Date(post.createdAt).toLocaleString(getLanguage() === "en" ? "en-US" : "ja-JP", { dateStyle: "long", timeStyle: "short" }), "date")
+  const locale = getLanguage() === "en" ? "en-US" : getLanguage() === "ko" ? "ko-KR" : "ja-JP";
+  addText(article, "time", new Date(post.createdAt).toLocaleString(locale, { dateStyle: "long", timeStyle: "short" }), "date")
     .setAttribute("datetime", post.createdAt);
   addText(article, "div", `ID: ${post.id}`, "footer");
   doc.body.appendChild(article);
