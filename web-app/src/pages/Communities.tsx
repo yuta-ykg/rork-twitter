@@ -5,7 +5,7 @@ import { isDevelopmentSession } from "@/lib/development";
 import { t, useLanguage } from "@/lib/language";
 import { findCommunities, getCommunity, manageCommunity, type Community, type CommunityOperation, type CommunityPost, type CommunitySnapshot } from "@/lib/communities";
 import { timeLabel } from "@/lib/posts";
-import { Shell } from "./Index";
+import { Shell } from "@/pages/IndexShared";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription,
   AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 

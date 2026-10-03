@@ -2,7 +2,6 @@ import {
   canSkipLogin, clearLocalData, developerUser, endDevelopmentSession, expireGuestSessionIfNeeded,
   isDevelopmentSession, isGuestSession, localUser, readDevelopmentPosts, startDevelopmentSession, startGuestSession,
 } from "@/lib/development";
-import { insertPost } from "@/lib/posts";
 import { t } from "@/lib/language";
 import { toast } from "sonner";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
@@ -112,6 +111,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     endDevelopmentSession();
     clearLocalData();
+    if (guestPosts.length === 0) return;
+    const { insertPost } = await import("@/lib/posts");
     let moved = 0;
     for (const post of guestPosts) {
       try {

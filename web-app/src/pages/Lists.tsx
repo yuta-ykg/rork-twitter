@@ -6,7 +6,7 @@ import { isDevelopmentSession } from "@/lib/development";
 import { findPublicLists, manageLists, publicListUrl, searchListProfiles, type ListMember, type UserList } from "@/lib/lists";
 import { filterListPosts, validateList, type ListOperation } from "@/lib/listModel";
 import { fetchPosts, setPostLike, type Post } from "@/lib/posts";
-import { Shell, Row } from "./Index";
+import { Shell, Row } from "@/pages/IndexShared";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
   AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 

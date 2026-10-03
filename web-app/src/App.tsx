@@ -17,12 +17,12 @@ const SettingsPage = lazy(() => import("./pages/Settings"));
 const FeatureGuidePage = lazy(() => import("./pages/FeatureGuide"));
 const ProfilePage = lazy(() => import("./pages/Profile"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
-const HomePage = lazy(() => import("./pages/Index").then((module) => ({ default: module.HomePage })));
-const NotificationsPage = lazy(() => import("./pages/Index").then((module) => ({ default: module.NotificationsPage })));
-const BookmarksPage = lazy(() => import("./pages/Index").then((module) => ({ default: module.BookmarksPage })));
-const MinePage = lazy(() => import("./pages/Index").then((module) => ({ default: module.MinePage })));
-const PostPage = lazy(() => import("./pages/Index").then((module) => ({ default: module.PostPage })));
-const SearchPage = lazy(() => import("./pages/Index").then((module) => ({ default: module.SearchPage })));
+const HomePage = lazy(() => import("./pages/Home"));
+const NotificationsPage = lazy(() => import("./pages/Notifications"));
+const BookmarksPage = lazy(() => import("./pages/Bookmarks"));
+const MinePage = lazy(() => import("./pages/Mine"));
+const PostPage = lazy(() => import("./pages/Post"));
+const SearchPage = lazy(() => import("./pages/Search"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
