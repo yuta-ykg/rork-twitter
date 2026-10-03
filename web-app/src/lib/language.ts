@@ -3,6 +3,11 @@ import { useLayoutEffect, useSyncExternalStore } from "react";
 export type Language = "ja" | "en" | "ko" | "zh-CN" | "zh-TW";
 const key = "iruka-language";
 const english: Record<string, string> = {
+  "取引や広告の表示に不審な点がある場合は、消費者庁の情報を確認できます。": "If a transaction or advertisement seems suspicious, you can check guidance from Japan's Consumer Affairs Agency.",
+  "詐欺的な勧誘、誤解を招く広告、価格や定期購入の条件、口コミなどに不審な点があれば、画面、URL、領収書、事業者とのやり取りを保存してください。": "If a solicitation, advertisement, price, subscription term, or review seems deceptive, save screenshots, URLs, receipts, and messages with the business.",
+  "契約・購入トラブルは消費者ホットラインに相談できます。景品表示法違反と思われる情報は消費者庁へ提供できます。身の危険や犯罪被害が迫っている場合は警察へ連絡してください。": "For contract or purchase problems, contact the Consumer Hotline. You can report suspected misleading representations to the Consumer Affairs Agency. Contact the police if there is immediate danger or an ongoing crime.",
+  "消費者庁「消費者ホットライン188」を見る": "View the Consumer Affairs Agency's Consumer Hotline 188",
+  "消費者庁の景品表示法に関する情報提供・相談窓口を見る": "View the Consumer Affairs Agency's misleading-representation reporting and guidance desk",
   "不審な求人や犯罪への勧誘には注意してください。": "Be cautious of suspicious job offers and recruitment into crime.",
   "仕事内容が不明な高額報酬の募集や、荷物・現金の受け取り、口座や携帯電話の提供を求める依頼には応じず、個人情報も送らないでください。": "Avoid offers with unclear duties that promise unusually high pay, or ask you to collect packages or cash, or provide a bank account or phone. Do not share personal information.",
   "すでに応募した、脅されている、被害に遭った場合は、やり取りを消さず、警察や信頼できる人に相談してください。身の危険が差し迫っている場合は、地域の警察・緊急窓口に連絡してください。": "If you already responded, are being threatened, or have been harmed, keep the messages and contact the police or someone you trust. If anyone is in immediate danger, contact local police or emergency services.",
@@ -331,6 +336,11 @@ const english: Record<string, string> = {
   "Yesterday": "昨日"
 };
 const korean: Record<string, string> = {
+  "取引や広告の表示に不審な点がある場合は、消費者庁の情報を確認できます。": "거래나 광고 표시에 의심스러운 점이 있다면 일본 소비자청의 정보를 확인할 수 있습니다.",
+  "詐欺的な勧誘、誤解を招く広告、価格や定期購入の条件、口コミなどに不審な点があれば、画面、URL、領収書、事業者とのやり取りを保存してください。": "사기성 권유, 오해를 부르는 광고, 가격·정기 구매 조건, 후기 등이 의심스럽다면 화면, URL, 영수증, 사업자와의 대화를 보관하세요.",
+  "契約・購入トラブルは消費者ホットラインに相談できます。景品表示法違反と思われる情報は消費者庁へ提供できます。身の危険や犯罪被害が迫っている場合は警察へ連絡してください。": "계약·구매 문제는 소비자 핫라인에 상담할 수 있고, 부당 표시로 의심되는 정보는 소비자청에 제공할 수 있습니다. 신변 위험이나 범죄 피해가 임박했다면 경찰에 연락하세요.",
+  "消費者庁「消費者ホットライン188」を見る": "일본 소비자청의 소비자 핫라인 188 보기",
+  "消費者庁の景品表示法に関する情報提供・相談窓口を見る": "일본 소비자청의 부당 표시 정보 제공·상담 창구 보기",
   "不審な求人や犯罪への勧誘には注意してください。": "수상한 구인이나 범죄 가담 권유에 주의하세요.",
   "仕事内容が不明な高額報酬の募集や、荷物・現金の受け取り、口座や携帯電話の提供を求める依頼には応じず、個人情報も送らないでください。": "업무 내용이 불분명한 고액 보수 구인이나 물품·현금 수령, 계좌·휴대전화 제공 요청에 응하지 말고 개인정보도 보내지 마세요.",
   "すでに応募した、脅されている、被害に遭った場合は、やり取りを消さず、警察や信頼できる人に相談してください。身の危険が差し迫っている場合は、地域の警察・緊急窓口に連絡してください。": "이미 지원했거나 협박을 받거나 피해를 입었다면 대화 기록을 지우지 말고 경찰이나 믿을 수 있는 사람에게 상담하세요. 신변에 급박한 위험이 있으면 현지 경찰이나 긴급기관에 연락하세요.",
@@ -385,6 +395,11 @@ const koreanExtraMessages: Record<string, string> = {
   "設定からいつでもこのガイドを開けます。": "설정에서 언제든 이 안내를 열 수 있습니다.",
 };
 const simplifiedChinese: Record<string, string> = {
+  "取引や広告の表示に不審な点がある場合は、消費者庁の情報を確認できます。": "如果交易或广告标示存在可疑之处，可以查看日本消费者厅的信息。",
+  "詐欺的な勧誘、誤解を招く広告、価格や定期購入の条件、口コミなどに不審な点があれば、画面、URL、領収書、事業者とのやり取りを保存してください。": "如果招揽、广告、价格、定期购买条件或评价可能具有欺骗性，请保存截图、URL、收据以及与经营者的往来记录。",
+  "契約・購入トラブルは消費者ホットラインに相談できます。景品表示法違反と思われる情報は消費者庁へ提供できます。身の危険や犯罪被害が迫っている場合は警察へ連絡してください。": "遇到合同或购买纠纷时可咨询消费者热线；疑似违反《赠品及标示法》的信息可提供给消费者厅。如有人身危险或犯罪侵害迫在眉睫，请联系警方。",
+  "消費者庁「消費者ホットライン188」を見る": "查看日本消费者厅的消费者热线188",
+  "消費者庁の景品表示法に関する情報提供・相談窓口を見る": "查看日本消费者厅的违法标示信息提供与咨询窗口",
   "不審な求人や犯罪への勧誘には注意してください。": "请警惕可疑招聘和诱骗参与犯罪的招募。",
   "仕事内容が不明な高額報酬の募集や、荷物・現金の受け取り、口座や携帯電話の提供を求める依頼には応じず、個人情報も送らないでください。": "不要回应工作内容不明却承诺高额报酬，或要求代收包裹、现金以及提供银行账户或手机的招聘，也不要发送个人信息。",
   "すでに応募した、脅されている、被害に遭った場合は、やり取りを消さず、警察や信頼できる人に相談してください。身の危険が差し迫っている場合は、地域の警察・緊急窓口に連絡してください。": "如果你已经应聘、受到威胁或遭受损害，请保留相关对话，并向警方或信任的人求助。如有人正面临紧迫危险，请联系当地警方或紧急服务。",
@@ -407,6 +422,12 @@ const simplifiedChinese: Record<string, string> = {
 };
 
 const simplifiedToTraditional: Array<[string, string]> = [
+  ["消费者厅", "消費者廳"], ["消费者", "消費者"], ["热线", "專線"], ["广告", "廣告"],
+  ["价格", "價格"], ["购买", "購買"], ["评价", "評價"], ["欺骗", "欺騙"],
+  ["截图", "截圖"], ["收据", "收據"], ["经营者", "業者"], ["纠纷", "糾紛"],
+  ["赠品", "贈品"], ["违法", "違法"], ["信息", "資訊"], ["标示", "標示"],
+  ["可疑之处", "可疑之處"], ["合同", "合約"], ["违反", "違反"], ["联系", "聯絡"],
+  ["危险", "危險"], ["诈骗", "詐騙"], ["虚假", "虛假"], ["误导", "誤導"],
   ["社区", "社群"], ["帖子", "貼文"], ["搜索", "搜尋"], ["点赞", "按讚"], ["发布", "發佈"],
   ["回复", "回覆"], ["重复", "重複"], ["设置", "設定"], ["默认", "預設"], ["简体中文", "簡體中文"],
   ["繁体中文", "繁體中文"], ["个人资料", "個人資料"], ["用户名", "使用者名稱"], ["用户", "使用者"],
