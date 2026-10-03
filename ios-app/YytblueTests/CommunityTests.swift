@@ -11,11 +11,13 @@ struct CommunityTests {
         #expect(!CommunityStore.valid(name: "Valid", description: String(repeating: "あ", count: 161)))
     }
     @Test func decodesPublicSnapshotAndMembership() throws {
-        let data = Data(#"{"community":{"id":"00000000-0000-4000-8000-000000000001","owner_id":"alice","name":"Readers","description":"Books","member_count":1,"is_member":true},"membership":"joined","members":[{"id":"alice","name":"Alice","handle":"alice","status":"joined","is_owner":true}],"posts":[],"has_more":false}"#.utf8)
+        let data = Data(#"{"community":{"id":"00000000-0000-4000-8000-000000000001","owner_id":"alice","name":"Readers","description":"Books","member_count":2,"is_member":true},"membership":"joined","role":"moderator","members":[{"id":"alice","name":"Alice","handle":"alice","status":"joined","is_owner":true,"role":"owner"},{"id":"bob","name":"Bob","handle":"bob","status":"joined","is_owner":false,"role":"moderator"}],"posts":[],"has_more":false}"#.utf8)
         let snapshot = try JSONDecoder().decode(CommunitySnapshot.self, from: data)
-        #expect(snapshot.community.memberCount == 1)
+        #expect(snapshot.community.memberCount == 2)
         #expect(snapshot.membership == "joined")
         #expect(snapshot.members.first?.isOwner == true)
+        #expect(snapshot.role == "moderator")
+        #expect(snapshot.members.last?.role == "moderator")
         #expect(!snapshot.hasMore)
     }
 }

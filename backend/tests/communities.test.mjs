@@ -21,6 +21,7 @@ test('public communities enforce membership, ownership, moderation, pagination a
     await db.exec(await readFile(new URL('../migrations/20261003020000_communities.sql',import.meta.url),'utf8'));
     const id='00000000-0000-4000-8000-000000000001';
     const postId='00000000-0000-4000-8000-000000000010';
+    const secondPostId='00000000-0000-4000-8000-000000000011';
     const invoke=async (owner,op,{name='Friends',description='',member=null,post=null,body=''}={}) => (await db.query(
       'select public.manage_community($1,$2,$3::uuid,$4,$5,$6,$7::uuid,$8) as data',[owner,op,id,name,description,member,post,body])).rows[0].data;
     const read=async (date=null,cursor=null) => (await db.query('select public.get_community($1::uuid,$2::timestamptz,$3::uuid) as data',[id,date,cursor])).rows[0].data;
@@ -28,6 +29,7 @@ test('public communities enforce membership, ownership, moderation, pagination a
     await db.exec("set test.user_id='alice'; set role anon;");
     const created=await invoke('alice','create');
     assert.equal(created.community.member_count,1); assert.equal(created.membership,'joined');
+    assert.equal(created.role,'owner'); assert.equal(created.members[0].role,'owner');
     assert.equal((await invoke('alice','create')).community.member_count,1);
     await assert.rejects(invoke('alice','leave'),/Owner cannot leave/);
     await assert.rejects(invoke('alice','update',{name:' '}),/check constraint/);
@@ -49,19 +51,50 @@ test('public communities enforce membership, ownership, moderation, pagination a
     await invoke('bob','post',{post:postId,body:'Hello'});
     assert.equal((await invoke('bob','post',{post:postId,body:'Hello'})).posts.length,1);
     await assert.rejects(invoke('bob','post',{post:postId,body:'Different'}),/Post ID already used/);
-    for (const op of ['update','delete','remove','restore']) await assert.rejects(invoke('bob',op,{member:'carol'}),/Owner required/);
+    for (const op of ['update','delete','promote','demote']) await assert.rejects(invoke('bob',op,{member:'carol'}),/Owner required/);
+    for (const op of ['remove','restore']) await assert.rejects(invoke('bob',op,{member:'carol'}),/Moderator required/);
     await db.exec("set test.user_id='carol';");
-    await assert.rejects(invoke('carol','delete_post',{post:postId}),/Author or owner required/);
+    await assert.rejects(invoke('carol','delete_post',{post:postId}),/Author or moderator required/);
     await db.exec("reset role; insert into public.test_mutes values('carol','bob'); set role anon;");
     assert.equal((await read()).posts.length,0);
     await db.exec("set test.user_id='alice';");
-    await invoke('alice','remove',{member:'bob'});
+    await invoke('alice','promote',{member:'bob'});
+    assert.equal((await read()).members.find(member=>member.id==='bob').role,'moderator');
     await db.exec("set test.user_id='bob';");
-    assert.equal((await read()).membership,'removed');
+    assert.equal((await read()).role,'moderator');
+    await assert.rejects(invoke('bob','update'),/Owner required/);
+    await assert.rejects(invoke('bob','promote',{member:'carol'}),/Owner required/);
+    await assert.rejects(invoke('bob','remove',{member:'alice'}),/Invalid member/);
+    await db.exec("set test.user_id='carol';");
+    await invoke('carol','join');
+    await invoke('carol','post',{post:secondPostId,body:'Carol post'});
+    await db.exec("set test.user_id='bob';");
+    await invoke('bob','remove',{member:'carol'});
+    assert.equal((await read()).members.find(member=>member.id==='carol').status,'removed');
+    await invoke('bob','restore',{member:'carol'});
+    await invoke('bob','delete_post',{post:secondPostId});
+    assert.equal((await read()).posts.some(post=>post.id===secondPostId),false);
+    await db.exec("set test.user_id='alice';");
+    await invoke('alice','promote',{member:'carol'});
+    await db.exec("set test.user_id='bob';");
+    await assert.rejects(invoke('bob','remove',{member:'carol'}),/Owner required for moderator/);
+    await db.exec("set test.user_id='alice';");
+    await invoke('alice','demote',{member:'carol'});
+    await invoke('alice','demote',{member:'bob'});
+    await db.exec("set test.user_id='bob';");
+    assert.equal((await read()).role,'member');
+    await assert.rejects(invoke('bob','remove',{member:'carol'}),/Moderator required/);
+    await db.exec("set test.user_id='alice';");
+    await invoke('alice','promote',{member:'bob'});
+    await invoke('alice','remove',{member:'bob'});
+    await db.exec("reset role;");
+    assert.deepEqual((await db.query("select status,role from public.community_members where community_id=$1::uuid and user_id='bob'",[id])).rows[0],{status:'removed',role:'member'});
+    await db.exec("set test.user_id='bob'; set role anon;");
+    assert.equal((await read()).membership,'removed'); assert.equal((await read()).role,null);
     await invoke('bob','leave'); // Cannot remove the moderation restriction through leave.
     await assert.rejects(invoke('bob','join'),/Membership removed/);
     await assert.rejects(invoke('bob','post',{post:postId,body:'Hello'}),/Join required/);
-    await db.exec("set test.user_id='';"); assert.equal((await read()).members.length,1); // Removed users are not exposed to visitors.
+    await db.exec("set test.user_id='';"); assert.equal((await read()).members.some(member=>member.id==='bob'),false); // Removed users are not exposed to visitors.
     await db.exec("set test.user_id='alice';");
     await assert.rejects(invoke('alice','remove',{member:'alice'}),/Invalid member/);
     await invoke('alice','restore',{member:'bob'});

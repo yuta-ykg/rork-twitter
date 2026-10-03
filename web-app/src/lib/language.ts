@@ -20,8 +20,11 @@ const english: Record<string, string> = {
   "コミュニティが見つかりません。": "Community not found.",
   "参加する": "Join",
   "退出する": "Leave",
-  "参加が制限されています。管理者に確認してください。": "Your membership is restricted. Contact the community owner.",
+  "参加が制限されています。管理者またはモデレーターに確認してください。": "Your membership is restricted. Contact the community owner or a moderator.",
   "管理者": "Owner",
+  "モデレーター": "Moderator",
+  "モデレーターにする": "Make moderator",
+  "モデレーターを解除": "Remove moderator",
   "参加制限中": "Membership restricted",
   "参加を復帰": "Restore membership",
   "メンバーを除外": "Remove member",
@@ -32,7 +35,7 @@ const english: Record<string, string> = {
   "メンバーを除外しますか？": "Remove this member?",
   "投稿を削除しますか？": "Delete this post?",
   "コミュニティを削除しますか？": "Delete this community?",
-  "管理者が復帰させるまで、このメンバーは参加・投稿できなくなります。": "This member cannot join or post until the owner restores their membership.",
+  "管理者またはモデレーターが復帰させるまで、このメンバーは参加・投稿できなくなります。": "This member cannot join or post until an owner or moderator restores their membership.",
   "この操作は取り消せません。": "This action cannot be undone.",
   "実行する": "Confirm",
   "更新": "Refresh",
@@ -64,6 +67,7 @@ const english: Record<string, string> = {
   "リスト名（1〜40文字）": "List name (1–40 characters)",
   "説明（160文字まで）": "Description (up to 160 characters)",
   "メンバー": "Members",
+  "メンバー一覧": "Member list",
   "ユーザーを検索": "Search users",
   "ユーザー名・表示名": "Username or display name",
   "追加": "Add",
@@ -327,5 +331,3 @@ export function useLanguage() {
   useLayoutEffect(() => { document.documentElement.lang = language; }, [language]);
   return { language, setLanguage };
 }
-
-

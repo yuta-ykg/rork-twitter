@@ -19,8 +19,9 @@ nonisolated struct CommunityMember: Decodable, Identifiable, Sendable {
     let name: String
     let handle: String?
     let status: String
+    let role: String
     let isOwner: Bool
-    enum CodingKeys: String, CodingKey { case id, name, handle, status; case isOwner = "is_owner" }
+    enum CodingKeys: String, CodingKey { case id, name, handle, status, role; case isOwner = "is_owner" }
 }
 nonisolated struct CommunityPost: Decodable, Identifiable, Sendable {
     let id: UUID
@@ -34,10 +35,11 @@ nonisolated struct CommunityPost: Decodable, Identifiable, Sendable {
 nonisolated struct CommunitySnapshot: Decodable, Sendable {
     let community: Community
     let membership: String?
+    let role: String?
     let members: [CommunityMember]
     var posts: [CommunityPost]
     let hasMore: Bool
-    enum CodingKeys: String, CodingKey { case community, membership, members, posts; case hasMore = "has_more" }
+    enum CodingKeys: String, CodingKey { case community, membership, role, members, posts; case hasMore = "has_more" }
 }
 nonisolated struct CommunitySearchParams: Encodable, Sendable { let keyword: String; let joined_only: Bool }
 nonisolated struct CommunityReadParams: Encodable, Sendable { let target_community_id: UUID; let before_created_at: String?; let before_id: UUID? }

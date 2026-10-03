@@ -35,6 +35,8 @@ export default function CommunitiesPage() {
   const [deleting, setDeleting] = useState<{ operation: "delete" | "delete_post" | "remove"; target?: string } | null>(null);
   const community = snapshot?.community;
   const owner = Boolean(userId && community?.owner_id === userId);
+  const moderator = snapshot?.role === "moderator";
+  const canModerate = owner || moderator;
   const canUse = Boolean(user && !local);
   useEffect(() => {
     let cancelled = false;
@@ -55,7 +57,7 @@ export default function CommunitiesPage() {
     setBusy(true); setError("");
     try {
       const next = await manageCommunity(user, operation, targetId, { name, description,
-        memberId: operation === "remove" || operation === "restore" ? target : undefined,
+        memberId: ["promote", "demote", "remove", "restore"].includes(operation) ? target : undefined,
         postId: operation === "post" ? postId.current : operation === "delete_post" ? target : undefined, body: draft });
       if (active.current !== epoch) return;
       setSnapshot(next); setDeleting(null); setEditing(false);
@@ -101,12 +103,15 @@ export default function CommunitiesPage() {
         {canUse && <div className="my-3 flex flex-wrap gap-3">
           {owner ? <><button disabled={busy || loadingMore} className="min-h-11 underline" onClick={edit}>{t("コミュニティを編集")}</button><button disabled={busy || loadingMore} className="min-h-11 text-red-600" onClick={() => setDeleting({ operation: "delete" })}>{t("コミュニティを削除")}</button></> :
             snapshot?.membership === "joined" ? <button disabled={busy || loadingMore} className="min-h-11 rounded-full border px-4" onClick={() => void mutate("leave")}>{t("退出する")}</button> :
-            snapshot?.membership === "removed" ? <p>{t("参加が制限されています。管理者に確認してください。")}</p> :
+            snapshot?.membership === "removed" ? <p>{t("参加が制限されています。管理者またはモデレーターに確認してください。")}</p> :
             <button disabled={busy || loadingMore} className="min-h-11 rounded-full bg-[hsl(var(--brand))] px-4 text-white" onClick={() => void mutate("join")}>{t("参加する")}</button>}
         </div>}
-        <details className="my-4 border-y py-3"><summary className="min-h-11 cursor-pointer content-center">{t("メンバー")}</summary>
-          {snapshot?.members.map((member) => <div key={member.id} className="flex items-center justify-between gap-2 py-2"><span>{member.name} {member.handle && `@${member.handle}`} {member.is_owner && t("管理者")} {member.status === "removed" && t("参加制限中")}</span>
-            {owner && !member.is_owner && <button disabled={busy || loadingMore} className="min-h-11 text-[hsl(var(--brand))]" onClick={() => member.status === "removed" ? void mutate("restore", member.id) : setDeleting({ operation: "remove", target: member.id })}>{t(member.status === "removed" ? "参加を復帰" : "メンバーを除外")}</button>}
+        <details className="my-4 border-y py-3"><summary aria-label={t("メンバー一覧")} className="min-h-11 cursor-pointer content-center">{t("メンバー")}</summary>
+          {snapshot?.members.map((member) => <div key={member.id} className="flex items-center justify-between gap-2 py-2"><span>{member.name} {member.handle && `@${member.handle}`} {member.role === "owner" && <span>{t("管理者")}</span>} {member.role === "moderator" && <span>{t("モデレーター")}</span>} {member.status === "removed" && <span>{t("参加制限中")}</span>}</span>
+            {!member.is_owner && <span className="flex flex-wrap justify-end gap-3">
+              {owner && member.status === "joined" && <button disabled={busy || loadingMore} className="min-h-11 text-[hsl(var(--brand))]" aria-label={`${t(member.role === "moderator" ? "モデレーターを解除" : "モデレーターにする")}: ${member.name}`} onClick={() => void mutate(member.role === "moderator" ? "demote" : "promote", member.id)}>{t(member.role === "moderator" ? "モデレーターを解除" : "モデレーターにする")}</button>}
+              {canModerate && (owner || member.role !== "moderator") && <button disabled={busy || loadingMore} className="min-h-11 text-[hsl(var(--brand))]" onClick={() => member.status === "removed" ? void mutate("restore", member.id) : setDeleting({ operation: "remove", target: member.id })}>{t(member.status === "removed" ? "参加を復帰" : "メンバーを除外")}</button>}
+            </span>}
           </div>)}
         </details>
         {canUse && snapshot?.membership === "joined" && <form className="my-4 space-y-2" onSubmit={(event) => { event.preventDefault(); void mutate("post"); }}>
@@ -116,7 +121,7 @@ export default function CommunitiesPage() {
         </form>}
         <h2 className="mt-6 text-lg font-semibold">{t("コミュニティの投稿")}</h2>
         {snapshot?.posts.map((post) => <article key={post.id} className="border-b py-4"><p className="font-semibold">{post.author_name} {post.handle && <span className="font-normal text-muted-foreground">@{post.handle}</span>}</p><p className="my-2 whitespace-pre-wrap break-words">{post.body}</p><time dateTime={post.created_at} className="text-sm text-muted-foreground">{timeLabel(post.created_at)}</time>
-          {canUse && (owner || post.user_id === userId) && <button disabled={busy || loadingMore} className="ml-3 min-h-11 text-red-600" aria-label={`${t("投稿を削除")}: ${post.body}`} onClick={() => setDeleting({ operation: "delete_post", target: post.id })}>{t("投稿を削除")}</button>}
+          {canUse && (canModerate || post.user_id === userId) && <button disabled={busy || loadingMore} className="ml-3 min-h-11 text-red-600" aria-label={`${t("投稿を削除")}: ${post.body}`} onClick={() => setDeleting({ operation: "delete_post", target: post.id })}>{t("投稿を削除")}</button>}
         </article>)}
         {!snapshot?.posts.length && <p className="py-6 text-muted-foreground">{t("まだ投稿がありません。")}</p>}
         {snapshot?.has_more && <button disabled={loadingMore || busy} className="min-h-11 w-full underline" onClick={() => void loadMore()}>{t(loadingMore ? "読み込み中…" : "もっと見る")}</button>}
@@ -129,7 +134,7 @@ export default function CommunitiesPage() {
     </>}
     <AlertDialog open={deleting !== null} onOpenChange={(open) => { if (!busy && !open) setDeleting(null); }}>
       <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>{t(deleting?.operation === "remove" ? "メンバーを除外しますか？" : deleting?.operation === "delete_post" ? "投稿を削除しますか？" : "コミュニティを削除しますか？")}</AlertDialogTitle>
-        <AlertDialogDescription>{t(deleting?.operation === "remove" ? "管理者が復帰させるまで、このメンバーは参加・投稿できなくなります。" : deleting?.operation === "delete" ? "コミュニティ、メンバー情報、すべての投稿が削除されます。この操作は取り消せません。" : "この操作は取り消せません。")}</AlertDialogDescription></AlertDialogHeader>
+        <AlertDialogDescription>{t(deleting?.operation === "remove" ? "管理者またはモデレーターが復帰させるまで、このメンバーは参加・投稿できなくなります。" : deleting?.operation === "delete" ? "コミュニティ、メンバー情報、すべての投稿が削除されます。この操作は取り消せません。" : "この操作は取り消せません。")}</AlertDialogDescription></AlertDialogHeader>
         <AlertDialogFooter><AlertDialogCancel disabled={busy}>{t("キャンセル")}</AlertDialogCancel><AlertDialogAction disabled={busy} onClick={(event) => { event.preventDefault(); if (deleting) void mutate(deleting.operation, deleting.target); }}>{t("実行する")}</AlertDialogAction></AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

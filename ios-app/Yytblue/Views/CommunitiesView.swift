@@ -49,6 +49,8 @@ struct CommunityDetailView: View {
     @State private var draftId = UUID()
     @State private var confirmation: CommunityConfirmation?
     private var owner: Bool { store.snapshot?.community.ownerId == auth.user?.id && auth.user != nil }
+    private var moderator: Bool { store.snapshot?.role == "moderator" }
+    private var canModerate: Bool { owner || moderator }
     var body: some View {
         List {
             if store.loading { ProgressView() }
@@ -63,7 +65,7 @@ struct CommunityDetailView: View {
                         Button(L("コミュニティを削除"), role: .destructive) { confirmation = CommunityConfirmation(operation: "delete") }.disabled(store.busy)
                     } else if snapshot.membership == "joined" {
                         Button(L("退出する")) { perform("leave") }.disabled(store.busy)
-                    } else if snapshot.membership == "removed" { Text(L("参加が制限されています。管理者に確認してください。")) }
+                    } else if snapshot.membership == "removed" { Text(L("参加が制限されています。管理者またはモデレーターに確認してください。")) }
                     else { Button(L("参加する")) { perform("join") }.disabled(store.busy) }
                 }
                 Section(L("メンバー")) {
@@ -71,14 +73,23 @@ struct CommunityDetailView: View {
                         HStack {
                             VStack(alignment: .leading) {
                                 Text(member.name)
-                                Text(L(member.isOwner ? "管理者" : member.status == "removed" ? "参加制限中" : "参加中")).font(.caption).foregroundStyle(.secondary)
+                                Text(L(member.role == "owner" ? "管理者" : member.role == "moderator" ? "モデレーター" : member.status == "removed" ? "参加制限中" : "参加中")).font(.caption).foregroundStyle(.secondary)
                             }
                             Spacer()
-                            if owner && !member.isOwner {
-                                Button(L(member.status == "removed" ? "参加を復帰" : "メンバーを除外")) {
-                                    if member.status == "removed" { perform("restore", memberId: member.id) }
-                                    else { confirmation = CommunityConfirmation(operation: "remove", memberId: member.id) }
-                                }.buttonStyle(.borderless).disabled(store.busy)
+                            if !member.isOwner {
+                                VStack(alignment: .trailing) {
+                                    if owner && member.status == "joined" {
+                                        Button(L(member.role == "moderator" ? "モデレーターを解除" : "モデレーターにする")) {
+                                            perform(member.role == "moderator" ? "demote" : "promote", memberId: member.id)
+                                        }.buttonStyle(.borderless).disabled(store.busy)
+                                    }
+                                    if canModerate && (owner || member.role != "moderator") {
+                                        Button(L(member.status == "removed" ? "参加を復帰" : "メンバーを除外")) {
+                                            if member.status == "removed" { perform("restore", memberId: member.id) }
+                                            else { confirmation = CommunityConfirmation(operation: "remove", memberId: member.id) }
+                                        }.buttonStyle(.borderless).disabled(store.busy)
+                                    }
+                                }
                             }
                         }
                     }
@@ -99,7 +110,7 @@ struct CommunityDetailView: View {
                             if let handle = post.handle { Text("@" + handle).font(.caption).foregroundStyle(.secondary) }
                             Text(post.body)
                             if let date = Self.date(post.createdAt) { Text(date, style: .date).font(.caption).foregroundStyle(.secondary) }
-                            if !DevelopmentData.isActive && (owner || auth.user?.id == post.userId) {
+                            if !DevelopmentData.isActive && (canModerate || auth.user?.id == post.userId) {
                                 Button(L("投稿を削除"), role: .destructive) { confirmation = CommunityConfirmation(operation: "delete_post", postId: post.id) }.disabled(store.busy)
                             }
                         }
@@ -119,7 +130,7 @@ struct CommunityDetailView: View {
                 if let value = confirmation { perform(value.operation, memberId: value.memberId, postId: value.postId) }
                 confirmation = nil
             }
-        } message: { Text(L(confirmation?.operation == "remove" ? "管理者が復帰させるまで、このメンバーは参加・投稿できなくなります。" : confirmation?.operation == "delete" ? "コミュニティ、メンバー情報、すべての投稿が削除されます。この操作は取り消せません。" : "この操作は取り消せません。")) }
+        } message: { Text(L(confirmation?.operation == "remove" ? "管理者またはモデレーターが復帰させるまで、このメンバーは参加・投稿できなくなります。" : confirmation?.operation == "delete" ? "コミュニティ、メンバー情報、すべての投稿が削除されます。この操作は取り消せません。" : "この操作は取り消せません。")) }
     }
     private func perform(_ operation: String, memberId: String? = nil, postId: UUID? = nil) {
         guard let user = auth.user else { return }
