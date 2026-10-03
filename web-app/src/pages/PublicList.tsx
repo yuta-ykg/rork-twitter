@@ -4,9 +4,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { fetchPublicList, type UserList } from "@/lib/lists";
 import { t, useLanguage } from "@/lib/language";
 import { timeLabel, type Post } from "@/lib/posts";
+import { useDateDisplay } from "@/lib/dateDisplay";
 
 export default function PublicListPage() {
   useLanguage();
+  useDateDisplay();
   const { id } = useParams();
   const { user } = useAuth();
   const [list, setList] = useState<UserList | null>(null);

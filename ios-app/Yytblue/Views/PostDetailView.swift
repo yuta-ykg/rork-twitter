@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PostDetailView: View {
     @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
+    @AppStorage("iruka-date-display") private var dateDisplay = DateDisplayStyle.relative.rawValue
     @Environment(AuthManager.self) private var auth
     let initialPost: Post
     @Bindable var store: PostStore
@@ -95,15 +96,7 @@ struct PostDetailView: View {
     }
 
     private var timeLabel: String {
-        let calendar = Calendar.current
-        let time = post.createdAt.formatted(.dateTime.locale(AppLanguage.locale).hour().minute())
-        if calendar.isDateInToday(post.createdAt) {
-            return L("today_time", time)
-        }
-        if calendar.isDateInYesterday(post.createdAt) {
-            return L("yesterday_time", time)
-        }
-        return post.createdAt.formatted(.dateTime.locale(AppLanguage.locale).month().day().hour().minute())
+        formatDate(post.createdAt)
     }
 
     private func metaColumn(title: String, value: String) -> some View {

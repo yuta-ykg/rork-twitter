@@ -11,6 +11,7 @@ import { BookmarkButton } from "@/components/BookmarkButton";
 import { useBookmarks } from "@/hooks/useBookmarks";
 import { t, useLanguage } from "@/lib/language";
 import { LikeIconGlyph, useLikeIcon } from "@/hooks/useLikeIcon";
+import { useDateDisplay } from "@/lib/dateDisplay";
 import { isDevelopmentSession, isGuestSession } from "@/lib/development";
 import { toast } from "sonner";
 import { Bookmark, List, Download, Fish, House, MessageCircle, Search, SquarePen, Settings, UserRound, UsersRound, X } from "lucide-react";
@@ -181,6 +182,7 @@ export function Shell({
   onCompose: () => void;
 }) {
   useLanguage();
+  useDateDisplay();
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -756,5 +758,3 @@ export function NotificationsPage() {
       authorName={own?.name ?? displayName(user)} handle={own?.handle ?? userHandle(user)} initial={own?.initial ?? displayName(user).slice(0, 1)} /> : null}
   </>;
 }
-
-

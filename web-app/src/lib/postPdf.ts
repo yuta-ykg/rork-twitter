@@ -1,4 +1,5 @@
 import { getLanguage, t } from "@/lib/language";
+import { formatDateTime } from "@/lib/dateDisplay";
 import type { Post } from "@/lib/posts";
 
 function addText(parent: HTMLElement, name: string, value: string, className?: string) {
@@ -41,8 +42,7 @@ export function exportPostPdf(post: Post): boolean {
   addText(article, "p", post.authorName, "name");
   addText(article, "p", post.handle, "handle");
   addText(article, "p", post.body, "body");
-  const locale = getLanguage() === "en" ? "en-US" : getLanguage() === "ko" ? "ko-KR" : "ja-JP";
-  addText(article, "time", new Date(post.createdAt).toLocaleString(locale, { dateStyle: "long", timeStyle: "short" }), "date")
+  addText(article, "time", formatDateTime(post.createdAt), "date")
     .setAttribute("datetime", post.createdAt);
   addText(article, "div", `ID: ${post.id}`, "footer");
   doc.body.appendChild(article);

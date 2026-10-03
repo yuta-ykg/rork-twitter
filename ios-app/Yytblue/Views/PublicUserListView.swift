@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct PublicUserListView: View {
+    @AppStorage("iruka-date-display") private var dateDisplay = DateDisplayStyle.relative.rawValue
     let id: UUID
     @Environment(AuthManager.self) private var auth
     @State private var snapshot: PublicListSnapshot?
@@ -25,7 +26,7 @@ struct PublicUserListView: View {
                             Text(post.authorName).font(.headline)
                             Text(post.handle).font(.caption).foregroundStyle(.secondary)
                             Text(post.body)
-                            Text(post.createdAt, style: .date).font(.caption).foregroundStyle(.secondary)
+                            Text(formatDate(post.createdAt, includeTime: false)).font(.caption).foregroundStyle(.secondary)
                         }
                     }
                     if snapshot.posts.isEmpty { Text(L("まだ投稿がありません。")) }

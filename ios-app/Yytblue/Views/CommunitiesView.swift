@@ -40,6 +40,7 @@ struct CommunitiesView: View {
 }
 
 struct CommunityDetailView: View {
+    @AppStorage("iruka-date-display") private var dateDisplay = DateDisplayStyle.relative.rawValue
     let id: UUID
     @Environment(AuthManager.self) private var auth
     @Environment(\.dismiss) private var dismiss
@@ -129,7 +130,7 @@ struct CommunityDetailView: View {
             Text(post.authorName).font(.headline)
             if let handle = post.handle { Text("@" + handle).font(.caption).foregroundStyle(.secondary) }
             Text(post.body)
-            if let date = Self.date(post.createdAt) { Text(date, style: .date).font(.caption).foregroundStyle(.secondary) }
+            if let date = Self.date(post.createdAt) { Text(formatDate(date, includeTime: false)).font(.caption).foregroundStyle(.secondary) }
             if !DevelopmentData.isActive && canModerate {
                 Button(L(pinned ? "固定を解除" : "投稿を固定")) { perform(pinned ? "unpin_post" : "pin_post", postId: post.id) }.disabled(store.busy)
             }

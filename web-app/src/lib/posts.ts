@@ -1,4 +1,4 @@
-import { getLanguage, t } from "@/lib/language";
+import { formatDateTime } from "@/lib/dateDisplay";
 import { isDevelopmentSession, localUser, readDevelopmentPosts, writeDevelopmentPosts, readDevelopmentProfile } from "@/lib/development";
 import { ensureProfile, fetchProfiles } from "@/lib/profiles";
 import { hiddenDevelopmentUsers } from "@/lib/userRelationships";
@@ -127,15 +127,7 @@ export function thisWeekCount(posts: Post[]): number {
 }
 
 export function timeLabel(iso: string): string {
-  const date = new Date(iso);
-  const locale = getLanguage() === "en" ? "en-US" : getLanguage() === "ko" ? "ko-KR" : "ja-JP";
-  const time = date.toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit" });
-  const today = new Date();
-  const yesterday = new Date();
-  yesterday.setDate(today.getDate() - 1);
-  if (date.toDateString() === today.toDateString()) return `${t("今朝")} ${time}`;
-  if (date.toDateString() === yesterday.toDateString()) return `${t("昨日")} ${time}`;
-  return date.toLocaleString(locale, { month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" });
+  return formatDateTime(iso);
 }
 
 export async function setPostLike(id: string, liked: boolean, userId: string) {

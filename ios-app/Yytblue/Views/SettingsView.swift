@@ -5,6 +5,7 @@ import SwiftUI
 struct SettingsView: View {
     @AppStorage("iruka-bottom-bar-labels") private var showBottomBarLabels = false
     @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
+    @AppStorage("iruka-date-display") private var dateDisplay = DateDisplayStyle.relative.rawValue
     @AppStorage("iruka-like-icon") private var likeIcon = LikeIcon.heart.rawValue
     @Environment(AuthManager.self) private var auth
     @Environment(RelationshipStore.self) private var relationships
@@ -67,6 +68,12 @@ struct SettingsView: View {
             Section(L("言語")) {
                 Picker(L("言語"), selection: $language) {
                     ForEach(AppLanguage.allCases) { option in Text(option.title).tag(option.rawValue) }
+                }
+                .pickerStyle(.inline)
+            }
+            Section(L("日付表示")) {
+                Picker(L("日付表示"), selection: $dateDisplay) {
+                    ForEach(DateDisplayStyle.allCases) { option in Text(L(option.label)).tag(option.rawValue) }
                 }
                 .pickerStyle(.inline)
             }
@@ -139,4 +146,3 @@ struct SettingsView: View {
 nonisolated struct DeleteAccountParams: Encodable, Sendable {
     let expected_user_id: String
 }
-

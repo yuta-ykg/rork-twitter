@@ -16,6 +16,7 @@ import { likeIconOptions, useLikeIcon, type LikeIcon } from "@/hooks/useLikeIcon
 import { Link, useNavigate } from "react-router-dom";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { themeOptions, useTheme, type Theme } from "@/hooks/useTheme";
+import { dateDisplayOptions, setDateDisplay, useDateDisplay, type DateDisplayStyle } from "@/lib/dateDisplay";
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
@@ -33,6 +34,7 @@ export default function SettingsPage() {
   const { language, setLanguage } = useLanguage();
   const { theme, setTheme } = useTheme();
   const { likeIcon, setLikeIcon } = useLikeIcon();
+  const dateDisplay = useDateDisplay();
   return <div className={`mx-auto min-h-dvh w-full max-w-[430px] bg-background text-foreground ${useDesktopBottomBar ? "" : "lg:max-w-[760px] lg:pl-[220px]"}`}>
     {!useDesktopBottomBar && <DesktopSidebar tab="settings" onCompose={() => navigate("/", { state: { compose: true } })} />}
     <main className="px-5 pb-10">
@@ -132,6 +134,15 @@ export default function SettingsPage() {
           className="flex min-h-14 cursor-pointer items-center justify-between rounded-xl border border-border bg-card px-4 py-3 text-base">
           <span className="inline-flex items-center gap-3"><Icon className="h-5 w-5" aria-hidden />{t(label)}</span>
           <RadioGroupItem id={`like-icon-${value}`} value={value} />
+        </label>)}
+      </RadioGroup>
+    </section>
+    <section className="border-t border-border py-6">
+      <h2 id="date-display-label" className="mb-5 text-xl font-semibold">{t("日付表示")}</h2>
+      <RadioGroup aria-labelledby="date-display-label" value={dateDisplay} onValueChange={(value) => setDateDisplay(value as DateDisplayStyle)}>
+        {dateDisplayOptions.map((option) => <label key={option.value} htmlFor={`date-display-${option.value}`}
+          className="flex min-h-14 cursor-pointer items-center justify-between rounded-xl border border-border bg-card px-4 py-3 text-base">
+          {t(option.label)}<RadioGroupItem id={`date-display-${option.value}`} value={option.value} />
         </label>)}
       </RadioGroup>
     </section>
