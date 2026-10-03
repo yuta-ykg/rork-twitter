@@ -124,8 +124,8 @@ enum DevelopmentData {
                             isMine: true, avatarIndex: old.avatarIndex, userId: userId, parentId: old.parentId, avatarUrl: profile.avatarUrl)
             post.likedByMe = old.isLiked
             post.storedLikeCount = old.likeCount
+            post.poll = old.poll
             return post
         }
     }
 }
-

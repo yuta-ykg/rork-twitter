@@ -13,6 +13,9 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/authContext";
 import { MAX_CHARACTERS, avatarFills, type Post } from "@/lib/posts";
+import { PollDraftEditor } from "@/components/PollDraftEditor";
+import { PostPollCard } from "@/components/PostPollCard";
+import { isPollDraftValid, type PollDraft } from "@/lib/polls";
 
 type Tab = "home" | "mine" | "bookmarks" | "notifications" | "search" | "lists" | "communities";
 
@@ -90,15 +93,16 @@ export function ComposeSheet({
   initial,
 }: {
   onClose: () => void;
-  onPost: (body: string) => void;
+  onPost: (body: string, poll: PollDraft | null) => void;
   authorName: string;
   handle: string;
   initial: string;
 }) {
   useLanguage();
   const [draft, setDraft] = useState("");
+  const [poll, setPoll] = useState<PollDraft | null>(null);
   const count = draft.length;
-  const canPost = draft.trim().length > 0 && count <= MAX_CHARACTERS;
+  const canPost = draft.trim().length > 0 && count <= MAX_CHARACTERS && isPollDraftValid(poll);
 
   return (
     <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/30 sm:items-center" role="presentation">
@@ -106,7 +110,7 @@ export function ComposeSheet({
         role="dialog"
         aria-modal="true"
         aria-labelledby="compose-title"
-        className="flex max-h-[92dvh] w-full max-w-[430px] flex-col rounded-t-[28px] bg-background px-5 pb-6 pt-3 shadow-2xl sm:rounded-[28px]"
+        className="flex max-h-[92dvh] w-full max-w-[430px] flex-col overflow-y-auto rounded-t-[28px] bg-background px-5 pb-6 pt-3 shadow-2xl sm:rounded-[28px]"
       >
         <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-[#ECF0F2]" />
         <div className="mb-4 flex items-center justify-between">
@@ -139,13 +143,14 @@ export function ComposeSheet({
         <p className={`mt-3 text-right font-mono text-[15px] ${count >= MAX_CHARACTERS ? "text-red-500" : "text-muted-foreground"}`}>
           {count} / {MAX_CHARACTERS}
         </p>
+        <PollDraftEditor value={poll} onChange={setPoll} />
         <div className="mt-4">
           <PostButton
             label={t("投稿する")}
             disabled={!canPost}
             onClick={() => {
               if (!canPost) return;
-              onPost(draft);
+              onPost(draft, poll);
               onClose();
             }}
           />
@@ -249,12 +254,13 @@ export function Row({ post, showAuthor, onLike }: { post: Post; showAuthor: bool
           <Avatar initial={post.initial} index={post.avatarIndex} />
         </Link>
       ) : <Avatar initial={post.initial} index={post.avatarIndex} />}
-      <span className="min-w-0 pt-0.5">
+      <div className="min-w-0 flex-1 pt-0.5">
         {showAuthor ? (post.userId ? (
           <Link to={`/profile/${encodeURIComponent(post.userId)}`} className="block text-base font-semibold text-foreground">{post.authorName}</Link>
         ) : <span className="block text-base font-semibold">{post.authorName}</span>) : null}
         <Link to={`/post/${post.id}`} className="block text-base leading-snug">{post.body}</Link>
-      </span>
+        {post.poll ? <PostPollCard postId={post.id} initialPoll={post.poll} /> : null}
+      </div>
     </div>
     <div className="ml-[58px] flex items-center gap-2"><LikeButton post={post} onClick={onLike} /><BookmarkButton postId={post.id} /><Link to={`/post/${post.id}`} aria-label={t("返信")} className="grid min-h-11 min-w-11 place-items-center text-muted-foreground"><MessageCircle className="h-5 w-5" aria-hidden /></Link></div>
     </div>
@@ -279,4 +285,3 @@ export function LikeButton({ post, onClick }: { post: Post; onClick: () => void 
 }
 
 /** 保存済みプロフィールの表示名・ハンドル・頭文字。プロフィール編集がすぐ反映される。 */
-

@@ -46,11 +46,17 @@ struct ContentView: View {
                 authorName: auth.user?.displayName ?? "あなた",
                 handle: auth.user?.handle ?? "@you",
                 initial: auth.user?.initial ?? "あ"
-            ) { body in
+            ) { body, poll in
                 guard let user = auth.user else { return }
-                store.add(body: body, user: user)
+                store.add(body: body, poll: poll, user: user)
             }
         }
+        .alert(L("投稿"), isPresented: Binding(
+            get: { store.composeError != nil },
+            set: { if !$0 { store.composeError = nil } }
+        )) {
+            Button("OK") { store.composeError = nil }
+        } message: { Text(L(store.composeError ?? "")) }
         .sheet(isPresented: $showsSignIn, onDismiss: {
             if composeAfterLogin && auth.user != nil { showsComposer = true }
             composeAfterLogin = false
@@ -82,6 +88,7 @@ struct ContentView: View {
         )) {
             Button("OK") { bookmarks.error = nil }
         } message: { Text(L(bookmarks.error ?? "")) }
+        .environment(store)
         .environment(notifications)
         .task(id: auth.user?.id) {
             notifications.configure(userId: auth.user?.id)
@@ -231,4 +238,3 @@ struct ContentView: View {
     ContentView()
         .environment(AuthManager())
 }
-

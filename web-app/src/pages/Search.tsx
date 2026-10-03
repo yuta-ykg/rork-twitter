@@ -11,6 +11,7 @@ import { isConsumerProtectionSearchQuery, isCrimePreventionSearchQuery, isSuppor
 import { SearchSupportNotice } from "@/components/SearchSupportNotice";
 import { CrimePreventionNotice } from "@/components/CrimePreventionNotice";
 import { ConsumerProtectionNotice } from "@/components/ConsumerProtectionNotice";
+import type { PollDraft } from "@/lib/polls";
 
 export default function SearchPage() {
   useLanguage();
@@ -56,10 +57,10 @@ export default function SearchPage() {
       }
     } catch { toast.error(t("いいねを保存できませんでした。もう一度試してください。")); }
   }
-  async function add(body: string) {
+  async function add(body: string, poll: PollDraft | null) {
     if (!user) return;
     try {
-      const post = await insertPost(body, user);
+      const post = await insertPost(body, user, poll);
       if (activeUser.current === user.id) setPosts((current) => [post, ...current]);
     } catch { toast.error(t("投稿できませんでした。もう一度試してください。")); }
   }
@@ -95,4 +96,3 @@ export default function SearchPage() {
     </>
   );
 }
-

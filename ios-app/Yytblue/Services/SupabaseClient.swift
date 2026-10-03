@@ -159,3 +159,58 @@ nonisolated struct CreateReplyParams: Encodable, Sendable {
     let reply_body: String
     let expected_user_id: String
 }
+
+nonisolated struct PollOptionInsert: Encodable, Sendable {
+    let text: String
+    let result: PollOptionResult
+    let feedback: String?
+}
+
+nonisolated struct CreatePostWithPollParams: Encodable, Sendable {
+    let post_id: UUID
+    let post_body: String
+    let poll_kind: String
+    let poll_allows_multiple: Bool
+    let poll_explanation: String?
+    let poll_options: [PollOptionInsert]
+    let expected_user_id: String
+}
+
+nonisolated struct GetPostPollsParams: Encodable, Sendable {
+    let requested_post_ids: [UUID]
+    let expected_user_id: String?
+}
+
+nonisolated struct SubmitPostPollResponseParams: Encodable, Sendable {
+    let target_post_id: UUID
+    let option_ids: [UUID]
+    let expected_user_id: String
+}
+
+nonisolated struct PostPollRow: Decodable, Sendable {
+    let postId: UUID
+    let poll: PostPoll
+
+    enum CodingKeys: String, CodingKey {
+        case postId = "post_id"
+        case pollKind = "poll_kind"
+        case allowsMultiple = "allows_multiple"
+        case explanation
+        case responseCount = "response_count"
+        case hasResponded = "has_responded"
+        case options
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        postId = try container.decode(UUID.self, forKey: .postId)
+        poll = PostPoll(
+            kind: try container.decode(PollKind.self, forKey: .pollKind),
+            allowsMultiple: try container.decode(Bool.self, forKey: .allowsMultiple),
+            explanation: try container.decodeIfPresent(String.self, forKey: .explanation),
+            responseCount: try container.decode(Int.self, forKey: .responseCount),
+            hasResponded: try container.decode(Bool.self, forKey: .hasResponded),
+            options: try container.decode([PostPollOption].self, forKey: .options)
+        )
+    }
+}

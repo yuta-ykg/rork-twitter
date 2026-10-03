@@ -54,6 +54,10 @@ struct PostDetailView: View {
                     .foregroundStyle(Color.irukaInk)
                     .fixedSize(horizontal: false, vertical: true)
 
+                if let poll = post.poll {
+                    PostPollCard(postId: post.id, initialPoll: poll, store: store)
+                }
+
                 HStack(spacing: 8) {
                     LikeButton(post: post) { store.toggleLike(id: post.id) }
                     BookmarkButton(postId: post.id)

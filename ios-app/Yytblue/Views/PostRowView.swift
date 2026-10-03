@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PostRowView: View {
     @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
+    @Environment(PostStore.self) private var store
     let post: Post
     var showsAuthor: Bool = true
 
@@ -29,6 +30,9 @@ struct PostRowView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .buttonStyle(.plain)
+                if let poll = post.poll {
+                    PostPollCard(postId: post.id, initialPoll: poll, store: store)
+                }
             }
             Spacer(minLength: 0)
         }
@@ -121,5 +125,157 @@ enum LikeIcon: String, CaseIterable, Identifiable {
         case .upvote: name = "arrowshape.up"
         }
         return name + (liked ? ".fill" : "")
+    }
+}
+
+struct PostPollCard: View {
+    @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
+    @Environment(AuthManager.self) private var auth
+    let postId: UUID
+    let store: PostStore
+    let initialPoll: PostPoll
+    @State private var poll: PostPoll
+    @State private var selectedOptionIds: Set<UUID>
+    @State private var isSubmitting = false
+    @State private var voteError: String?
+
+    init(postId: UUID, initialPoll: PostPoll, store: PostStore) {
+        self.postId = postId
+        self.initialPoll = initialPoll
+        self.store = store
+        _poll = State(initialValue: initialPoll)
+        _selectedOptionIds = State(initialValue: Set(initialPoll.options.filter(\.selected).map(\.id)))
+    }
+
+    private var showsResults: Bool {
+        poll.hasResponded || poll.options.contains(where: { $0.voteCount != nil })
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text(L(poll.kind == .quiz ? "クイズ" : "投票"))
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(Color.irukaBlue)
+                Spacer()
+                Text("\(poll.responseCount) \(L("回答"))")
+                    .font(.system(size: 12))
+                    .foregroundStyle(Color.irukaSecondary)
+            }
+
+            ForEach(poll.options.sorted(by: { $0.position < $1.position })) { option in
+                optionButton(option)
+            }
+
+            if !showsResults {
+                Button(action: submit) {
+                    Text(L(isSubmitting ? "回答を送信中…" : "回答する"))
+                        .font(.system(size: 14, weight: .semibold))
+                        .frame(maxWidth: .infinity, minHeight: 42)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Color.irukaBlue)
+                .disabled(selectedOptionIds.isEmpty || isSubmitting)
+            }
+
+            if showsResults, let explanation = poll.explanation, !explanation.isEmpty {
+                (Text(L("解説") + ": ").bold() + Text(explanation))
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color.irukaInk)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(10)
+                    .background(Color.irukaField, in: RoundedRectangle(cornerRadius: 10))
+            }
+            if !showsResults && poll.allowsMultiple {
+                Text(L("複数選択できます。"))
+                    .font(.system(size: 11))
+                    .foregroundStyle(Color.irukaSecondary)
+            }
+        }
+        .padding(12)
+        .background(Color.white, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Color.irukaHairline, lineWidth: 1))
+        .onChange(of: initialPoll) { _, updated in
+            poll = updated
+            selectedOptionIds = Set(updated.options.filter(\.selected).map(\.id))
+        }
+        .alert(L("投票"), isPresented: Binding(
+            get: { voteError != nil },
+            set: { if !$0 { voteError = nil } }
+        )) {
+            Button("OK") { voteError = nil }
+        } message: {
+            Text(L(voteError ?? ""))
+        }
+    }
+
+    private func optionButton(_ option: PostPollOption) -> some View {
+        let result = showsResults && poll.kind == .quiz ? option.result : nil
+        let denominator = max(poll.responseCount, 1)
+        let percentage = option.voteCount.map { Int((Double($0) / Double(denominator) * 100).rounded()) }
+        let background: Color
+        if result == .correct { background = Color.green.opacity(0.10) }
+        else if result == .close { background = Color.orange.opacity(0.12) }
+        else { background = selectedOptionIds.contains(option.id) ? Color.irukaBlue.opacity(0.10) : Color.irukaField }
+
+        return Button {
+            guard !showsResults, !isSubmitting else { return }
+            if poll.allowsMultiple {
+                if selectedOptionIds.contains(option.id) { selectedOptionIds.remove(option.id) }
+                else { selectedOptionIds.insert(option.id) }
+            } else {
+                selectedOptionIds = [option.id]
+            }
+        } label: {
+            VStack(alignment: .leading, spacing: 5) {
+                HStack(alignment: .top, spacing: 8) {
+                    Text(option.text)
+                        .font(.system(size: 14, weight: .medium))
+                        .multilineTextAlignment(.leading)
+                    Spacer(minLength: 4)
+                    if showsResults, let percentage {
+                        Text("\(percentage)%")
+                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                            .monospacedDigit()
+                    } else if selectedOptionIds.contains(option.id) {
+                        Image(systemName: "checkmark.circle.fill").foregroundStyle(Color.irukaBlue)
+                    }
+                }
+                if showsResults, let result {
+                    Text(option.feedback.flatMap { $0.isEmpty ? nil : $0 } ?? L(result.message))
+                        .font(.system(size: 12, weight: .semibold))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                if showsResults, let percentage {
+                    ProgressView(value: Double(percentage), total: 100)
+                        .tint(result == .correct ? Color.green : Color.irukaBlue)
+                }
+            }
+            .padding(10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(background, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(result == .correct ? Color.green : Color.irukaHairline, lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+        .disabled(showsResults || isSubmitting)
+        .accessibilityAddTraits(selectedOptionIds.contains(option.id) ? .isSelected : [])
+    }
+
+    private func submit() {
+        guard !selectedOptionIds.isEmpty, !isSubmitting else { return }
+        guard let userId = auth.user?.id else {
+            voteError = "回答するにはAppleかGoogleでログインしてください。"
+            return
+        }
+        isSubmitting = true
+        Task {
+            defer { isSubmitting = false }
+            do {
+                poll = try await store.submitPoll(postId: postId, optionIds: Array(selectedOptionIds), userId: userId)
+                selectedOptionIds = Set(poll.options.filter(\.selected).map(\.id))
+            } catch {
+                voteError = "回答を保存できませんでした。"
+            }
+        }
     }
 }

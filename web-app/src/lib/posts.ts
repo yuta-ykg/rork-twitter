@@ -3,6 +3,7 @@ import { isDevelopmentSession, localUser, readDevelopmentPosts, writeDevelopment
 import { ensureProfile, fetchProfiles } from "@/lib/profiles";
 import { hiddenDevelopmentUsers } from "@/lib/userRelationships";
 import { supabase } from "@/lib/supabase";
+import { fetchPostPolls, isPollDraftValid, pollFromDraft, type PollDraft, type PostPoll } from "@/lib/polls";
 
 export const MAX_CHARACTERS = 70;
 
@@ -21,6 +22,7 @@ export type Post = {
   parentId?: string | null;
   isLiked?: boolean;
   likeCount?: number;
+  poll?: PostPoll | null;
 };
 
 type Row = {
@@ -72,11 +74,12 @@ export async function fetchPosts(userId?: string | null): Promise<Post[]> {
   if (error) throw error;
   const posts = (data ?? []).map((row) => toPost(row, userId));
   if (posts.length === 0) return posts;
-  const { data: stats, error: likesError } = await supabase.rpc("get_post_likes", {
-    post_ids: posts.map((post) => post.id),
-  });
+  const [{ data: stats, error: likesError }, profiles, polls] = await Promise.all([
+    supabase.rpc("get_post_likes", { post_ids: posts.map((post) => post.id) }),
+    fetchProfiles(posts.flatMap((post) => post.userId ? [post.userId] : [])),
+    fetchPostPolls(posts.map((post) => post.id), userId),
+  ]);
   if (likesError) throw likesError;
-  const profiles = await fetchProfiles(posts.flatMap((post) => post.userId ? [post.userId] : []));
   const profileById = new Map(profiles.map((profile) => [profile.id, profile]));
   const byId = new Map((stats ?? []).map((stat) => [stat.post_id, stat]));
   return posts.map((post) => {
@@ -86,7 +89,8 @@ export async function fetchPosts(userId?: string | null): Promise<Post[]> {
       authorName: profile?.name ?? post.authorName,
       handle: profile?.handle ? `@${profile.handle}` : post.handle,
       initial: (profile?.name ?? post.authorName).slice(0, 1),
-      likeCount: Number(stat?.like_count ?? 0), isLiked: Boolean(userId && stat?.is_liked) };
+      likeCount: Number(stat?.like_count ?? 0), isLiked: Boolean(userId && stat?.is_liked),
+      poll: polls.get(post.id) ?? null };
   });
 }
 
@@ -94,22 +98,40 @@ export async function syncProfile(author: Author): Promise<void> {
   await ensureProfile(author);
 }
 
-export async function insertPost(body: string, author: Author): Promise<Post> {
+export async function insertPost(body: string, author: Author, pollDraft: PollDraft | null = null): Promise<Post> {
+  if (!isPollDraftValid(pollDraft)) throw new Error("投票の入力内容を確認してください。");
   if (isDevelopmentSession()) {
     const trimmed = body.trim();
     if (!trimmed || Array.from(trimmed).length > MAX_CHARACTERS) throw new Error("投稿は1〜70文字で入力してください。");
     const profile = readDevelopmentProfile();
     const post: Post = { id: crypto.randomUUID(), userId: localUser().id, authorName: profile.name,
       handle: `@${profile.handle}`, initial: Array.from(profile.name)[0] ?? "開", body: trimmed,
-      createdAt: new Date().toISOString(), isMine: true, avatarIndex: 0, isLiked: false, likeCount: 0 };
+      createdAt: new Date().toISOString(), isMine: true, avatarIndex: 0, isLiked: false, likeCount: 0,
+      poll: pollDraft ? pollFromDraft(pollDraft) : null };
     writeDevelopmentPosts([post, ...readDevelopmentPosts()]);
     return post;
   }
   const trimmed = body.trim();
   await syncProfile(author);
-  const { data, error } = await supabase.rpc("create_post", { post_id: crypto.randomUUID(), post_body: trimmed, expected_user_id: author.id });
+  const postId = crypto.randomUUID();
+  const request = pollDraft ? supabase.rpc("create_post_with_poll", {
+    post_id: postId,
+    post_body: trimmed,
+    poll_kind: pollDraft.kind,
+    poll_allows_multiple: pollDraft.allowsMultiple,
+    poll_explanation: pollDraft.explanation.trim(),
+    poll_options: pollDraft.options.map((option) => ({
+      text: option.text.trim(),
+      result: option.result,
+      feedback: option.feedback.trim(),
+    })),
+    expected_user_id: author.id,
+  }) : supabase.rpc("create_post", { post_id: postId, post_body: trimmed, expected_user_id: author.id });
+  const { data, error } = await request;
   if (error || !data?.[0]) throw error ?? new Error("投稿できませんでした");
-  return toPost(data[0], author.id);
+  const post = toPost(data[0], author.id);
+  if (pollDraft) post.poll = (await fetchPostPolls([post.id], author.id)).get(post.id) ?? null;
+  return post;
 }
 
 export function sortTimeline(posts: Post[]): Post[] {

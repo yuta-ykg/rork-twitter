@@ -8,6 +8,7 @@ import { displayName, userHandle } from "@/hooks/authUser";
 import { fetchPosts, insertPost, setPostLike, type Post } from "@/lib/posts";
 import { Shell, Row, ComposeSheet, SignInPanel } from "@/pages/IndexShared";
 import { useOwnProfile } from "@/hooks/useOwnProfile";
+import type { PollDraft } from "@/lib/polls";
 
 export default function BookmarksPage() {
   useLanguage();
@@ -43,11 +44,11 @@ export default function BookmarksPage() {
       if (activeUser.current === userId) setPosts((current) => current.map((item) => item.id === post.id ? { ...item, ...state } : item));
     } catch { toast.error(t("いいねを保存できませんでした。もう一度試してください。")); }
   }
-  async function add(body: string) {
+  async function add(body: string, poll: PollDraft | null) {
     if (!user) return;
     const userId = user.id;
     try {
-      const post = await insertPost(body, user);
+      const post = await insertPost(body, user, poll);
       if (activeUser.current === userId) setPosts((current) => [post, ...current]);
     } catch { toast.error(t("投稿できませんでした。もう一度試してください。")); }
   }
@@ -65,4 +66,3 @@ export default function BookmarksPage() {
       authorName={own?.name ?? displayName(user)} handle={own?.handle ?? userHandle(user)} initial={own?.initial ?? displayName(user).slice(0, 1)} /> : null}
   </>;
 }
-

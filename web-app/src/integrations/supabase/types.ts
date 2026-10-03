@@ -111,6 +111,39 @@ export type Database = {
           },
         ]
       }
+      post_poll_options: {
+        Row: { body: string; feedback: string | null; id: string; position: number; post_id: string; result_kind: string | null }
+        Insert: { body: string; feedback?: string | null; id?: string; position: number; post_id: string; result_kind?: string | null }
+        Update: { body?: string; feedback?: string | null; id?: string; position?: number; post_id?: string; result_kind?: string | null }
+        Relationships: [
+          { foreignKeyName: "post_poll_options_post_id_fkey"; columns: ["post_id"]; isOneToOne: false; referencedRelation: "post_polls"; referencedColumns: ["post_id"] },
+        ]
+      }
+      post_poll_response_options: {
+        Row: { option_id: string; post_id: string; response_id: string }
+        Insert: { option_id: string; post_id: string; response_id: string }
+        Update: { option_id?: string; post_id?: string; response_id?: string }
+        Relationships: [
+          { foreignKeyName: "post_poll_response_options_option_id_post_id_fkey"; columns: ["option_id", "post_id"]; isOneToOne: false; referencedRelation: "post_poll_options"; referencedColumns: ["id", "post_id"] },
+          { foreignKeyName: "post_poll_response_options_response_id_post_id_fkey"; columns: ["response_id", "post_id"]; isOneToOne: false; referencedRelation: "post_poll_responses"; referencedColumns: ["id", "post_id"] },
+        ]
+      }
+      post_poll_responses: {
+        Row: { created_at: string; id: string; post_id: string; user_id: string }
+        Insert: { created_at?: string; id?: string; post_id: string; user_id: string }
+        Update: { created_at?: string; id?: string; post_id?: string; user_id?: string }
+        Relationships: [
+          { foreignKeyName: "post_poll_responses_post_id_fkey"; columns: ["post_id"]; isOneToOne: false; referencedRelation: "post_polls"; referencedColumns: ["post_id"] },
+        ]
+      }
+      post_polls: {
+        Row: { allows_multiple: boolean; created_at: string; explanation: string | null; kind: string; post_id: string }
+        Insert: { allows_multiple?: boolean; created_at?: string; explanation?: string | null; kind: string; post_id: string }
+        Update: { allows_multiple?: boolean; created_at?: string; explanation?: string | null; kind?: string; post_id?: string }
+        Relationships: [
+          { foreignKeyName: "post_polls_post_id_fkey"; columns: ["post_id"]; isOneToOne: true; referencedRelation: "posts"; referencedColumns: ["id"] },
+        ]
+      }
       posts: {
         Row: {
           author_name: string
@@ -242,6 +275,30 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      create_post_with_poll: {
+        Args: {
+          expected_user_id: string
+          poll_allows_multiple: boolean
+          poll_explanation: string
+          poll_kind: string
+          poll_options: Json
+          post_body: string
+          post_id: string
+        }
+        Returns: {
+          author_name: string
+          avatar_index: number
+          body: string
+          created_at: string
+          handle: string
+          id: string
+          initial: string
+          is_mine: boolean
+          parent_id: string | null
+          user_id: string | null
+        }[]
+        SetofOptions: { from: "*"; to: "posts"; isOneToOne: false; isSetofReturn: true }
+      }
       create_reply: {
         Args: {
           expected_user_id: string
@@ -309,6 +366,18 @@ export type Database = {
           is_liked: boolean
           like_count: number
           post_id: string
+        }[]
+      }
+      get_post_polls: {
+        Args: { expected_user_id?: string; requested_post_ids: string[] }
+        Returns: {
+          allows_multiple: boolean
+          explanation: string | null
+          has_responded: boolean
+          options: Json
+          poll_kind: string
+          post_id: string
+          response_count: number
         }[]
       }
       get_public_profiles: {
@@ -430,6 +499,18 @@ export type Database = {
           is_liked: boolean
           like_count: number
           post_id: string
+        }[]
+      }
+      submit_post_poll_response: {
+        Args: { expected_user_id: string; option_ids: string[]; target_post_id: string }
+        Returns: {
+          allows_multiple: boolean
+          explanation: string | null
+          has_responded: boolean
+          options: Json
+          poll_kind: string
+          post_id: string
+          response_count: number
         }[]
       }
       set_user_relationship: {

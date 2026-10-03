@@ -8,6 +8,7 @@ import { rankTimeline, type TimelineMode } from "@/lib/recommendations";
 import { useBookmarks } from "@/hooks/useBookmarks";
 import { Shell, Row, ComposeSheet, SignInPanel } from "@/pages/IndexShared";
 import { useOwnProfile } from "@/hooks/useOwnProfile";
+import type { PollDraft } from "@/lib/polls";
 
 const timelineModeKey = "iruka-timeline-mode";
 
@@ -55,10 +56,10 @@ export default function HomePage() {
     } catch { toast.error(t("いいねを保存できませんでした。もう一度試してください。")); }
   }
 
-  async function add(body: string) {
+  async function add(body: string, poll: PollDraft | null) {
     if (!user) return;
     try {
-      const next = await insertPost(body, user);
+      const next = await insertPost(body, user, poll);
       setPosts((current) => [next, ...current]);
       setError("");
     } catch {

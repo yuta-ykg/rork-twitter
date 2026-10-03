@@ -7,6 +7,7 @@ import { displayName, userHandle } from "@/hooks/authUser";
 import { fetchPosts, insertPost, sortTimeline, thisWeekCount, setPostLike, type Post } from "@/lib/posts";
 import { Shell, Row, ComposeSheet, SignInPanel } from "@/pages/IndexShared";
 import { useOwnProfile } from "@/hooks/useOwnProfile";
+import type { PollDraft } from "@/lib/polls";
 
 export default function MinePage() {
   useLanguage();
@@ -39,9 +40,9 @@ export default function MinePage() {
     } catch { toast.error(t("いいねを保存できませんでした。もう一度試してください。")); }
   }
 
-  async function add(body: string) {
+  async function add(body: string, poll: PollDraft | null) {
     if (!user) return;
-    const next = await insertPost(body, user);
+    const next = await insertPost(body, user, poll);
     setPosts((current) => [next, ...current]);
   }
 
@@ -81,4 +82,3 @@ export default function MinePage() {
     </>
   );
 }
-
