@@ -801,6 +801,7 @@ private let simplifiedToTraditional: [(String, String)] = [
     ("划", "劃"), ("称", "稱"), ("检", "檢"), ("选", "選"), ("择", "擇"), ("线", "線"),
     ("赞", "讚"), ("贴", "貼"), ("浅", "淺"), ("头", "頭"), ("关", "關"), ("闭", "閉"),
     ("许", "許"), ("议", "議"), ("复", "復"),
+    ("测", "測"), ("结", "結"), ("创", "創"), ("娱", "娛"), ("乐", "樂"), ("说", "說"), ("项", "項"),
 ]
 private func traditionalize(_ value: String) -> String {
     simplifiedToTraditional.reduce(value) { result, pair in
