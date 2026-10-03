@@ -552,6 +552,7 @@ export function MinePage() {
 
 export function PostPage() {
   useLanguage();
+  useDateDisplay();
   const { id } = useParams();
   const navigate = useNavigate();
   const [posts, setPosts] = useState<Post[]>([]);
