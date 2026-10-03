@@ -164,8 +164,8 @@ export default function SettingsPage() {
     </section>}
     <section className="border-t border-border py-6">
       <h2 id="language-label" className="mb-5 text-xl font-semibold">{t("言語")}</h2>
-      <RadioGroup aria-labelledby="language-label" value={language} onValueChange={(value) => setLanguage(value === "en" || value === "ko" ? value : "ja")}>
-        {[{ value: "ja", label: "日本語" }, { value: "en", label: "English" }, { value: "ko", label: "한국어" }].map((option) => <label key={option.value} htmlFor={`language-${option.value}`}
+      <RadioGroup aria-labelledby="language-label" value={language} onValueChange={(value) => setLanguage(value === "en" || value === "ko" || value === "zh-CN" || value === "zh-TW" ? value : "ja")}>
+        {[{ value: "ja", label: "日本語" }, { value: "en", label: "English" }, { value: "ko", label: "한국어" }, { value: "zh-CN", label: "简体中文" }, { value: "zh-TW", label: "繁體中文" }].map((option) => <label key={option.value} htmlFor={`language-${option.value}`}
           className="flex min-h-14 cursor-pointer items-center justify-between rounded-xl border border-border bg-card px-4 py-3 text-base">
           {option.label}<RadioGroupItem id={`language-${option.value}`} value={option.value} />
         </label>)}

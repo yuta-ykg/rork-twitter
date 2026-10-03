@@ -44,7 +44,8 @@ export function useDateDisplay() {
 }
 
 function locale() {
-  return getLanguage() === "en" ? "en-US" : getLanguage() === "ko" ? "ko-KR" : "ja-JP";
+  const language = getLanguage();
+  return language === "en" ? "en-US" : language === "ko" ? "ko-KR" : language === "zh-CN" ? "zh-CN" : language === "zh-TW" ? "zh-TW" : "ja-JP";
 }
 
 export function formatDateTime(input: Date | string, includeTime = true): string {
