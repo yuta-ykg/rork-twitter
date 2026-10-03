@@ -23,6 +23,7 @@ const BookmarksPage = lazy(() => import("./pages/Bookmarks"));
 const MinePage = lazy(() => import("./pages/Mine"));
 const PostPage = lazy(() => import("./pages/Post"));
 const SearchPage = lazy(() => import("./pages/Search"));
+const DiagnosesPage = lazy(() => import("./pages/Diagnoses"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -56,6 +57,7 @@ const App = () => (
             <Route path="/lists" element={<RequireAuth><ListsPage /></RequireAuth>} />
             <Route path="/lists/:id" element={<RequireAuth><ListsPage /></RequireAuth>} />
             <Route path="/search" element={<RequireAuth><SearchPage /></RequireAuth>} />
+            <Route path="/diagnoses" element={<RequireAuth><DiagnosesPage /></RequireAuth>} />
             <Route path="/profile/:id" element={<RequireAuth><ProfilePage /></RequireAuth>} />
             <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />
             <Route path="/guide" element={<RequireAuth><FeatureGuidePage /></RequireAuth>} />

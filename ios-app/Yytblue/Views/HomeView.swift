@@ -70,7 +70,12 @@ struct HomeView: View {
                 Wordmark()
             }
             ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink { CommunitiesView() } label: { Label(L("コミュニティ"), systemImage: "person.3") }
+                HStack(spacing: 14) {
+                    NavigationLink { DiagnosisLibraryView(store: store) } label: {
+                        Image(systemName: "sparkles").accessibilityLabel(L("診断を探す"))
+                    }
+                    NavigationLink { CommunitiesView() } label: { Label(L("コミュニティ"), systemImage: "person.3") }
+                }
             }
         }
 

@@ -84,3 +84,34 @@ export async function fetchPostDiagnoses(postIds: string[], userId?: string | nu
   if (error) throw error;
   return new Map(((data ?? []) as DiagnosisRow[]).map((row) => [row.post_id, fromDiagnosisRow(row.diagnosis)]));
 }
+
+export type DiagnosisSearchResult = { postId: string; diagnosis: PostDiagnosis };
+
+export async function searchUserDiagnoses(query: string, userId?: string | null, limit = 24): Promise<DiagnosisSearchResult[]> {
+  const keyword = query.trim();
+  if (isDevelopmentSession()) {
+    const needle = keyword.toLocaleLowerCase();
+    const seen = new Set<string>();
+    return readDevelopmentPosts().flatMap((post) => {
+      const diagnosis = post.diagnosis;
+      if (!diagnosis || seen.has(diagnosis.id)) return [];
+      seen.add(diagnosis.id);
+      const searchable = [diagnosis.title, diagnosis.description,
+        ...diagnosis.outcomes.flatMap((outcome) => [outcome.title, outcome.description]),
+        ...diagnosis.questions.flatMap((question) => [question.prompt, ...question.options.map((option) => option.text)])]
+        .join(" ").toLocaleLowerCase();
+      if (needle && !searchable.includes(needle)) return [];
+      return [{ postId: post.id, diagnosis: { ...diagnosis, resultIndex: null, result: null } }];
+    }).slice(0, Math.min(Math.max(limit, 1), 50));
+  }
+  const { data, error } = await supabase.rpc("search_user_diagnoses", {
+    search_query: keyword || null,
+    expected_user_id: userId ?? null,
+    result_limit: Math.min(Math.max(limit, 1), 50),
+  });
+  if (error) throw error;
+  return ((data ?? []) as DiagnosisRow[]).map((row) => ({
+    postId: row.post_id,
+    diagnosis: fromDiagnosisRow(row.diagnosis),
+  }));
+}

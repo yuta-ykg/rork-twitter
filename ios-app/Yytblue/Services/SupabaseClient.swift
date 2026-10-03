@@ -203,6 +203,12 @@ nonisolated struct GetPostDiagnosesParams: Encodable, Sendable {
     let expected_user_id: String?
 }
 
+nonisolated struct SearchUserDiagnosesParams: Encodable, Sendable {
+    let search_query: String?
+    let expected_user_id: String?
+    let result_limit: Int
+}
+
 nonisolated struct CreateDiagnosisResultPostParams: Encodable, Sendable {
     let post_id: UUID
     let post_body: String

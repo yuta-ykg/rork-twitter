@@ -440,6 +440,10 @@ export type Database = {
         Args: { expected_user_id?: string | null; requested_post_ids: string[] }
         Returns: { diagnosis: Json; post_id: string }[]
       }
+      search_user_diagnoses: {
+        Args: { expected_user_id?: string | null; result_limit?: number; search_query?: string | null }
+        Returns: { diagnosis: Json; post_id: string }[]
+      }
       get_public_profiles: {
         Args: { profile_ids: string[] }
         Returns: {

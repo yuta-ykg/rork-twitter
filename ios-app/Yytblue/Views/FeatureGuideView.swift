@@ -10,7 +10,7 @@ struct FeatureGuideView: View {
     private let sections = [
         FeatureGuideItem(id: "posts", title: "投稿", body: "70文字までの投稿を作成し、返信・いいね・ブックマークを使えます。"),
         FeatureGuideItem(id: "polls", title: "投票・クイズ", body: "投稿に投票を付け、回答後に結果を確認できます。クイズでは複数の正解、正解・惜しい・不正解の判定、選択肢ごとのメッセージや解説を設定できます。"),
-        FeatureGuideItem(id: "diagnoses", title: "診断", body: "オリジナルの診断を作って投稿し、ほかのユーザーは回答して結果をシェアしたり、診断結果の投稿から再度遊んだりできます。"),
+        FeatureGuideItem(id: "diagnoses", title: "診断", body: "診断を投稿から遊べるほか、診断一覧で探してその場で遊べます。検索からも診断を見つけられ、結果を投稿で共有できます。"),
         FeatureGuideItem(id: "communities", title: "コミュニティ", body: "公開コミュニティを作成・検索・参加できます。作成者とモデレーターはメンバーや投稿を管理し、投稿を固定できます。"),
         FeatureGuideItem(id: "lists", title: "リスト", body: "ユーザーをリストに追加すると、そのユーザーの投稿をまとめて確認できます。公開すると共有リンクで誰でも閲覧できます。"),
         FeatureGuideItem(id: "notifications", title: "通知", body: "自分の投稿へのいいね通知を確認し、既読にできます。"),

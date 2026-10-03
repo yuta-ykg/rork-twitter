@@ -11,8 +11,10 @@ import { isConsumerProtectionSearchQuery, isCrimePreventionSearchQuery, isSuppor
 import { SearchSupportNotice } from "@/components/SearchSupportNotice";
 import { CrimePreventionNotice } from "@/components/CrimePreventionNotice";
 import { ConsumerProtectionNotice } from "@/components/ConsumerProtectionNotice";
+import { PostDiagnosisCard } from "@/components/PostDiagnosisCard";
 import type { PollDraft } from "@/lib/polls";
-import type { DiagnosisDraft } from "@/lib/diagnoses";
+import { searchUserDiagnoses, type DiagnosisDraft, type DiagnosisSearchResult } from "@/lib/diagnoses";
+import { useNavigate } from "react-router-dom";
 
 export default function SearchPage() {
   useLanguage();
@@ -24,6 +26,10 @@ export default function SearchPage() {
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
   const [open, setOpen] = useState(false);
+  const [diagnoses, setDiagnoses] = useState<DiagnosisSearchResult[]>([]);
+  const [diagnosisLoading, setDiagnosisLoading] = useState(false);
+  const [diagnosisError, setDiagnosisError] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     let cancelled = false;
@@ -43,6 +49,25 @@ export default function SearchPage() {
       || post.authorName.toLowerCase().includes(keyword)
       || post.handle.toLowerCase().includes(keyword));
   }, [posts, keyword]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!keyword) {
+      setDiagnoses([]);
+      setDiagnosisLoading(false);
+      setDiagnosisError("");
+      return () => { cancelled = true; };
+    }
+    setDiagnosisLoading(true);
+    setDiagnosisError("");
+    const timer = window.setTimeout(() => {
+      searchUserDiagnoses(query, user?.id)
+        .then((next) => { if (!cancelled) setDiagnoses(next); })
+        .catch(() => { if (!cancelled) setDiagnosisError("診断を読み込めませんでした。"); })
+        .finally(() => { if (!cancelled) setDiagnosisLoading(false); });
+    }, 250);
+    return () => { cancelled = true; window.clearTimeout(timer); };
+  }, [keyword, query, user?.id]);
 
   const activeUser = useRef(user?.id);
   activeUser.current = user?.id;
@@ -77,7 +102,7 @@ export default function SearchPage() {
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder={t("キーワードで投稿を検索")}
+              placeholder={t("キーワードで投稿や診断を検索")}
               aria-label={t("検索")}
               className="h-11 w-full rounded-full border border-input bg-muted/60 pl-11 pr-4 text-base text-foreground outline-none placeholder:text-muted-foreground focus:border-[hsl(var(--brand))]"
             />
@@ -87,10 +112,22 @@ export default function SearchPage() {
         {isCrimePreventionSearchQuery(query) ? <CrimePreventionNotice /> : null}
         {isConsumerProtectionSearchQuery(query) ? <ConsumerProtectionNotice /> : null}
         {error ? <p role="alert" className="mt-4 text-sm text-red-500">{t(error)}</p> : null}
-        {loading ? <p role="status" className="py-10 text-muted-foreground">{t("読み込み中…")}</p> :
-          !keyword ? <p className="py-10 text-center text-muted-foreground">{t("ユーザー名や本文のキーワードで投稿を探せます。")}</p> :
-          results.length ? results.map((post) => <Row key={post.id} post={post} showAuthor onLike={() => like(post.id)} />) :
-          <p className="py-10 text-center text-muted-foreground">{t("該当する投稿がありません。")}</p>}
+        {!keyword ? <p className="py-10 text-center text-muted-foreground">{t("ユーザー名や本文のキーワードで投稿を探せます。診断はタイトル・説明・質問から検索できます。")}</p> : <>
+          <section className="mt-5" aria-labelledby="search-diagnoses-heading">
+            <h2 id="search-diagnoses-heading" className="text-lg font-semibold">{t("診断")}</h2>
+            {diagnosisError ? <p role="alert" className="mt-3 text-sm text-red-500">{t(diagnosisError)}</p> : null}
+            {diagnosisLoading ? <p role="status" className="py-6 text-center text-muted-foreground">{t("読み込み中…")}</p> :
+              diagnoses.length ? diagnoses.map(({ diagnosis }) => <PostDiagnosisCard key={diagnosis.id} diagnosis={diagnosis}
+                onShared={(post) => navigate(`/post/${post.id}`)} />) :
+              <p className="py-6 text-center text-sm text-muted-foreground">{t("該当する診断がありません。")}</p>}
+          </section>
+          <section className="mt-5" aria-labelledby="search-posts-heading">
+            <h2 id="search-posts-heading" className="text-lg font-semibold">{t("投稿")}</h2>
+            {loading ? <p role="status" className="py-6 text-center text-muted-foreground">{t("読み込み中…")}</p> :
+              results.length ? results.map((post) => <Row key={post.id} post={post} showAuthor onLike={() => like(post.id)} />) :
+              <p className="py-6 text-center text-sm text-muted-foreground">{t("該当する投稿がありません。")}</p>}
+          </section>
+        </>}
       </Shell>
       {open && user ? <ComposeSheet onClose={() => setOpen(false)} onPost={add}
         authorName={own?.name ?? displayName(user)} handle={own?.handle ?? userHandle(user)} initial={own?.initial ?? displayName(user).slice(0, 1)} /> : null}

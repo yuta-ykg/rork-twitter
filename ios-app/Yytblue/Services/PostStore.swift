@@ -36,6 +36,40 @@ final class PostStore {
         Task { await insert(trimmed, poll: poll, diagnosis: diagnosis, user: user) }
     }
 
+    func searchDiagnoses(_ query: String, userId: String?, limit: Int = 24) async throws -> [PostDiagnosisRow] {
+        let term = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard term.count <= 100 else { throw NSError(domain: "Diagnosis", code: 4) }
+        if DevelopmentData.isActive {
+            var seen = Set<UUID>()
+            let matches = DevelopmentData.timeline().sorted { $0.createdAt > $1.createdAt }.compactMap { post -> PostDiagnosisRow? in
+                guard let diagnosis = post.diagnosis, seen.insert(diagnosis.id).inserted else { return nil }
+                let searchable = ([diagnosis.title, diagnosis.diagnosisDescription]
+                    + diagnosis.outcomes.flatMap { [$0.title, $0.description] }
+                    + diagnosis.questions.flatMap { [$0.prompt] + $0.options.map(\.text) }).joined(separator: " ")
+                guard term.isEmpty || searchable.localizedCaseInsensitiveContains(term) else { return nil }
+                let playable = PostDiagnosis(id: diagnosis.id, creatorId: diagnosis.creatorId, title: diagnosis.title,
+                    diagnosisDescription: diagnosis.diagnosisDescription, outcomes: diagnosis.outcomes,
+                    questions: diagnosis.questions, resultIndex: nil, result: nil)
+                return PostDiagnosisRow(postId: post.id, diagnosis: playable)
+            }
+            return Array(matches.prefix(min(max(limit, 1), 50)))
+        }
+        let rows: [PostDiagnosisRow] = try await IrukaDatabase.client
+            .rpc("search_user_diagnoses", params: SearchUserDiagnosesParams(
+                search_query: term.isEmpty ? nil : term,
+                expected_user_id: userId,
+                result_limit: min(max(limit, 1), 50)
+            )).execute().value
+        return rows.map { row in
+            let diagnosis = row.diagnosis
+            return PostDiagnosisRow(postId: row.postId, diagnosis: PostDiagnosis(
+                id: diagnosis.id, creatorId: diagnosis.creatorId, title: diagnosis.title,
+                diagnosisDescription: diagnosis.diagnosisDescription, outcomes: diagnosis.outcomes,
+                questions: diagnosis.questions, resultIndex: nil, result: nil
+            ))
+        }
+    }
+
     func shareDiagnosisResult(_ diagnosis: PostDiagnosis, resultIndex: Int, user: AuthManager.User) async throws -> Post {
         guard diagnosis.outcomes.indices.contains(resultIndex) else { throw NSError(domain: "Diagnosis", code: 1) }
         let outcome = diagnosis.outcomes[resultIndex]
