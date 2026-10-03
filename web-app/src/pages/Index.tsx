@@ -13,7 +13,7 @@ import { t, useLanguage } from "@/lib/language";
 import { LikeIconGlyph, useLikeIcon } from "@/hooks/useLikeIcon";
 import { isDevelopmentSession, isGuestSession } from "@/lib/development";
 import { toast } from "sonner";
-import { Bookmark, List, Download, Fish, House, MessageCircle, Search, SquarePen, Settings, UserRound, X } from "lucide-react";
+import { Bookmark, List, Download, Fish, House, MessageCircle, Search, SquarePen, Settings, UserRound, UsersRound, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 
@@ -30,7 +30,7 @@ import {
   type Post,
 } from "@/lib/posts";
 
-type Tab = "home" | "mine" | "bookmarks" | "notifications" | "search" | "lists";
+type Tab = "home" | "mine" | "bookmarks" | "notifications" | "search" | "lists" | "communities";
 
 function Avatar({ initial, index }: { initial: string; index: number }) {
   useLanguage();
@@ -203,9 +203,14 @@ export function Shell({
       <header className="sticky top-0 z-10 border-b border-border/80 bg-background/75 px-5 py-3 backdrop-blur-xl">
         <div className="flex items-center justify-between">
           <Wordmark />
+          <div className="flex items-center">
+          <Link to="/communities" aria-label={t("コミュニティ")} aria-current={tab === "communities" ? "page" : undefined} className={`grid min-h-11 min-w-11 place-items-center ${tab === "communities" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
+            <UsersRound className="h-5 w-5" aria-hidden />
+          </Link>
           <Link to="/settings" aria-label={t("設定")} className="grid min-h-11 min-w-11 place-items-center text-muted-foreground">
             <Settings className="h-5 w-5" aria-hidden />
           </Link>
+          </div>
         </div>
         {isDevelopmentSession() ? <p className="mt-1 text-sm text-muted-foreground">{t(isGuestSession() ? "ゲストモード・このブラウザに保存" : "開発モード・このブラウザに保存")}</p> : null}
       </header>

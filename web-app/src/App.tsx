@@ -1,3 +1,4 @@
+import CommunitiesPage from "./pages/Communities";
 import ListsPage from "./pages/Lists";
 import PublicListPage from "./pages/PublicList";
 import { LikeIconProvider } from "@/hooks/useLikeIcon";
@@ -41,6 +42,8 @@ const App = () => (
         <Routes>
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/communities" element={<CommunitiesPage />} />
+          <Route path="/communities/:id" element={<CommunitiesPage />} />
           <Route path="/public/lists/:id" element={<PublicListPage />} />
           <Route path="/" element={<RequireAuth><HomePage /></RequireAuth>} />
           <Route path="/lists" element={<RequireAuth><ListsPage /></RequireAuth>} />

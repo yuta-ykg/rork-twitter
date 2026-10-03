@@ -52,6 +52,9 @@ struct HomeView: View {
             ToolbarItem(placement: .topBarLeading) {
                 Wordmark()
             }
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink { CommunitiesView() } label: { Label(L("コミュニティ"), systemImage: "person.3") }
+            }
         }
 
     }
@@ -131,3 +134,4 @@ struct MineView: View {
 
     }
 }
+
