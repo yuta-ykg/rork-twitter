@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { t, useLanguage } from "@/lib/language";
 import { isDevelopmentSession } from "@/lib/development";
-import { manageLists, searchListProfiles, type ListMember, type UserList } from "@/lib/lists";
+import { findPublicLists, manageLists, publicListUrl, searchListProfiles, type ListMember, type UserList } from "@/lib/lists";
 import { filterListPosts, validateList, type ListOperation } from "@/lib/listModel";
 import { fetchPosts, setPostLike, type Post } from "@/lib/posts";
 import { Shell, Row } from "./Index";
@@ -29,6 +29,12 @@ export default function ListsPage() {
   const [results, setResults] = useState<ListMember[]>([]);
   const [searching, setSearching] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [publicLists, setPublicLists] = useState<Omit<UserList, "members">[]>([]);
+  const [publicQuery, setPublicQuery] = useState("");
+  const [publicError, setPublicError] = useState("");
+  const [publicLoading, setPublicLoading] = useState(false);
+  const [publicRetry, setPublicRetry] = useState(0);
+  const [copied, setCopied] = useState(false);
   const active = useRef(user?.id); active.current = user?.id;
   const searchVersion = useRef(0);
   const list = lists.find((item) => item.id === id);
@@ -45,6 +51,16 @@ export default function ListsPage() {
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; versions.current++; };
   }, [userId, id, retry]);
+  useEffect(() => {
+    let cancelled = false;
+    setPublicLists([]); setPublicError(""); setCopied(false);
+    if (id || !userId || isDevelopmentSession()) return;
+    setPublicLoading(true);
+    findPublicLists(publicQuery).then((next) => { if (!cancelled) setPublicLists(next); })
+      .catch(() => { if (!cancelled) setPublicError(t("公開リストを読み込めませんでした。")); })
+      .finally(() => { if (!cancelled) setPublicLoading(false); });
+    return () => { cancelled = true; };
+  }, [id, userId, publicQuery, publicRetry]);
   async function mutate(operation: ListOperation, member?: ListMember) {
     if (!user || busy) return;
     const userId = user.id;
@@ -56,6 +72,7 @@ export default function ListsPage() {
       const next = await manageLists(userId, operation, targetId, name, description, member);
       if (active.current !== userId) return;
       setLists(next); setEditing(false); setConfirmDelete(false);
+      setCopied(false); setPublicRetry((value) => value + 1);
       if (operation === "create") navigate(`/lists/${targetId}`);
       if (operation === "delete") navigate("/lists");
     } catch (err) { if (active.current === userId) setError(t(err instanceof Error ? err.message : "リストを保存できませんでした。")); }
@@ -75,7 +92,7 @@ export default function ListsPage() {
       <h1 className="text-2xl font-bold">{list?.name ?? t("リスト")}</h1>
       <Link to={id ? "/lists" : "/"} className="min-h-11 content-center text-[hsl(var(--brand))]">{t("戻る")}</Link>
     </div>
-    <p className="mb-4 text-sm text-muted-foreground">{t(isDevelopmentSession() ? "リストはこの端末に保存されます。" : "リストは自分だけに表示され、端末間で共有されます。")}</p>
+    <p className="mb-4 text-sm text-muted-foreground">{t(isDevelopmentSession() ? "リストはこの端末に保存されます。" : "リストは初期状態では非公開です。公開すると共有リンクから誰でも閲覧できます。")}</p>
     {error && <div role="alert" className="my-3 text-red-600">{error}<button className="ml-3 min-h-11 underline" onClick={() => setRetry((value) => value + 1)}>{t("再読み込み")}</button></div>}
     {loading ? <p role="status">{t("読み込み中…")}</p> : <>
       {id && !list ? <p>{t("リストが見つかりません。")}</p> : <>
@@ -90,10 +107,25 @@ export default function ListsPage() {
         </form>}
         {!id && <div className="mt-4">{lists.length ? lists.map((item) => <Link className="block border-b py-4" key={item.id} to={`/lists/${item.id}`}>
           <span className="block text-lg font-semibold">{item.name}</span><span className="block break-words text-sm text-muted-foreground">{item.description}</span>
+          <span className="mr-2 text-sm text-muted-foreground">{t(item.is_public ? "公開" : "非公開")}</span>
           <span className="text-sm">{t("メンバー")}: {item.members.length}</span>
         </Link>) : <p className="py-8 text-muted-foreground">{t("まだリストがありません。")}</p>}</div>}
         {list && <>
           <p className="my-3 break-words">{list.description}</p>
+          <section className="my-4 rounded-lg border p-3">
+            <h2 className="font-semibold">{t(list.is_public ? "公開" : "非公開")}</h2>
+            {isDevelopmentSession() ? <p className="mt-2 text-sm text-muted-foreground">{t("公開するにはAppleかGoogleでログインしてください。")}</p> : <>
+              <button disabled={busy} className="my-2 min-h-11 rounded-full border px-4" onClick={() => void mutate(list.is_public ? "unpublish" : "publish")}>{t(list.is_public ? "非公開にする" : "リストを公開")}</button>
+              {list.is_public && <div className="space-y-2">
+                <Link className="block min-h-11 content-center underline" to={`/public/lists/${list.id}`}>{t("公開ページを見る")}</Link>
+                <input aria-label={t("共有リンク")} readOnly value={publicListUrl(list.id)} className="w-full rounded border bg-background p-2" />
+                <button className="min-h-11 underline" onClick={async () => {
+                  try { await navigator.clipboard.writeText(publicListUrl(list.id)); setCopied(true); }
+                  catch { setError(t("共有リンクをコピーできませんでした。")); }
+                }}>{t(copied ? "コピーしました" : "共有リンクをコピー")}</button>
+              </div>}
+            </>}
+          </section>
           <section className="my-5 border-y py-4">
             <h2 className="text-lg font-semibold">{t("メンバー")}</h2>
             {list.members.map((member) => <div key={member.id} className="flex items-center justify-between gap-3 py-2">
@@ -129,6 +161,12 @@ export default function ListsPage() {
               </AlertDialogFooter></AlertDialogContent>
           </AlertDialog>
         </>}
+        {!id && !isDevelopmentSession() && <section className="mt-8 border-t pt-4">
+          <h2 className="text-xl font-semibold">{t("公開リストを探す")}</h2>
+          <label className="my-3 block">{t("リスト名で検索")}<input value={publicQuery} maxLength={40} onChange={(event) => setPublicQuery(event.target.value)} className="mt-1 w-full rounded border bg-background p-2" /></label>
+          {publicLoading ? <p role="status">{t("読み込み中…")}</p> : publicError ? <p role="alert">{publicError}<button className="ml-2 min-h-11 underline" onClick={() => setPublicRetry((value) => value + 1)}>{t("再読み込み")}</button></p> :
+            publicLists.length ? publicLists.map((item) => <Link className="block border-b py-3" to={`/public/lists/${item.id}`} key={item.id}><span className="block font-semibold">{item.name}</span><span className="text-sm text-muted-foreground">{item.description}</span></Link>) : <p>{t("公開リストがありません。")}</p>}
+        </section>}
       </>}
     </>}
   </Shell>;

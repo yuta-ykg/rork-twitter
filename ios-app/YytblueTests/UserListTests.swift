@@ -4,6 +4,15 @@ import Testing
 
 @MainActor
 struct UserListTests {
+    @Test func decodesLegacyAndPublicListVisibility() throws {
+        let id = "00000000-0000-4000-8000-000000000001"
+        let legacy = Data("{\"id\":\"\(id)\",\"name\":\"Legacy\",\"description\":\"\",\"members\":[]}".utf8)
+        #expect(try JSONDecoder().decode(UserList.self, from: legacy).isPublic == nil)
+        let shared = Data("{\"id\":\"\(id)\",\"name\":\"Public\",\"description\":\"\",\"members\":[],\"is_public\":true,\"owner_id\":\"alice\"}".utf8)
+        let decoded = try JSONDecoder().decode(UserList.self, from: shared)
+        #expect(decoded.isPublic == true)
+        #expect(decoded.ownerId == "alice")
+    }
     @Test func guestListLifecycleAndIsolation() async throws {
         DevelopmentData.startGuest()
         defer { DevelopmentData.clearGuestData() }
@@ -13,6 +22,8 @@ struct UserListTests {
         #expect(await store.perform("create", name: "  Friends  ", description: "People"))
         let list = try #require(store.lists.first)
         #expect(list.name == "Friends")
+        #expect(!(await store.perform("publish", id: list.id)))
+        #expect(store.lists.first?.isPublic != true)
         let member = ListMember(id: userId, name: "Guest", handle: "guest")
         #expect(await store.perform("add", id: list.id, member: member))
         #expect(await store.perform("add", id: list.id, member: member))

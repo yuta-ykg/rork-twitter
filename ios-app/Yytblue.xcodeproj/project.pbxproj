@@ -430,6 +430,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				INFOPLIST_KEY_PublicWebURL = "$(EXPO_PUBLIC_WEB_URL)";
 				INFOPLIST_KEY_CFBundleDisplayName = yytblue;
 			};
 			name = Debug;
@@ -465,6 +466,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				INFOPLIST_KEY_PublicWebURL = "$(EXPO_PUBLIC_WEB_URL)";
 				INFOPLIST_KEY_CFBundleDisplayName = yytblue;
 			};
 			name = Release;
@@ -615,3 +617,4 @@
 	};
 	rootObject = 105FC5722E9EAD3100EA8BCF /* Project object */;
 }
+

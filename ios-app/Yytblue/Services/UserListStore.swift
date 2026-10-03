@@ -12,6 +12,33 @@ nonisolated struct UserList: Codable, Identifiable, Sendable {
     var name: String
     var description: String
     var members: [ListMember]
+    var isPublic: Bool? = nil
+    var ownerId: String? = nil
+    enum CodingKeys: String, CodingKey {
+        case id, name, description, members
+        case isPublic = "is_public", ownerId = "owner_id"
+    }
+}
+nonisolated struct PublicListSnapshot: Decodable, Sendable {
+    let list: UserList
+    let posts: [PostRow]
+}
+nonisolated struct PublicListIDParams: Encodable, Sendable { let target_list_id: UUID }
+nonisolated struct PublicListSearchParams: Encodable, Sendable { let keyword: String }
+
+@MainActor
+enum PublicListService {
+    static func fetch(_ id: UUID) async throws -> PublicListSnapshot? {
+        try await IrukaDatabase.client.rpc("get_public_user_list", params: PublicListIDParams(target_list_id: id)).execute().value
+    }
+    static func find(_ keyword: String) async throws -> [UserList] {
+        try await IrukaDatabase.client.rpc("find_public_user_lists", params: PublicListSearchParams(keyword: keyword)).execute().value
+    }
+    static func shareURL(_ id: UUID) -> URL? {
+        guard let base = Bundle.main.object(forInfoDictionaryKey: "PublicWebURL") as? String,
+              let url = URL(string: base), url.scheme == "https", url.host != nil else { return nil }
+        return URL(string: "/public/lists/\(id.uuidString.lowercased())", relativeTo: url)?.absoluteURL
+    }
 }
 nonisolated struct ManageListsParams: Encodable, Sendable {
     let expected_user_id: String
@@ -47,6 +74,10 @@ final class UserListStore {
     @discardableResult
     func perform(_ operation: String, id: UUID? = nil, name: String = "", description: String = "", member: ListMember? = nil) async -> Bool {
         guard let userId, !busy else { return false }
+        if DevelopmentData.isActive && (operation == "publish" || operation == "unpublish") {
+            error = "公開するにはAppleかGoogleでログインしてください。"
+            return false
+        }
         let epoch = generation
         let local = DevelopmentData.isActive
         busy = true; loading = operation == "read"; error = nil

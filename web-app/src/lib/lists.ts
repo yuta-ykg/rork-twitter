@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { isDevelopmentSession, localUser, readDevelopmentProfile } from "@/lib/development";
 import { supabase } from "@/lib/supabase";
+import type { Post } from "@/lib/posts";
 import { updateLocalLists, type ListMember, type ListOperation, type UserList } from "./listModel";
 export type { ListMember, UserList } from "./listModel";
 
@@ -11,9 +12,30 @@ type ListsDatabase = Omit<Database, "public"> & { public: Omit<Database["public"
     manage_user_lists: { Args: { expected_user_id: string; operation: string; target_list_id: string | null;
       list_name: string; list_description: string; target_user_id: string | null }; Returns: UserList[] };
     search_list_profiles: { Args: { expected_user_id: string; keyword: string }; Returns: ListMember[] };
+    get_public_user_list: { Args: { target_list_id: string }; Returns: PublicListResponse | null };
+    find_public_user_lists: { Args: { keyword: string }; Returns: Omit<UserList, "members">[] };
   };
 } };
 const client = supabase as unknown as SupabaseClient<ListsDatabase>;
+type PublicPostRow = { id: string; author_name: string; handle: string; initial: string; body: string;
+  created_at: string; avatar_index: number; user_id: string | null; parent_id: string | null };
+type PublicListResponse = { list: UserList; posts: PublicPostRow[] };
+export async function fetchPublicList(id: string): Promise<{ list: UserList; posts: Post[] } | null> {
+  const { data, error } = await client.rpc("get_public_user_list", { target_list_id: id });
+  if (error) throw new Error("公開リストを読み込めませんでした。");
+  if (!data) return null;
+  return { list: data.list, posts: data.posts.map((row) => ({ id: row.id, authorName: row.author_name,
+    handle: row.handle, initial: row.initial, body: row.body, createdAt: row.created_at,
+    avatarIndex: row.avatar_index, userId: row.user_id, parentId: row.parent_id, isMine: false })) };
+}
+export async function findPublicLists(keyword = ""): Promise<Omit<UserList, "members">[]> {
+  const { data, error } = await client.rpc("find_public_user_lists", { keyword });
+  if (error) throw new Error("公開リストを読み込めませんでした。");
+  return data ?? [];
+}
+export function publicListUrl(id: string): string {
+  return new URL(`/public/lists/${encodeURIComponent(id)}`, window.location.origin).href;
+}
 const localKey = (id: string) => `iruka:lists:${encodeURIComponent(id)}`;
 function readLocal(userId: string): UserList[] {
   const value: unknown = JSON.parse(localStorage.getItem(localKey(userId)) ?? "[]");

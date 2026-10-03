@@ -1,6 +1,6 @@
 export type ListMember = { id: string; name: string; handle: string | null };
-export type UserList = { id: string; name: string; description: string; members: ListMember[] };
-export type ListOperation = "read" | "create" | "update" | "delete" | "add" | "remove";
+export type UserList = { id: string; name: string; description: string; members: ListMember[]; owner_id?: string; is_public?: boolean };
+export type ListOperation = "read" | "create" | "update" | "delete" | "add" | "remove" | "publish" | "unpublish";
 export function validateList(name: string, description: string): void {
   if (!name.trim() || Array.from(name.trim()).length > 40 || Array.from(description).length > 160) {
     throw new Error("リスト名は1〜40文字、説明は160文字以内で入力してください。");
@@ -16,6 +16,9 @@ export function updateLocalLists(lists: UserList[], operation: ListOperation, id
   }
   if (!lists.some((list) => list.id === id)) throw new Error("リストが見つかりません。");
   if (operation === "delete") return lists.filter((list) => list.id !== id);
+  if (operation === "publish" || operation === "unpublish") {
+    throw new Error("公開するにはAppleかGoogleでログインしてください。");
+  }
   if ((operation === "add" || operation === "remove") && !member) throw new Error("ユーザーが見つかりません。");
   return lists.map((list) => {
     if (list.id !== id) return list;

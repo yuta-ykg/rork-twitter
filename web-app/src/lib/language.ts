@@ -3,6 +3,24 @@ import { useLayoutEffect, useSyncExternalStore } from "react";
 export type Language = "ja" | "en";
 const key = "iruka-language";
 const english: Record<string, string> = {
+  "公開": "Public",
+  "非公開": "Private",
+  "公開リスト": "Public list",
+  "リストを公開": "Publish list",
+  "非公開にする": "Make private",
+  "公開ページを見る": "View public page",
+  "共有リンク": "Share link",
+  "共有リンクをコピー": "Copy share link",
+  "コピーしました": "Copied",
+  "共有リンクをコピーできませんでした。": "Could not copy the share link.",
+  "公開リストを探す": "Discover public lists",
+  "リスト名で検索": "Search by list name",
+  "公開リストがありません。": "No public lists found.",
+  "公開リストを読み込めませんでした。": "Could not load the public list.",
+  "このリストは公開されていないか、削除されています。": "This list is private or has been deleted.",
+  "公開するにはAppleかGoogleでログインしてください。": "Sign in with Apple or Google to publish lists.",
+  "リストは初期状態では非公開です。公開すると共有リンクから誰でも閲覧できます。": "Lists are private by default. Publishing lets anyone view them using the share link.",
+
   "リスト": "Lists",
   "リストを作成": "Create list",
   "リストを編集": "Edit list",

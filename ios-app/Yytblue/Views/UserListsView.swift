@@ -5,9 +5,12 @@ struct UserListsView: View {
     @Environment(AuthManager.self) private var auth
     @Bindable var store: PostStore
     @State private var creating = false
+    @State private var publicLists: [UserList] = []
+    @State private var publicQuery = ""
+    @State private var publicError: String?
     var body: some View {
         List {
-            Text(L(DevelopmentData.isActive ? "リストはこの端末に保存されます。" : "リストは自分だけに表示され、端末間で共有されます。"))
+            Text(L(DevelopmentData.isActive ? "リストはこの端末に保存されます。" : "リストは初期状態では非公開です。公開すると共有リンクから誰でも閲覧できます。"))
                 .font(.footnote).foregroundStyle(.secondary)
             if lists.loading { ProgressView() }
             if let error = lists.error {
@@ -20,18 +23,40 @@ struct UserListsView: View {
                 } label: {
                     VStack(alignment: .leading) {
                         Text(list.name).font(.headline)
+                        Text(L(list.isPublic == true ? "公開" : "非公開")).font(.caption)
                         if !list.description.isEmpty { Text(list.description).font(.subheadline).foregroundStyle(.secondary) }
                         Text("\(L("メンバー")): \(list.members.count)").font(.caption)
                     }
                 }
             }
             if lists.lists.isEmpty && !lists.loading { Text(L("まだリストがありません。")) }
+            if !DevelopmentData.isActive {
+                Section(L("公開リストを探す")) {
+                    TextField(L("リスト名で検索"), text: $publicQuery)
+                    if let publicError {
+                        Text(L(publicError)).foregroundStyle(.red)
+                        Button(L("再読み込み")) { Task { await loadPublicLists() } }
+                    }
+                    ForEach(publicLists) { list in
+                        NavigationLink { PublicUserListView(id: list.id) } label: { Text(list.name) }
+                    }
+                }
+            }
         }
         .navigationTitle(L("リスト"))
         .toolbar { Button(L("リストを作成"), systemImage: "plus") { creating = true }.disabled(lists.busy) }
         .sheet(isPresented: $creating) { UserListEditor(list: nil) }
         .task(id: auth.user?.id) { await lists.refresh() }
+        .task(id: "\(auth.user?.id ?? ""):\(publicQuery)") { await loadPublicLists() }
         .refreshable { await lists.refresh(); await store.refresh(userId: auth.user?.id) }
+    }
+    private func loadPublicLists() async {
+        publicLists = []; publicError = nil
+        guard !DevelopmentData.isActive, publicQuery.unicodeScalars.count <= 40 else { return }
+        do {
+            let result = try await PublicListService.find(publicQuery)
+            if !Task.isCancelled { publicLists = result }
+        } catch { if !Task.isCancelled { publicError = "公開リストを読み込めませんでした。" } }
     }
 }
 
@@ -58,6 +83,20 @@ struct UserListDetailView: View {
             if let list {
                 if !list.description.isEmpty { Text(list.description) }
                 if let error = lists.error { Text(L(error)).foregroundStyle(.red) }
+                Section(L(list.isPublic == true ? "公開" : "非公開")) {
+                    if DevelopmentData.isActive { Text(L("公開するにはAppleかGoogleでログインしてください。")) }
+                    else {
+                        Button(L(list.isPublic == true ? "非公開にする" : "リストを公開")) {
+                            Task { await lists.perform(list.isPublic == true ? "unpublish" : "publish", id: listId) }
+                        }.disabled(lists.busy)
+                        if list.isPublic == true {
+                            NavigationLink(L("公開ページを見る")) { PublicUserListView(id: listId) }
+                            if let url = PublicListService.shareURL(listId) {
+                                ShareLink(item: url) { Label(L("共有リンク"), systemImage: "square.and.arrow.up") }
+                            }
+                        }
+                    }
+                }
                 Section(L("メンバー")) {
                     ForEach(list.members) { member in
                         HStack {

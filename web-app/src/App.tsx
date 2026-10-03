@@ -1,4 +1,5 @@
 import ListsPage from "./pages/Lists";
+import PublicListPage from "./pages/PublicList";
 import { LikeIconProvider } from "@/hooks/useLikeIcon";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { useAuth } from "@/hooks/useAuth";
@@ -40,6 +41,7 @@ const App = () => (
         <Routes>
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/public/lists/:id" element={<PublicListPage />} />
           <Route path="/" element={<RequireAuth><HomePage /></RequireAuth>} />
           <Route path="/lists" element={<RequireAuth><ListsPage /></RequireAuth>} />
           <Route path="/lists/:id" element={<RequireAuth><ListsPage /></RequireAuth>} />
@@ -61,4 +63,3 @@ const App = () => (
 );
 
 export default App;
-

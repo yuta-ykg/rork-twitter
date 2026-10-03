@@ -31,4 +31,9 @@ describe("private user lists", () => {
     expect(filterListPosts(posts, list).map((post) => post.id)).toEqual([1, 5]);
     expect(filterListPosts(posts, { ...list, members: [] })).toEqual([]);
   });
+  it("does not publish device-local lists or silently claim they are shared", () => {
+    const lists = updateLocalLists([], "create", "local", "Local list");
+    expect(() => updateLocalLists(lists, "publish", "local")).toThrow("公開するには");
+    expect(lists[0].is_public).not.toBe(true);
+  });
 });
