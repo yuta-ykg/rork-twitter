@@ -2,7 +2,7 @@ import { t, useLanguage } from "@/lib/language";
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/authContext";
 
 export default function AuthCallback() {
   useLanguage();

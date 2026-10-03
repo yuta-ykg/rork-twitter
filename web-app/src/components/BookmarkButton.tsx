@@ -1,6 +1,6 @@
 import { Bookmark } from "lucide-react";
 import { toast } from "sonner";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/authContext";
 import { setBookmark, useBookmarks } from "@/hooks/useBookmarks";
 import { t, useLanguage } from "@/lib/language";
 

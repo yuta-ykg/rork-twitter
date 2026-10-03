@@ -6,8 +6,8 @@ const fixtures = vi.hoisted(() => ({ user: null as { id: string } | null,
   list: { id: "00000000-0000-4000-8000-000000000001", name: "友達", description: "公開テスト",
     owner_id: "alice", is_public: false, members: [{ id: "bob", name: "Bob", handle: "bob" }] } as UserList,
   fetchPublicList: vi.fn(), manageLists: vi.fn() }));
-vi.mock("@/hooks/useAuth", () => ({ useAuth: () => ({ user: fixtures.user, isLoading: false }),
-  displayName: () => "Alice", userHandle: () => "@alice" }));
+vi.mock("@/hooks/authContext", () => ({ useAuth: () => ({ user: fixtures.user, isLoading: false }) }));
+vi.mock("@/hooks/authUser", () => ({ displayName: () => "Alice", userHandle: () => "@alice" }));
 vi.mock("@/lib/development", async (importOriginal) => ({ ...await importOriginal<typeof import("@/lib/development")>(), isDevelopmentSession: () => false, isGuestSession: () => false }));
 vi.mock("@/lib/lists", () => ({ fetchPublicList: fixtures.fetchPublicList,
   manageLists: fixtures.manageLists, findPublicLists: async () => [], searchListProfiles: async () => [],

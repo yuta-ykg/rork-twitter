@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Fish } from "lucide-react";
 
 import { AppleMark, GoogleMark } from "@/components/BrandMarks";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/authContext";
 import { t, useLanguage } from "@/lib/language";
 
 export default function LoginPage() {

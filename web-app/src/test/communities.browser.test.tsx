@@ -5,7 +5,8 @@ import type { CommunitySnapshot } from "@/lib/communities";
 const fixtures = vi.hoisted(() => ({ user: { id: "alice", email: "alice@example.test" } as { id: string; email: string } | null,
   local: false, snapshot: null as CommunitySnapshot | null,
   find: vi.fn(), read: vi.fn(), manage: vi.fn() }));
-vi.mock("@/hooks/useAuth", () => ({ useAuth: () => ({ user: fixtures.user, isLoading: false }), displayName: () => "Alice", userHandle: () => "@alice" }));
+vi.mock("@/hooks/authContext", () => ({ useAuth: () => ({ user: fixtures.user, isLoading: false }) }));
+vi.mock("@/hooks/authUser", () => ({ displayName: () => "Alice", userHandle: () => "@alice" }));
 vi.mock("@/lib/development", async (importOriginal) => ({ ...await importOriginal<typeof import("@/lib/development")>(),
   isDevelopmentSession: () => fixtures.local, isGuestSession: () => fixtures.local }));
 vi.mock("@/lib/communities", () => ({ findCommunities: fixtures.find, getCommunity: fixtures.read, manageCommunity: fixtures.manage }));

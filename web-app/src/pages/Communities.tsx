@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/authContext";
 import { isDevelopmentSession } from "@/lib/development";
 import { t, useLanguage } from "@/lib/language";
 import { findCommunities, getCommunity, manageCommunity, type Community, type CommunityOperation, type CommunityPost, type CommunitySnapshot } from "@/lib/communities";

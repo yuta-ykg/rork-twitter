@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/authContext";
 import { t, useLanguage } from "@/lib/language";
 import { isDevelopmentSession } from "@/lib/development";
 import { findPublicLists, manageLists, publicListUrl, searchListProfiles, type ListMember, type UserList } from "@/lib/lists";

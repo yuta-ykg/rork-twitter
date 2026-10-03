@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/authContext";
 import { insertReply, MAX_CHARACTERS, type Post } from "@/lib/posts";
 import { t, useLanguage } from "@/lib/language";
 import { Link } from "react-router-dom";

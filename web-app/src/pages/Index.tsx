@@ -10,7 +10,8 @@ import { useBottomBarLabels } from "@/hooks/useBottomBarLabels";
 import { BookmarkButton } from "@/components/BookmarkButton";
 import { useBookmarks } from "@/hooks/useBookmarks";
 import { t, useLanguage } from "@/lib/language";
-import { LikeIconGlyph, useLikeIcon } from "@/hooks/useLikeIcon";
+import { LikeIconGlyph } from "@/hooks/useLikeIcon";
+import { useLikeIcon } from "@/hooks/likeIconState";
 import { useDateDisplay } from "@/lib/dateDisplay";
 import { isDevelopmentSession, isGuestSession } from "@/lib/development";
 import { toast } from "sonner";
@@ -18,7 +19,8 @@ import { Bookmark, List, Download, Fish, House, MessageCircle, Search, SquarePen
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 
-import { displayName, useAuth, userHandle } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/authContext";
+import { displayName, userHandle } from "@/hooks/authUser";
 import {
   MAX_CHARACTERS,
   avatarFills,

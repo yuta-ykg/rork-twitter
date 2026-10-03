@@ -5,7 +5,9 @@ import {
 import { insertPost } from "@/lib/posts";
 import { t } from "@/lib/language";
 import { toast } from "sonner";
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { AuthContext } from "@/hooks/authContext";
+import type { AuthUser } from "@/hooks/authUser";
 
 const AUTH_URL = import.meta.env.EXPO_PUBLIC_RORK_AUTH_URL as string;
 const APP_KEY = import.meta.env.EXPO_PUBLIC_RORK_APP_KEY as string;
@@ -32,24 +34,6 @@ async function generateCodeChallenge(verifier: string): Promise<string> {
     .replace(/=+$/, "");
 }
 
-export interface AuthUser {
-  id: string;
-  email: string;
-  name?: string;
-  picture?: string;
-}
-
-export function displayName(user: AuthUser): string {
-  const name = user.name?.trim();
-  return name && name.length > 0 ? name : user.email;
-}
-
-export function userHandle(user: AuthUser): string {
-  const local = user.email.split("@")[0] ?? "you";
-  const cleaned = local.replace(/[^A-Za-z0-9_]/g, "");
-  return `@${(cleaned || "you").slice(0, 38)}`;
-}
-
 function userFromToken(token: string): AuthUser | null {
   try {
     const parts = token.split(".");
@@ -66,22 +50,6 @@ function userFromToken(token: string): AuthUser | null {
   }
 }
 
-interface AuthContextType {
-  user: AuthUser | null;
-  isLoading: boolean;
-  isSigningIn: boolean;
-  error: string | null;
-  signIn: (provider: "google" | "apple") => Promise<void>;
-  signInAsGuest: () => void;
-  signOut: () => void;
-  clearError: () => void;
-  canSkipLogin: boolean;
-  skipLogin: () => void;
-  exchangeCode: (code: string) => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextType | null>(null);
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -92,10 +60,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const clearError = useCallback(() => setError(null), []);
 
   useEffect(() => {
-    void checkAuth();
-  }, []);
-
-  useEffect(() => {
     return () => {
       if (messageListenerRef.current) {
         window.removeEventListener("message", messageListenerRef.current);
@@ -103,28 +67,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     };
   }, []);
-
-  async function checkAuth() {
-    try {
-      if (expireGuestSessionIfNeeded()) {
-        toast(t("ゲストのデータは保持期限（30日）を過ぎたため、削除されました。"));
-      }
-      if (isDevelopmentSession()) { setUser(localUser()); return; }
-      const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
-      if (accessToken) {
-        const decoded = userFromToken(accessToken);
-        if (decoded) {
-          setUser(decoded);
-          return;
-        }
-      }
-      if (localStorage.getItem(REFRESH_TOKEN_KEY)) {
-        await refreshToken();
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  }
 
   async function exchangeCode(code: string) {
     const verifier = localStorage.getItem(CODE_VERIFIER_KEY);
@@ -259,7 +201,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  async function refreshToken() {
+  const signOut = useCallback(() => {
+    if (isGuestSession()) clearLocalData();
+    endDevelopmentSession();
+    localStorage.removeItem(ACCESS_TOKEN_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
+    localStorage.removeItem(CODE_VERIFIER_KEY);
+    setUser(null);
+  }, []);
+
+  const refreshToken = useCallback(async () => {
     const stored = localStorage.getItem(REFRESH_TOKEN_KEY);
     if (!stored) {
       signOut();
@@ -277,26 +228,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { access_token } = (await response.json()) as { access_token: string };
     localStorage.setItem(ACCESS_TOKEN_KEY, access_token);
     setUser(userFromToken(access_token));
-  }
+  }, [signOut]);
 
-  function signOut() {
-    if (isGuestSession()) clearLocalData();
-    endDevelopmentSession();
-    localStorage.removeItem(ACCESS_TOKEN_KEY);
-    localStorage.removeItem(REFRESH_TOKEN_KEY);
-    localStorage.removeItem(CODE_VERIFIER_KEY);
-    setUser(null);
-  }
+  const checkAuth = useCallback(async () => {
+    try {
+      if (expireGuestSessionIfNeeded()) {
+        toast(t("ゲストのデータは保持期限（30日）を過ぎたため、削除されました。"));
+      }
+      if (isDevelopmentSession()) { setUser(localUser()); return; }
+      const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
+      if (accessToken) {
+        const decoded = userFromToken(accessToken);
+        if (decoded) {
+          setUser(decoded);
+          return;
+        }
+      }
+      if (localStorage.getItem(REFRESH_TOKEN_KEY)) await refreshToken();
+    } finally {
+      setIsLoading(false);
+    }
+  }, [refreshToken]);
+
+  useEffect(() => {
+    void checkAuth();
+  }, [checkAuth]);
 
   return (
     <AuthContext.Provider value={{ user, isLoading, isSigningIn, error, signIn, signInAsGuest, signOut, clearError, exchangeCode, canSkipLogin, skipLogin }}>
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) throw new Error("useAuth must be used within AuthProvider");
-  return context;
 }

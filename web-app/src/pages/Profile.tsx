@@ -6,7 +6,7 @@ import { LikeIconGlyph } from "@/hooks/useLikeIcon";
 import { Check, Loader2, X } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/authContext";
 import { ensureProfile, fetchHandleAvailability, fetchProfile, saveProfile, uploadAvatar, type Profile } from "@/lib/profiles";
 import { fetchPosts, type Post } from "@/lib/posts";
 
@@ -68,7 +68,7 @@ export default function ProfilePage() {
     load().catch(() => { if (!cancelled) setError("プロフィールを読み込めませんでした。"); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [id, user?.id, retry]);
+  }, [id, user, retry]);
 
   async function changeRelationship(kind: "mute" | "block") {
     if (!user || !id || relationshipBusy) return;

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/authContext";
 import { fetchPublicList, type UserList } from "@/lib/lists";
 import { t, useLanguage } from "@/lib/language";
 import { timeLabel, type Post } from "@/lib/posts";

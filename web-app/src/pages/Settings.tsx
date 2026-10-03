@@ -4,7 +4,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/authContext";
 import { isGuestSession } from "@/lib/development";
 import { listUserRelationships, setUserRelationship, type UserRelationship } from "@/lib/userRelationships";
 import { DesktopSidebar } from "@/components/DesktopSidebar";
@@ -12,10 +12,10 @@ import { useDesktopNavigation } from "@/hooks/useDesktopNavigation";
 import { useBottomBarLabels } from "@/hooks/useBottomBarLabels";
 import { Switch } from "@/components/ui/switch";
 import { t, useLanguage } from "@/lib/language";
-import { likeIconOptions, useLikeIcon, type LikeIcon } from "@/hooks/useLikeIcon";
+import { likeIconOptions, useLikeIcon, type LikeIcon } from "@/hooks/likeIconState";
 import { Link, useNavigate } from "react-router-dom";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { themeOptions, useTheme, type Theme } from "@/hooks/useTheme";
+import { themeOptions, useTheme, type Theme } from "@/hooks/themeState";
 import { dateDisplayOptions, setDateDisplay, useDateDisplay, type DateDisplayStyle } from "@/lib/dateDisplay";
 
 export default function SettingsPage() {
@@ -26,7 +26,8 @@ export default function SettingsPage() {
   const [relationships, setRelationships] = useState<UserRelationship[]>([]);
   const [relationshipError, setRelationshipError] = useState("");
   const [relationshipBusy, setRelationshipBusy] = useState(false);
-  useEffect(() => { let cancelled = false; setRelationships([]); if (user) listUserRelationships(user.id).then((rows) => { if (!cancelled) setRelationships(rows); }).catch(() => { if (!cancelled) setRelationshipError("設定を読み込めませんでした。"); }); return () => { cancelled = true; }; }, [user?.id]);
+  const userId = user?.id;
+  useEffect(() => { let cancelled = false; setRelationships([]); if (userId) listUserRelationships(userId).then((rows) => { if (!cancelled) setRelationships(rows); }).catch(() => { if (!cancelled) setRelationshipError("設定を読み込めませんでした。"); }); return () => { cancelled = true; }; }, [userId]);
   async function removeRelationship(row: UserRelationship) { if (!user || relationshipBusy) return; setRelationshipBusy(true); setRelationshipError(""); try { await setUserRelationship(user.id, row.target_id, row.kind, false); setRelationships((rows) => rows.filter((item) => !(item.kind === row.kind && item.target_id === row.target_id))); } catch { setRelationshipError("設定を保存できませんでした。"); } finally { setRelationshipBusy(false); } }
   const { showBottomBarLabels, setShowBottomBarLabels } = useBottomBarLabels();
   const navigate = useNavigate();
