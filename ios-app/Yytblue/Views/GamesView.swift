@@ -13,6 +13,7 @@ struct GamesView: View {
     @Binding var showsSignIn: Bool
     @State private var selected: ArcadeGame = .memory
     @State private var shareMessage: String?
+    @State private var isSharing = false
 
     var body: some View {
         ScrollView {
@@ -46,8 +47,17 @@ struct GamesView: View {
 
     private func shareResult(_ body: String) {
         guard let user = auth.user else { showsSignIn = true; return }
-        store.add(body: body, user: user)
-        shareMessage = "ゲーム結果を投稿しました。"
+        guard !isSharing else { return }
+        isSharing = true
+        Task {
+            do {
+                try await store.createGameResultPost(body, user: user)
+                shareMessage = "ゲーム結果を投稿しました。"
+            } catch {
+                shareMessage = "ゲーム結果を投稿できませんでした。"
+            }
+            isSharing = false
+        }
     }
 }
 

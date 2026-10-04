@@ -36,6 +36,37 @@ final class PostStore {
         Task { await insert(trimmed, poll: poll, diagnosis: diagnosis, user: user) }
     }
 
+    func createGameResultPost(_ body: String, user: AuthManager.User) async throws {
+        let trimmed = body.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, trimmed.unicodeScalars.count <= PostLimits.maxCharacters else {
+            throw NSError(domain: "Game", code: 1)
+        }
+        if DevelopmentData.isActive {
+            guard user.id == DevelopmentData.userId else { throw NSError(domain: "Game", code: 2) }
+            let profile = DevelopmentData.profile()
+            let post = Post(id: UUID(), authorName: profile.name, handle: "@" + (profile.handle ?? "developer"),
+                initial: String(profile.name.prefix(1)), body: trimmed, createdAt: Date(), isMine: true,
+                avatarIndex: 0, userId: DevelopmentData.userId, avatarUrl: profile.avatarUrl)
+            posts.insert(post, at: 0)
+            DevelopmentData.save(posts: posts)
+            return
+        }
+        await syncProfile(user)
+        guard currentUserId == user.id else { throw CancellationError() }
+        let postId = UUID()
+        let rows: [PostRow] = try await IrukaDatabase.client
+            .rpc("create_post", params: CreatePostParams(
+                post_id: postId, post_body: trimmed, expected_user_id: user.id
+            )).execute().value
+        guard let row = rows.first else { throw NSError(domain: "Game", code: 3) }
+        guard currentUserId == user.id else { return }
+        let post = Post(id: row.id, authorName: row.authorName, handle: row.handle, initial: row.initial,
+            body: row.body, createdAt: row.createdAt, isMine: true, avatarIndex: row.avatarIndex,
+            userId: row.userId, parentId: row.parentId, avatarUrl: user.picture)
+        posts.removeAll { $0.id == post.id }
+        posts.insert(post, at: 0)
+    }
+
     func searchDiagnoses(_ query: String, userId: String?, limit: Int = 24) async throws -> [PostDiagnosisRow] {
         let term = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard term.count <= 100 else { throw NSError(domain: "Diagnosis", code: 4) }
