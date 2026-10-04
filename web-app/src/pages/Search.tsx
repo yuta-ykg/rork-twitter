@@ -1,6 +1,6 @@
 import { t, useLanguage } from "@/lib/language";
 import { toast } from "sonner";
-import { Search } from "lucide-react";
+import { Brain, Gamepad2, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/hooks/authContext";
 import { displayName, userHandle } from "@/hooks/authUser";
@@ -14,7 +14,23 @@ import { ConsumerProtectionNotice } from "@/components/ConsumerProtectionNotice"
 import { PostDiagnosisCard } from "@/components/PostDiagnosisCard";
 import type { PollDraft } from "@/lib/polls";
 import { searchUserDiagnoses, type DiagnosisDraft, type DiagnosisSearchResult } from "@/lib/diagnoses";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+
+const miniGames = [
+  {
+    id: "memory",
+    title: "神経衰弱",
+    description: "カードの中から同じ絵柄のペアを見つけましょう。",
+    keywords: ["神経衰弱", "memory", "memory match", "matching pairs", "짝 맞추기", "같은 그림 찾기", "记忆配对", "記憶配對"],
+  },
+  {
+    id: "2048",
+    title: "2048",
+    description: "矢印キーまたは画面のボタンで数字を合わせて2048を目指しましょう。",
+    keywords: ["2048", "two zero four eight"],
+  },
+] as const;
+const gameSearchTerms = ["ゲーム", "game", "mini game", "ゲームセンター", "미니게임", "게임센터", "游戏", "游戏中心", "遊戲", "遊戲中心"];
 
 export default function SearchPage() {
   useLanguage();
@@ -42,6 +58,12 @@ export default function SearchPage() {
   }, [user?.id, retry]);
 
   const keyword = query.trim().toLowerCase();
+  const gameResults = useMemo(() => {
+    if (keyword.length < 2) return [];
+    const matchesTerm = (terms: readonly string[]) => terms.some((term) => term.includes(keyword) || keyword.includes(term));
+    if (matchesTerm(gameSearchTerms)) return miniGames;
+    return miniGames.filter((game) => matchesTerm(game.keywords));
+  }, [keyword]);
   const results = useMemo(() => {
     if (!keyword) return [];
     return sortTimeline(posts).filter((post) =>
@@ -102,7 +124,7 @@ export default function SearchPage() {
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder={t("キーワードで投稿や診断を検索")}
+              placeholder={t("キーワードで投稿・診断・ゲームを検索")}
               aria-label={t("検索")}
               className="h-11 w-full rounded-full border border-input bg-muted/60 pl-11 pr-4 text-base text-foreground outline-none placeholder:text-muted-foreground focus:border-[hsl(var(--brand))]"
             />
@@ -112,7 +134,21 @@ export default function SearchPage() {
         {isCrimePreventionSearchQuery(query) ? <CrimePreventionNotice /> : null}
         {isConsumerProtectionSearchQuery(query) ? <ConsumerProtectionNotice /> : null}
         {error ? <p role="alert" className="mt-4 text-sm text-red-500">{t(error)}</p> : null}
-        {!keyword ? <p className="py-10 text-center text-muted-foreground">{t("ユーザー名や本文のキーワードで投稿を探せます。診断はタイトル・説明・質問から検索できます。")}</p> : <>
+        {!keyword ? <p className="py-10 text-center text-muted-foreground">{t("ユーザー名や本文のキーワードで投稿を探せます。診断のほか、ゲーム名からゲームセンターを開けます。")}</p> : <>
+          {gameResults.length ? <section className="mt-5" aria-labelledby="search-games-heading">
+            <h2 id="search-games-heading" className="text-lg font-semibold">{t("ゲームセンター")}</h2>
+            <div className="mt-2 grid gap-2">
+              {gameResults.map((game) => <Link key={game.id} to={`/games?game=${game.id}`} className="flex min-h-16 items-center gap-3 rounded-xl border border-border px-4 py-3 transition hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand))]">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[hsl(var(--brand))]/10 text-[hsl(var(--brand))]">
+                  {game.id === "memory" ? <Brain className="h-5 w-5" aria-hidden /> : <Gamepad2 className="h-5 w-5" aria-hidden />}
+                </span>
+                <span className="min-w-0">
+                  <span className="block font-semibold">{t(game.title)}</span>
+                  <span className="mt-0.5 block text-sm text-muted-foreground">{t(game.description)}</span>
+                </span>
+              </Link>)}
+            </div>
+          </section> : null}
           <section className="mt-5" aria-labelledby="search-diagnoses-heading">
             <h2 id="search-diagnoses-heading" className="text-lg font-semibold">{t("診断")}</h2>
             {diagnosisError ? <p role="alert" className="mt-3 text-sm text-red-500">{t(diagnosisError)}</p> : null}

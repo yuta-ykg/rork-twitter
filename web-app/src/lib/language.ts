@@ -266,6 +266,8 @@ const english: Record<string, string> = {
   "ホーム": "Home",
   "検索": "Search",
   "キーワードで投稿や診断を検索": "Search posts and quizzes by keyword",
+  "キーワードで投稿・診断・ゲームを検索": "Search posts, quizzes, and games by keyword",
+  "ユーザー名や本文のキーワードで投稿を探せます。診断のほか、ゲーム名からゲームセンターを開けます。": "Find posts by username or text. Search quizzes, or open a game by searching its name.",
   "ユーザー名や本文のキーワードで投稿を探せます。診断はタイトル・説明・質問から検索できます。": "Find posts by username or text. Search quizzes by title, description, or question.",
   "ユーザー名や本文のキーワードで投稿を探せます。": "Find posts by username or text. Quizzes can also be searched by title, description, or question.",
   "該当する投稿がありません。": "No matching posts.",
@@ -486,6 +488,8 @@ const korean: Record<string, string> = {
   "診断を検索": "진단 검색",
   "診断一覧の説明": "여기에서 참여할 진단을 찾아보세요. 제목, 설명 또는 질문으로 검색할 수 있습니다.",
   "キーワードで投稿や診断を検索": "키워드로 게시물과 진단 검색",
+  "キーワードで投稿・診断・ゲームを検索": "키워드로 게시물, 진단, 게임 검색",
+  "ユーザー名や本文のキーワードで投稿を探せます。診断のほか、ゲーム名からゲームセンターを開けます。": "사용자 이름이나 게시물 내용으로 검색할 수 있습니다. 진단을 찾거나 게임 이름으로 게임 센터를 열 수 있습니다.",
   "ユーザー名や本文のキーワードで投稿を探せます。診断はタイトル・説明・質問から検索できます。": "사용자 이름이나 게시물 내용으로 검색할 수 있습니다. 진단은 제목, 설명 또는 질문으로 찾을 수 있습니다.",
   "新着の診断": "최신 진단",
   "検索結果": "검색 결과",
@@ -608,6 +612,8 @@ const koreanExtraMessages: Record<string, string> = {
   "設定からいつでもこのガイドを開けます。": "설정에서 언제든 이 안내를 열 수 있습니다.",
 };
 const simplifiedChinese: Record<string, string> = {
+  "キーワードで投稿・診断・ゲームを検索": "按关键词搜索帖子、测试和游戏",
+  "ユーザー名や本文のキーワードで投稿を探せます。診断のほか、ゲーム名からゲームセンターを開けます。": "可按用户名或帖子内容搜索。也可查找测试，或按游戏名称打开游戏中心。",
   "メニュー": "菜单",
   "メニューを開く": "打开菜单",
   "メニューを閉じる": "关闭菜单",

@@ -4,7 +4,7 @@ import { insertPost } from "@/lib/posts";
 import { Shell } from "@/pages/IndexShared";
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Brain, Gamepad2, RotateCcw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
 type MiniGame = "memory" | "2048";
@@ -83,7 +83,8 @@ export default function GamesPage() {
   useLanguage();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [selected, setSelected] = useState<MiniGame>("memory");
+  const [searchParams] = useSearchParams();
+  const [selected, setSelected] = useState<MiniGame>(() => searchParams.get("game") === "2048" ? "2048" : "memory");
 
   async function shareResult(body: string) {
     if (!user) {
