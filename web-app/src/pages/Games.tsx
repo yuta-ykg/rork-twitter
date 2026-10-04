@@ -129,7 +129,7 @@ export default function GamesPage() {
         </div>
       </div>
       <section className="mt-5 rounded-2xl border border-border bg-card p-4 sm:p-5" aria-live="polite">
-        {selected === "memory" ? <MemoryGame onShare={(body) => void shareResult(body)} /> : selected === "shogi" ? <ShogiGame onShare={(body) => void shareResult(body)} /> : <Game2048 key={selected} target={selected} onShare={(body) => void shareResult(body)} />}
+        {selected === "memory" ? <MemoryGame onShare={(body) => void shareResult(body)} /> : selected === "shogi" ? <ShogiGame author={user} initialRoomKey={searchParams.get("room")} onShare={(body) => void shareResult(body)} /> : <Game2048 key={selected} target={selected} onShare={(body) => void shareResult(body)} />}
       </section>
     </Shell>
   );

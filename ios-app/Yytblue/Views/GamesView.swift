@@ -35,7 +35,12 @@ struct GamesView: View {
                     switch selected {
                     case .memory: MemoryGameView(onShare: shareResult)
                     case .game2048: Game2048View(onShare: shareResult)
-                    case .shogi: ShogiGameView(onShare: shareResult)
+                    case .shogi:
+                        ShogiGameView(
+                            user: DevelopmentData.isActive ? nil : auth.user,
+                            onShare: shareResult,
+                            onRequestSignIn: { showsSignIn = true }
+                        )
                     }
                 }
                 .padding(15)
