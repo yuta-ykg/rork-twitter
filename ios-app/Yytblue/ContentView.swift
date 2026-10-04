@@ -128,7 +128,15 @@ struct ContentView: View {
         TabView(selection: Binding(get: { selectedTab }, set: selectTab)) {
             Tab(L("ホーム"), systemImage: "house.fill", value: MainTab.home) {
                 NavigationStack {
-                    HomeView(store: store, showsComposer: $showsComposer, showsSignIn: $showsSignIn)
+                    HomeView(store: store, showsComposer: $showsComposer, showsSignIn: $showsSignIn, onSelectTab: { destination in
+                        switch destination {
+                        case "compose": selectTab(.compose)
+                        case "mine": selectTab(.mine)
+                        case "bookmarks": selectTab(.bookmarks)
+                        case "notifications": selectTab(.notifications)
+                        default: selectTab(.home)
+                        }
+                    })
                         .navigationDestination(for: Post.self) { post in
                             PostDetailView(initialPost: post, store: store)
                         }
@@ -190,8 +198,6 @@ struct ContentView: View {
                 bottomBarButton(.mine, title: "自分", symbol: "person.fill")
                 bottomBarButton(.bookmarks, title: "ブックマーク", symbol: "bookmark.fill")
                 bottomBarButton(.notifications, title: "通知", symbol: "bell.fill")
-                bottomBarButton(.lists, title: "リスト", symbol: "list.bullet.rectangle")
-                bottomBarButton(.settings, title: "設定", symbol: "gearshape")
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 8)

@@ -53,6 +53,9 @@ func formatDate(_ date: Date, includeTime: Bool = true) -> String {
 }
 
 private let englishMessages: [String: String] = [
+    "メニュー": "Menu",
+    "メニューを開く": "Open menu",
+    "メニューを閉じる": "Close menu",
     "ゲームセンター": "Game Center",
     "ゲームを選択": "Choose a game",
     "神経衰弱": "Memory match",
@@ -407,6 +410,9 @@ private let englishMessages: [String: String] = [
     "Yesterday": "昨日"
 ]
 private let koreanMessages: [String: String] = [
+    "メニュー": "메뉴",
+    "メニューを開く": "메뉴 열기",
+    "メニューを閉じる": "메뉴 닫기",
     "ゲームセンター": "게임 센터",
     "ゲームを選択": "게임 선택",
     "神経衰弱": "같은 그림 찾기",
@@ -512,6 +518,9 @@ private let koreanExtraMessages: [String: String] = [
     "設定からいつでもこのガイドを開けます。": "설정에서 언제든 이 안내를 열 수 있습니다.",
 ]
 private let simplifiedChineseMessages: [String: String] = [
+    "メニュー": "菜单",
+    "メニューを開く": "打开菜单",
+    "メニューを閉じる": "关闭菜单",
     "ゲームセンター": "游戏中心",
     "ゲームを選択": "选择游戏",
     "神経衰弱": "记忆配对",

@@ -8,8 +8,8 @@ import { LikeIconGlyph } from "@/hooks/useLikeIcon";
 import { useLikeIcon } from "@/hooks/likeIconState";
 import { useDateDisplay } from "@/lib/dateDisplay";
 import { isDevelopmentSession, isGuestSession } from "@/lib/development";
-import { Bookmark, List, Fish, Gamepad2, House, MessageCircle, Search, SquarePen, Settings, UserRound, UsersRound, X, Sparkles, Trophy } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { Bookmark, List, Fish, Gamepad2, House, Menu, MessageCircle, Search, SquarePen, Settings, UserRound, UsersRound, X, Sparkles, Trophy } from "lucide-react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/authContext";
 import { MAX_CHARACTERS, avatarFills, type Post } from "@/lib/posts";
@@ -20,7 +20,7 @@ import { DiagnosisDraftEditor } from "@/components/DiagnosisDraftEditor";
 import { isDiagnosisDraftValid, newDiagnosisDraft, type DiagnosisDraft } from "@/lib/diagnoses";
 import { PostDiagnosisCard } from "@/components/PostDiagnosisCard";
 
-type Tab = "home" | "mine" | "bookmarks" | "notifications" | "search" | "lists" | "communities" | "diagnoses" | "games" | "rankings";
+type Tab = "home" | "mine" | "bookmarks" | "notifications" | "search" | "lists" | "communities" | "diagnoses" | "games" | "rankings" | "settings";
 
 export function Avatar({ initial, index }: { initial: string; index: number }) {
   useLanguage();
@@ -187,6 +187,9 @@ export function Shell({
   const location = useLocation();
   const { showBottomBarLabels } = useBottomBarLabels();
   const { useDesktopBottomBar } = useDesktopNavigation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
+  const mobileMenuPanelRef = useRef<HTMLElement>(null);
   useEffect(() => {
     if (location.state?.compose === true) {
       navigate(location.pathname, { replace: true, state: null });
@@ -194,17 +197,54 @@ export function Shell({
       else onCompose();
     }
   }, [location.state, location.pathname, navigate, user, onCompose]);
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const focusableElements = () => Array.from(mobileMenuPanelRef.current?.querySelectorAll<HTMLElement>("a[href], button:not([disabled])") ?? []);
+    const firstFocusable = focusableElements()[0];
+    firstFocusable?.focus();
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMobileMenuOpen(false);
+        mobileMenuButtonRef.current?.focus();
+        return;
+      }
+      if (event.key === "Tab") {
+        const items = focusableElements();
+        if (!items.length) return;
+        const first = items[0];
+        const last = items[items.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [mobileMenuOpen]);
   function compose() {
     if (!user) { navigate("/mine"); return; }
     onCompose();
+  }
+  function closeMobileMenu() {
+    setMobileMenuOpen(false);
+    mobileMenuButtonRef.current?.focus();
   }
   return (
     <div className={`mx-auto flex min-h-dvh w-full max-w-[430px] flex-col bg-background text-foreground ${useDesktopBottomBar ? "" : "lg:max-w-[760px] lg:pl-[220px]"}`}>
       {!useDesktopBottomBar && <DesktopSidebar tab={tab} onCompose={compose} />}
       <header className="sticky top-0 z-10 border-b border-border/80 bg-background/75 px-5 py-3 backdrop-blur-xl">
         <div className="flex items-center justify-between">
-          <Wordmark />
-          <div className="flex items-center">
+          <div className="flex items-center gap-2">
+            <button ref={mobileMenuButtonRef} type="button" onClick={() => setMobileMenuOpen(true)} aria-label={t("メニューを開く")} aria-expanded={mobileMenuOpen} aria-controls="mobile-navigation-menu" className="grid min-h-11 min-w-11 place-items-center rounded-full text-muted-foreground hover:bg-muted lg:hidden">
+              <Menu className="h-5 w-5" aria-hidden />
+            </button>
+            <Wordmark />
+          </div>
+          <div className="hidden items-center lg:flex">
           <Link to="/rankings" aria-label={t("ランキング")} aria-current={tab === "rankings" ? "page" : undefined} className={`grid min-h-11 min-w-11 place-items-center ${tab === "rankings" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
             <Trophy className="h-5 w-5" aria-hidden />
           </Link>
@@ -217,6 +257,9 @@ export function Shell({
           <Link to="/communities" aria-label={t("コミュニティ")} aria-current={tab === "communities" ? "page" : undefined} className={`grid min-h-11 min-w-11 place-items-center ${tab === "communities" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
             <UsersRound className="h-5 w-5" aria-hidden />
           </Link>
+          <Link to="/lists" aria-label={t("リスト")} aria-current={tab === "lists" ? "page" : undefined} className={`grid min-h-11 min-w-11 place-items-center ${tab === "lists" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
+            <List className="h-5 w-5" aria-hidden />
+          </Link>
           <Link to="/settings" aria-label={t("設定")} className="grid min-h-11 min-w-11 place-items-center text-muted-foreground">
             <Settings className="h-5 w-5" aria-hidden />
           </Link>
@@ -224,6 +267,33 @@ export function Shell({
         </div>
         {isDevelopmentSession() ? <p className="mt-1 text-sm text-muted-foreground">{t(isGuestSession() ? "ゲストモード・このブラウザに保存" : "開発モード・このブラウザに保存")}</p> : null}
       </header>
+      {mobileMenuOpen ? (
+        <>
+          <button type="button" aria-label={t("メニューを閉じる")} onClick={closeMobileMenu} className="fixed inset-0 z-30 bg-black/40 lg:hidden" />
+          <aside id="mobile-navigation-menu" ref={mobileMenuPanelRef} role="dialog" aria-modal="true" aria-labelledby="mobile-menu-title" className="fixed inset-y-0 left-0 z-40 flex w-[82vw] max-w-[320px] flex-col overflow-y-auto border-r border-border bg-background px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-[max(16px,env(safe-area-inset-top))] shadow-2xl lg:hidden">
+            <div className="mb-3 flex min-h-12 items-center justify-between px-1">
+              <h2 id="mobile-menu-title" className="font-semibold">{t("メニュー")}</h2>
+              <button type="button" onClick={closeMobileMenu} aria-label={t("メニューを閉じる")} className="grid h-11 w-11 place-items-center rounded-full text-muted-foreground hover:bg-muted">
+                <X className="h-5 w-5" aria-hidden />
+              </button>
+            </div>
+            <nav aria-label={t("メニュー")} className="grid gap-1">
+              <Link to="/" onClick={closeMobileMenu} aria-current={tab === "home" ? "page" : undefined} className={`flex min-h-12 items-center gap-3 rounded-xl px-3 ${tab === "home" ? "bg-muted text-[hsl(var(--brand))]" : "text-foreground"}`}><House className="h-5 w-5" aria-hidden />{t("ホーム")}</Link>
+              <Link to="/search" onClick={closeMobileMenu} aria-current={tab === "search" ? "page" : undefined} className={`flex min-h-12 items-center gap-3 rounded-xl px-3 ${tab === "search" ? "bg-muted text-[hsl(var(--brand))]" : "text-foreground"}`}><Search className="h-5 w-5" aria-hidden />{t("検索")}</Link>
+              <button type="button" onClick={() => { closeMobileMenu(); compose(); }} className="flex min-h-12 items-center gap-3 rounded-xl px-3 text-[hsl(var(--brand))]"><SquarePen className="h-5 w-5" aria-hidden />{t("投稿")}</button>
+              <Link to="/bookmarks" onClick={closeMobileMenu} aria-current={tab === "bookmarks" ? "page" : undefined} className={`flex min-h-12 items-center gap-3 rounded-xl px-3 ${tab === "bookmarks" ? "bg-muted text-[hsl(var(--brand))]" : "text-foreground"}`}><Bookmark className="h-5 w-5" aria-hidden />{t("ブックマーク")}</Link>
+              <Link to="/notifications" onClick={closeMobileMenu} aria-current={tab === "notifications" ? "page" : undefined} className={`flex min-h-12 items-center gap-3 rounded-xl px-3 ${tab === "notifications" ? "bg-muted text-[hsl(var(--brand))]" : "text-foreground"}`}><NotificationBell />{t("通知")}</Link>
+              <Link to="/lists" onClick={closeMobileMenu} aria-current={tab === "lists" ? "page" : undefined} className={`flex min-h-12 items-center gap-3 rounded-xl px-3 ${tab === "lists" ? "bg-muted text-[hsl(var(--brand))]" : "text-foreground"}`}><List className="h-5 w-5" aria-hidden />{t("リスト")}</Link>
+              <Link to="/communities" onClick={closeMobileMenu} aria-current={tab === "communities" ? "page" : undefined} className={`flex min-h-12 items-center gap-3 rounded-xl px-3 ${tab === "communities" ? "bg-muted text-[hsl(var(--brand))]" : "text-foreground"}`}><UsersRound className="h-5 w-5" aria-hidden />{t("コミュニティ")}</Link>
+              <Link to="/diagnoses" onClick={closeMobileMenu} aria-current={tab === "diagnoses" ? "page" : undefined} className={`flex min-h-12 items-center gap-3 rounded-xl px-3 ${tab === "diagnoses" ? "bg-muted text-[hsl(var(--brand))]" : "text-foreground"}`}><Sparkles className="h-5 w-5" aria-hidden />{t("診断を探す")}</Link>
+              <Link to="/games" onClick={closeMobileMenu} aria-current={tab === "games" ? "page" : undefined} className={`flex min-h-12 items-center gap-3 rounded-xl px-3 ${tab === "games" ? "bg-muted text-[hsl(var(--brand))]" : "text-foreground"}`}><Gamepad2 className="h-5 w-5" aria-hidden />{t("ゲームセンター")}</Link>
+              <Link to="/rankings" onClick={closeMobileMenu} aria-current={tab === "rankings" ? "page" : undefined} className={`flex min-h-12 items-center gap-3 rounded-xl px-3 ${tab === "rankings" ? "bg-muted text-[hsl(var(--brand))]" : "text-foreground"}`}><Trophy className="h-5 w-5" aria-hidden />{t("ランキング")}</Link>
+              <Link to="/mine" onClick={closeMobileMenu} aria-current={tab === "mine" ? "page" : undefined} className={`flex min-h-12 items-center gap-3 rounded-xl px-3 ${tab === "mine" ? "bg-muted text-[hsl(var(--brand))]" : "text-foreground"}`}><UserRound className="h-5 w-5" aria-hidden />{t("自分")}</Link>
+              <Link to="/settings" onClick={closeMobileMenu} aria-current={tab === "settings" ? "page" : undefined} className={`flex min-h-12 items-center gap-3 rounded-xl px-3 ${tab === "settings" ? "bg-muted text-[hsl(var(--brand))]" : "text-foreground"}`}><Settings className="h-5 w-5" aria-hidden />{t("設定")}</Link>
+            </nav>
+          </aside>
+        </>
+      ) : null}
       <main className={`flex-1 px-5 pb-24 ${useDesktopBottomBar ? "" : "lg:pb-8"}`}>{children}</main>
       <div className={`fixed bottom-0 left-1/2 z-20 w-full max-w-[430px] -translate-x-1/2 ${useDesktopBottomBar ? "" : "lg:hidden"}`}>
         <button
@@ -234,27 +304,23 @@ export function Shell({
         >
           <SquarePen className="h-6 w-6" aria-hidden />
         </button>
-        <nav aria-label={t("メインナビゲーション")} className="grid grid-cols-6 border-t border-border/60 bg-background/70 px-3 pb-[max(8px,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl">
-          <Link to="/" aria-label={t("ホーム")} className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "home" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
+        <nav aria-label={t("メインナビゲーション")} className="grid grid-cols-5 border-t border-border/60 bg-background/70 px-3 pb-[max(8px,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl">
+          <Link to="/" aria-label={t("ホーム")} aria-current={tab === "home" ? "page" : undefined} className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "home" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
             <House className="h-5 w-5" aria-hidden />
             {showBottomBarLabels && <span>{t("ホーム")}</span>}</Link>
-          <Link to="/search" aria-label={t("検索")} className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "search" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
+          <Link to="/search" aria-label={t("検索")} aria-current={tab === "search" ? "page" : undefined} className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "search" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
             <Search className="h-5 w-5" aria-hidden />
             {showBottomBarLabels && <span>{t("検索")}</span>}
           </Link>
-          <Link to="/bookmarks" aria-label={t("ブックマーク")} className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "bookmarks" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
+          <Link to="/bookmarks" aria-label={t("ブックマーク")} aria-current={tab === "bookmarks" ? "page" : undefined} className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "bookmarks" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
             <Bookmark className="h-5 w-5" aria-hidden />
             {showBottomBarLabels && <span>{t("ブックマーク")}</span>}
           </Link>
-          <Link to="/notifications" className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "notifications" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
+          <Link to="/notifications" aria-label={t("通知")} aria-current={tab === "notifications" ? "page" : undefined} className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "notifications" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
             <span className="sr-only">{t("通知")}</span><NotificationBell />
             {showBottomBarLabels && <span aria-hidden>{t("通知")}</span>}
           </Link>
-          <Link to="/lists" aria-label={t("リスト")} aria-current={tab === "lists" ? "page" : undefined} className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "lists" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
-            <List className="h-5 w-5" aria-hidden />
-            {showBottomBarLabels && <span>{t("リスト")}</span>}
-          </Link>
-          <Link to="/mine" aria-label={t("自分")} className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "mine" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
+          <Link to="/mine" aria-label={t("自分")} aria-current={tab === "mine" ? "page" : undefined} className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "mine" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
             <UserRound className="h-5 w-5" aria-hidden />
             {showBottomBarLabels && <span>{t("自分")}</span>}</Link>
         </nav>
