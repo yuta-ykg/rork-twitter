@@ -4,9 +4,10 @@ import { insertPost } from "@/lib/posts";
 import { Shell } from "@/pages/IndexShared";
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Brain, Crown, Gamepad2, RotateCcw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { ShogiGame } from "@/components/ShogiGame";
+import { isDevelopmentSession } from "@/lib/development";
 
 const goalTargets = [1024, 2048, 4096, 8192, 16384] as const;
 type GoalTarget = typeof goalTargets[number];
@@ -84,8 +85,9 @@ function canMove2048(board: number[][]): boolean {
 
 export default function GamesPage() {
   useLanguage();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const [selected, setSelected] = useState<MiniGame>(() => {
     const requestedGame = searchParams.get("game");
@@ -106,6 +108,11 @@ export default function GamesPage() {
     } catch {
       toast.error(t("ゲーム結果を投稿できませんでした。"));
     }
+  }
+
+  function requestShogiSignIn() {
+    if (isDevelopmentSession()) signOut();
+    navigate("/login", { state: { from: location.pathname + location.search } });
   }
 
   return (
@@ -129,7 +136,11 @@ export default function GamesPage() {
         </div>
       </div>
       <section className="mt-5 rounded-2xl border border-border bg-card p-4 sm:p-5" aria-live="polite">
-        {selected === "memory" ? <MemoryGame onShare={(body) => void shareResult(body)} /> : selected === "shogi" ? <ShogiGame author={user} initialRoomKey={searchParams.get("room")} onShare={(body) => void shareResult(body)} /> : <Game2048 key={selected} target={selected} onShare={(body) => void shareResult(body)} />}
+        {selected === "memory" ? <MemoryGame onShare={(body) => void shareResult(body)} /> : selected === "shogi" ? (
+          <ShogiGame author={user} initialRoomKey={searchParams.get("room")} onShare={(body) => void shareResult(body)} onRequestSignIn={requestShogiSignIn} />
+        ) : (
+          <Game2048 key={selected} target={selected} onShare={(body) => void shareResult(body)} />
+        )}
       </section>
     </Shell>
   );

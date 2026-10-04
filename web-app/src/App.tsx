@@ -37,7 +37,7 @@ function RequireAuth({ children }: { children: ReactNode }) {
   if (isLoading) {
     return <div className="grid min-h-dvh place-items-center text-muted-foreground">{t("読み込み中…")}</div>;
   }
-  if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  if (!user) return <Navigate to="/login" replace state={{ from: location.pathname + location.search + location.hash }} />;
   return children;
 }
 
