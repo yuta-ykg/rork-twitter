@@ -16,6 +16,7 @@ import type { PollDraft } from "@/lib/polls";
 import { searchUserDiagnoses, type DiagnosisDraft, type DiagnosisSearchResult } from "@/lib/diagnoses";
 import { Link, useNavigate } from "react-router-dom";
 
+const goalTargets = [1024, 2048, 4096, 8192, 16384] as const;
 const miniGames = [
   {
     id: "memory",
@@ -23,12 +24,12 @@ const miniGames = [
     description: "カードの中から同じ絵柄のペアを見つけましょう。",
     keywords: ["神経衰弱", "memory", "memory match", "matching pairs", "짝 맞추기", "같은 그림 찾기", "记忆配对", "記憶配對"],
   },
-  {
-    id: "2048",
-    title: "2048",
-    description: "矢印キーまたは画面のボタンで数字を合わせて2048を目指しましょう。",
-    keywords: ["2048", "two zero four eight"],
-  },
+  ...goalTargets.map((target) => ({
+    id: target,
+    title: String(target),
+    description: "矢印キーまたは画面のボタンで数字を合わせ、目標の数字を目指しましょう。",
+    keywords: [String(target)],
+  })),
 ] as const;
 const gameSearchTerms = ["ゲーム", "game", "mini game", "ゲームセンター", "미니게임", "게임센터", "游戏", "游戏中心", "遊戲", "遊戲中心"];
 

@@ -7,7 +7,9 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
-type MiniGame = "memory" | "2048";
+const goalTargets = [1024, 2048, 4096, 8192, 16384] as const;
+type GoalTarget = typeof goalTargets[number];
+type MiniGame = "memory" | GoalTarget;
 type MemoryCard = { id: number; symbol: string };
 type Direction = "left" | "right" | "up" | "down";
 
@@ -15,7 +17,7 @@ const memorySymbols = ["🐬", "🐟", "🐙", "🐢", "🦀", "🐳", "🪼", "
 const tileColors: Record<number, string> = {
   0: "#cdc1b4", 2: "#eee4da", 4: "#ede0c8", 8: "#f2b179", 16: "#f59563",
   32: "#f67c5f", 64: "#f65e3b", 128: "#edcf72", 256: "#edcc61", 512: "#edc850",
-  1024: "#edc53f", 2048: "#edc22e",
+  1024: "#edc53f", 2048: "#edc22e", 4096: "#e9bd32", 8192: "#e9b52c", 16384: "#e8ac22",
 };
 
 function shuffledMemoryCards(): MemoryCard[] {
@@ -84,7 +86,10 @@ export default function GamesPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [selected, setSelected] = useState<MiniGame>(() => searchParams.get("game") === "2048" ? "2048" : "memory");
+  const [selected, setSelected] = useState<MiniGame>(() => {
+    const requestedTarget = Number(searchParams.get("game"));
+    return goalTargets.includes(requestedTarget as GoalTarget) ? requestedTarget as GoalTarget : "memory";
+  });
 
   async function shareResult(body: string) {
     if (!user) {
@@ -105,19 +110,19 @@ export default function GamesPage() {
       <div className="pt-4">
         <h1 className="flex items-center gap-2 text-[28px] font-bold"><Gamepad2 className="h-7 w-7 text-[hsl(var(--brand))]" />{t("ゲームセンター")}</h1>
         <p className="mt-2 text-sm text-muted-foreground">{t("ゲームのスコアや神経衰弱の手数を投稿で共有できます。")}</p>
-        <div className="mt-4 grid grid-cols-2 gap-2" role="group" aria-label={t("ゲームを選択")}>
+        <div className="mt-4 grid grid-cols-3 gap-2" role="group" aria-label={t("ゲームを選択")}>
           <button type="button" aria-pressed={selected === "memory"} onClick={() => setSelected("memory")}
             className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border text-sm font-semibold ${selected === "memory" ? "border-[hsl(var(--brand))] bg-[hsl(var(--brand))]/10 text-[hsl(var(--brand))]" : "border-input text-muted-foreground"}`}>
             <Brain className="h-4 w-4" />{t("神経衰弱")}
           </button>
-          <button type="button" aria-pressed={selected === "2048"} onClick={() => setSelected("2048")}
-            className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border text-sm font-semibold ${selected === "2048" ? "border-[hsl(var(--brand))] bg-[hsl(var(--brand))]/10 text-[hsl(var(--brand))]" : "border-input text-muted-foreground"}`}>
-            <span className="font-bold">2048</span>
-          </button>
+          {goalTargets.map((target) => <button key={target} type="button" aria-pressed={selected === target} onClick={() => setSelected(target)}
+            className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border text-sm font-semibold ${selected === target ? "border-[hsl(var(--brand))] bg-[hsl(var(--brand))]/10 text-[hsl(var(--brand))]" : "border-input text-muted-foreground"}`}>
+            <span className="font-bold">{target}</span>
+          </button>)}
         </div>
       </div>
       <section className="mt-5 rounded-2xl border border-border bg-card p-4 sm:p-5" aria-live="polite">
-        {selected === "memory" ? <MemoryGame onShare={(body) => void shareResult(body)} /> : <Game2048 onShare={(body) => void shareResult(body)} />}
+        {selected === "memory" ? <MemoryGame onShare={(body) => void shareResult(body)} /> : <Game2048 key={selected} target={selected} onShare={(body) => void shareResult(body)} />}
       </section>
     </Shell>
   );
@@ -191,7 +196,7 @@ function MemoryGame({ onShare }: { onShare: (body: string) => void }) {
   </div>;
 }
 
-function Game2048({ onShare }: { onShare: (body: string) => void }) {
+function Game2048({ target, onShare }: { target: GoalTarget; onShare: (body: string) => void }) {
   const [board, setBoard] = useState(new2048Board);
   const [score, setScore] = useState(0);
   const [ended, setEnded] = useState(false);
@@ -207,7 +212,7 @@ function Game2048({ onShare }: { onShare: (body: string) => void }) {
     const nextScore = score + result.gained;
     setBoard(next);
     setScore(nextScore);
-    if (next.some((row) => row.some((value) => value >= 2048))) { setWon(true); setEnded(true); }
+    if (next.some((row) => row.some((value) => value >= target))) { setWon(true); setEnded(true); }
     else if (!canMove2048(next)) setEnded(true);
   }
 
@@ -225,7 +230,7 @@ function Game2048({ onShare }: { onShare: (body: string) => void }) {
 
   return <div>
     <div className="flex items-start justify-between gap-3">
-      <div><h2 className="text-xl font-bold">2048</h2><p className="mt-1 text-sm text-muted-foreground">{t("矢印キーまたは画面のボタンで数字を合わせて2048を目指しましょう。")}</p></div>
+      <div><h2 className="text-xl font-bold">{target}</h2><p className="mt-1 text-sm text-muted-foreground">{t("矢印キーまたは画面のボタンで数字を合わせ、目標の数字を目指しましょう。")}</p></div>
       <button type="button" onClick={restart} className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-input" aria-label={t("新しいゲーム")}><RotateCcw className="h-4 w-4" /></button>
     </div>
     <div className="mt-4 flex items-center justify-between"><p className="text-sm">{t("スコア")} <strong className="text-lg tabular-nums">{score}</strong></p>
@@ -237,17 +242,17 @@ function Game2048({ onShare }: { onShare: (body: string) => void }) {
       </div>
     </div>
     <div className="mx-auto mt-4 grid aspect-square max-w-[390px] grid-cols-4 gap-2 rounded-xl bg-[#bbada0] p-2" role="grid" aria-label="2048">
-      {board.flatMap((row, r) => row.map((value, c) => <div key={`${r}-${c}`} role="gridcell" aria-label={String(value)} className="grid place-items-center rounded-lg text-xl font-bold tabular-nums sm:text-2xl"
+      {board.flatMap((row, r) => row.map((value, c) => <div key={`${r}-${c}`} role="gridcell" aria-label={String(value)} className={`grid place-items-center rounded-lg font-bold tabular-nums ${value >= 10000 ? "text-base sm:text-lg" : "text-xl sm:text-2xl"}`}
         style={{ backgroundColor: tileColors[value] ?? "#3c3a32", color: value >= 8 ? "#fff" : "#776e65" }}>
         {value || ""}
       </div>))}
     </div>
     {ended ? <div className="mt-4 rounded-xl bg-muted p-3 text-center">
-      <p className="font-semibold">{t(won ? "2048を達成しました！" : "ゲームオーバー")}</p>
+      <p className="font-semibold">{t(won ? "目標を達成しました！" : "ゲームオーバー")}</p>
       <p className="mt-1 text-sm">{t("スコア")} {score}</p>
       <div className="mt-3 flex justify-center gap-2">
         <button type="button" onClick={restart} className="min-h-11 rounded-full border border-input px-4 text-sm font-semibold">{t("もう一度遊ぶ")}</button>
-        <button type="button" onClick={() => onShare(`2048 ${t("スコア")} ${score}`)} className="min-h-11 rounded-full bg-[hsl(var(--brand))] px-4 text-sm font-semibold text-white">{t("結果を投稿で共有")}</button>
+        <button type="button" onClick={() => onShare(`${target} ${t("スコア")} ${score}`)} className="min-h-11 rounded-full bg-[hsl(var(--brand))] px-4 text-sm font-semibold text-white">{t("結果を投稿で共有")}</button>
       </div>
     </div> : null}
   </div>;

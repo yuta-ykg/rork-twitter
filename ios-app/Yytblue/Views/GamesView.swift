@@ -179,23 +179,35 @@ private enum MoveDirection { case left, right, up, down }
 
 private struct Game2048View: View {
     @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
+    private static let goalTargets = [1024, 2048, 4096, 8192, 16384]
     let onShare: (String) -> Void
     @State private var board = Self.newBoard()
     @State private var score = 0
     @State private var ended = false
     @State private var won = false
+    @State private var target = 2048
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("2048").font(.system(size: 20, weight: .bold)).foregroundStyle(Color.irukaInk)
-                    Text(L("矢印キーまたは画面のボタンで数字を合わせて2048を目指しましょう。"))
+                    Text(String(target)).font(.system(size: 20, weight: .bold)).foregroundStyle(Color.irukaInk)
+                    Text(L("矢印キーまたは画面のボタンで数字を合わせ、目標の数字を目指しましょう。"))
                         .font(.system(size: 13)).foregroundStyle(Color.irukaSecondary)
                 }
                 Spacer()
                 Button(action: restart) { Image(systemName: "arrow.clockwise").frame(width: 42, height: 42) }
-                    .buttonStyle(.bordered).accessibilityLabel(L("新しいゲーム"))
+                .buttonStyle(.bordered).accessibilityLabel(L("新しいゲーム"))
+            }
+            Menu {
+                Picker(L("目標"), selection: $target) {
+                    ForEach(Self.goalTargets, id: \.self) { value in
+                        Text(String(value)).tag(value)
+                    }
+                }
+            } label: {
+                Label("\(L("目標"))  \(target)", systemImage: "chevron.down")
+                    .font(.system(size: 14, weight: .semibold))
             }
             HStack {
                 Text("\(L("スコア"))  \(score)").font(.system(size: 16, weight: .semibold)).monospacedDigit()
@@ -219,10 +231,10 @@ private struct Game2048View: View {
             .background(Color(red: 0.73, green: 0.68, blue: 0.62), in: RoundedRectangle(cornerRadius: 13))
             if ended {
                 VStack(spacing: 9) {
-                    Text(L(won ? "2048を達成しました！" : "ゲームオーバー"))
+                    Text(L(won ? "目標を達成しました！" : "ゲームオーバー"))
                         .font(.system(size: 17, weight: .bold))
                     Text("\(L("スコア"))  \(score)").font(.system(size: 14)).foregroundStyle(Color.irukaSecondary)
-                    Button { onShare("2048 \(L("スコア")) \(score)") } label: {
+                    Button { onShare("\(target) \(L("スコア")) \(score)") } label: {
                         Label(L("結果を投稿で共有"), systemImage: "square.and.arrow.up")
                             .frame(maxWidth: .infinity, minHeight: 42)
                     }
@@ -233,6 +245,7 @@ private struct Game2048View: View {
                 .background(Color.irukaField, in: RoundedRectangle(cornerRadius: 14))
             }
         }
+        .onChange(of: target) { _, _ in restart() }
     }
 
     private func move(_ direction: MoveDirection) {
@@ -256,7 +269,7 @@ private struct Game2048View: View {
         next = Self.addTile(to: next)
         board = next
         score += gained
-        if next.flatMap({ $0 }).contains(where: { $0 >= 2048 }) {
+        if next.flatMap({ $0 }).contains(where: { $0 >= target }) {
             won = true
             ended = true
         } else if !Self.canMove(next) {
@@ -315,7 +328,11 @@ private struct Game2048View: View {
         case 16: Color(red: 0.96, green: 0.58, blue: 0.39)
         case 32: Color(red: 0.96, green: 0.48, blue: 0.37)
         case 64: Color(red: 0.96, green: 0.37, blue: 0.23)
-        default: Color(red: 0.93, green: 0.77, blue: 0.35)
+        case 1024, 2048: Color(red: 0.93, green: 0.77, blue: 0.35)
+        case 4096: Color(red: 0.91, green: 0.74, blue: 0.20)
+        case 8192: Color(red: 0.90, green: 0.70, blue: 0.17)
+        case 16384: Color(red: 0.88, green: 0.65, blue: 0.13)
+        default: Color(red: 0.88, green: 0.65, blue: 0.13)
         }
     }
 }
