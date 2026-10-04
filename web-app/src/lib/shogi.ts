@@ -187,3 +187,76 @@ export function isShogiCheckmate(state: ShogiState, side: ShogiSide = state.turn
 export function shogiHandOrder(hand: ShogiKind[]): ShogiKind[] {
   return handOrder.filter((kind) => hand.includes(kind));
 }
+
+const pieceValues: Record<ShogiKind, number> = { P: 100, L: 260, N: 300, S: 420, G: 520, B: 760, R: 900, K: 20000 };
+const promotionBonuses: Partial<Record<ShogiKind, number>> = { P: 360, L: 300, N: 280, S: 180, B: 180, R: 180 };
+
+function allLegalShogiActions(state: ShogiState): ShogiAction[] {
+  const actions: ShogiAction[] = [];
+  for (let row = 0; row < 9; row++) for (let col = 0; col < 9; col++) {
+    if (state.board[row][col]?.side === state.turn) actions.push(...legalShogiMoves(state, row, col));
+  }
+  for (const kind of new Set(state.hands[state.turn])) actions.push(...legalShogiDrops(state, kind));
+  return actions;
+}
+
+function evaluateShogiPosition(state: ShogiState, perspective: ShogiSide): number {
+  let score = 0;
+  for (let row = 0; row < 9; row++) for (let col = 0; col < 9; col++) {
+    const piece = state.board[row][col];
+    if (!piece) continue;
+    const sign = piece.side === perspective ? 1 : -1;
+    const value = pieceValues[piece.kind] + (piece.promoted ? promotionBonuses[piece.kind] ?? 0 : 0);
+    const advancement = piece.kind === "K" ? 0 : piece.side === "sente" ? 8 - row : row;
+    const centrality = piece.kind === "K" ? 0 : 4 - Math.abs(4 - col);
+    score += sign * (value + advancement * 2 + centrality * 2);
+  }
+  for (const side of ["sente", "gote"] as const) {
+    const sign = side === perspective ? 1 : -1;
+    for (const kind of state.hands[side]) score += sign * pieceValues[kind];
+    if (isShogiInCheck(state, side)) score += sign * -45;
+  }
+  return score;
+}
+
+function orderedActions(state: ShogiState, actions: ShogiAction[], limit: number) {
+  return actions.map((action) => {
+    const next = applyShogiAction(state, action);
+    const score = isShogiCheckmate(next) ? 100000 : evaluateShogiPosition(next, state.turn);
+    return { action, next, score };
+  }).sort((a, b) => b.score - a.score).slice(0, limit);
+}
+
+function searchShogiPosition(state: ShogiState, depth: number, alpha: number, beta: number): number {
+  if (isShogiCheckmate(state)) return -100000 - depth;
+  if (depth === 0) return evaluateShogiPosition(state, state.turn);
+  const actions = allLegalShogiActions(state);
+  if (actions.length === 0) return isShogiInCheck(state, state.turn) ? -100000 - depth : 0;
+  const candidates = orderedActions(state, actions, 12);
+  let best = -Infinity;
+  for (const { next } of candidates) {
+    const score = -searchShogiPosition(next, depth - 1, -beta, -alpha);
+    best = Math.max(best, score);
+    alpha = Math.max(alpha, score);
+    if (alpha >= beta) break;
+  }
+  return best;
+}
+
+/** Selects a legal CPU move by considering immediate tactics and the opponent's best reply. */
+export function chooseShogiCpuAction(state: ShogiState, side: ShogiSide = state.turn): ShogiAction | null {
+  const position = side === state.turn ? state : { ...state, turn: side };
+  const actions = allLegalShogiActions(position);
+  if (actions.length === 0) return null;
+  const candidates = orderedActions(position, actions, 20);
+  let bestAction = candidates[0].action;
+  let bestScore = -Infinity;
+  for (const { action, next } of candidates) {
+    const score = isShogiCheckmate(next) ? 100000 : -searchShogiPosition(next, 1, -Infinity, Infinity);
+    if (score > bestScore) {
+      bestScore = score;
+      bestAction = action;
+    }
+  }
+  return bestAction;
+}

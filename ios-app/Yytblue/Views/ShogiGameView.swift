@@ -140,6 +140,86 @@ private enum ShogiRules {
         isInCheck(state, side: state.turn) && !hasLegalAction(state, side: state.turn)
     }
 
+    static func chooseCpuAction(_ state: ShogiState) -> ShogiAction? {
+        let actions = rankedActions(state, allLegalActions(state), limit: 20)
+        guard !actions.isEmpty else { return nil }
+        var bestAction = actions[0].action
+        var bestScore = Int.min
+        for candidate in actions {
+            let score = isCheckmate(candidate.next) ? 100_000 : -search(candidate.next, depth: 1, alpha: -100_000, beta: 100_000)
+            if score > bestScore {
+                bestScore = score
+                bestAction = candidate.action
+            }
+        }
+        return bestAction
+    }
+
+    private static func allLegalActions(_ state: ShogiState) -> [ShogiAction] {
+        var actions: [ShogiAction] = []
+        for row in 0..<9 { for col in 0..<9 {
+            if state.board[row][col]?.side == state.turn { actions += legalMoves(state, row: row, col: col) }
+        } }
+        for kind in Set(state.hands[state.turn, default: []]) { actions += legalDrops(state, kind: kind) }
+        return actions
+    }
+
+    private static func rankedActions(_ state: ShogiState, _ actions: [ShogiAction], limit: Int) -> [(action: ShogiAction, next: ShogiState, score: Int)] {
+        actions.map { action in
+            let next = apply(state, action)
+            return (action, next, isCheckmate(next) ? 100_000 : evaluate(next, perspective: state.turn))
+        }
+        .sorted { $0.score > $1.score }
+        .prefix(limit)
+        .map { $0 }
+    }
+
+    private static func search(_ state: ShogiState, depth: Int, alpha: Int, beta: Int) -> Int {
+        if isCheckmate(state) { return -100_000 - depth }
+        if depth == 0 { return evaluate(state, perspective: state.turn) }
+        let actions = allLegalActions(state)
+        if actions.isEmpty { return isInCheck(state, side: state.turn) ? -100_000 - depth : 0 }
+        var currentAlpha = alpha
+        var best = Int.min
+        for candidate in rankedActions(state, actions, limit: 12) {
+            let score = -search(candidate.next, depth: depth - 1, alpha: -beta, beta: -currentAlpha)
+            best = max(best, score)
+            currentAlpha = max(currentAlpha, score)
+            if currentAlpha >= beta { break }
+        }
+        return best
+    }
+
+    private static func evaluate(_ state: ShogiState, perspective: ShogiSide) -> Int {
+        func value(_ kind: ShogiKind) -> Int {
+            switch kind {
+            case .pawn: 100
+            case .lance: 260
+            case .knight: 300
+            case .silver: 420
+            case .gold: 520
+            case .bishop: 760
+            case .rook: 900
+            case .king: 20_000
+            }
+        }
+        let promotionBonus: [ShogiKind: Int] = [.pawn: 360, .lance: 300, .knight: 280, .silver: 180, .bishop: 180, .rook: 180]
+        var score = 0
+        for row in 0..<9 { for col in 0..<9 {
+            guard let piece = state.board[row][col] else { continue }
+            let sign = piece.side == perspective ? 1 : -1
+            let advance = piece.kind == .king ? 0 : piece.side == .sente ? 8 - row : row
+            let center = piece.kind == .king ? 0 : 4 - abs(4 - col)
+            score += sign * (value(piece.kind) + (piece.promoted ? promotionBonus[piece.kind, default: 0] : 0) + advance * 2 + center * 2)
+        } }
+        for side in ShogiSide.allCases {
+            let sign = side == perspective ? 1 : -1
+            for kind in state.hands[side, default: []] { score += sign * value(kind) }
+            if isInCheck(state, side: side) { score -= sign * 45 }
+        }
+        return score
+    }
+
     private static func hasLegalAction(_ state: ShogiState, side: ShogiSide, preventPawnDropMate: Bool = true) -> Bool {
         var position = state
         position.turn = side
@@ -248,13 +328,21 @@ struct ShogiGameView: View {
     @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
     let onShare: (String) -> Void
     @State private var game = ShogiRules.initialState()
+    @State private var isCpuGame = true
+    @State private var humanSide: ShogiSide = .sente
+    @State private var isThinking = false
+    @State private var cpuTaskID = UUID()
     @State private var selectedSquare: ShogiPosition?
     @State private var selectedHand: ShogiKind?
     @State private var promotionActions: [ShogiAction]?
     @State private var winner: ShogiSide?
 
+    private var canHumanPlay: Bool {
+        winner == nil && !isThinking && (!isCpuGame || game.turn == humanSide)
+    }
+
     private var selectedActions: [ShogiAction] {
-        guard winner == nil else { return [] }
+        guard canHumanPlay else { return [] }
         if let selectedSquare { return ShogiRules.legalMoves(game, row: selectedSquare.row, col: selectedSquare.col) }
         if let selectedHand { return ShogiRules.legalDrops(game, kind: selectedHand) }
         return []
@@ -263,8 +351,22 @@ struct ShogiGameView: View {
     var body: some View {
         let destinationSquares = Set(selectedActions.map(\.to))
         VStack(alignment: .leading, spacing: 10) {
-            Text(L("同じ端末で交互に指す将棋です。駒の移動・成り・持ち駒・王手と詰みを判定します。"))
+            Text(L("CPUまたは同じ端末の2人で対局できます。合法手・成り・持ち駒・王手と詰みを判定します。"))
                 .font(.system(size: 13)).foregroundStyle(Color.irukaSecondary)
+            Picker(L("対局モード"), selection: $isCpuGame) {
+                Text(L("CPU対戦")).tag(true)
+                Text(L("対人戦")).tag(false)
+            }
+            .pickerStyle(.segmented)
+            .onChange(of: isCpuGame) { _, _ in restart() }
+            if isCpuGame {
+                Picker(L("あなたの手番"), selection: $humanSide) {
+                    Text(L("先手")).tag(ShogiSide.sente)
+                    Text(L("後手")).tag(ShogiSide.gote)
+                }
+                .pickerStyle(.segmented)
+                .onChange(of: humanSide) { _, _ in restart() }
+            }
             handView(.gote)
             HStack {
                 Text(statusText).font(.system(size: 14, weight: .semibold)).foregroundStyle(winner == nil ? Color.irukaInk : Color.irukaBlue)
@@ -302,7 +404,7 @@ struct ShogiGameView: View {
                         .overlay(Rectangle().stroke(Color(red: 0.61, green: 0.46, blue: 0.27), lineWidth: 0.5))
                     }
                     .buttonStyle(.plain)
-                    .disabled(winner != nil || promotionActions != nil)
+                    .disabled(!canHumanPlay || promotionActions != nil)
                     .accessibilityLabel("\(row + 1) \(col + 1) \(piece?.glyph ?? L("空きマス"))")
                     .accessibilityAddTraits(selected ? .isSelected : [])
                 }
@@ -324,8 +426,8 @@ struct ShogiGameView: View {
             }
             if let winner {
                 VStack(spacing: 8) {
-                    Text(L(winner == .sente ? "先手の勝ち" : "後手の勝ち")).font(.system(size: 16, weight: .bold))
-                    Button { onShare("\(L(winner == .sente ? "先手の勝ち" : "後手の勝ち")) · \(L("将棋"))") } label: {
+                    Text(winnerLabel(winner)).font(.system(size: 16, weight: .bold))
+                    Button { onShare("\(winnerLabel(winner)) · \(L("将棋"))") } label: {
                         Label(L("結果を投稿で共有"), systemImage: "square.and.arrow.up")
                             .frame(maxWidth: .infinity, minHeight: 42)
                     }
@@ -334,11 +436,19 @@ struct ShogiGameView: View {
                 .frame(maxWidth: .infinity).padding(10).background(Color.irukaField, in: RoundedRectangle(cornerRadius: 12))
             }
         }
+        .onAppear(perform: scheduleCpuMove)
     }
 
     private var statusText: String {
-        if let winner { return L(winner == .sente ? "先手の勝ち" : "後手の勝ち") }
-        return L(game.turn == .sente ? "先手の番" : "後手の番") + (ShogiRules.isInCheck(game, side: game.turn) ? " · \(L("王手"))" : "")
+        if let winner { return winnerLabel(winner) }
+        if isThinking { return L("CPUが考えています…") }
+        let player = isCpuGame ? "\(L(game.turn == humanSide ? "あなた" : "CPU")) · " : ""
+        return player + L(game.turn == .sente ? "先手の番" : "後手の番") + (ShogiRules.isInCheck(game, side: game.turn) ? " · \(L("王手"))" : "")
+    }
+
+    private func winnerLabel(_ side: ShogiSide) -> String {
+        if isCpuGame && side != humanSide { return L("CPUの勝ち") }
+        return L(side == .sente ? "先手の勝ち" : "後手の勝ち")
     }
 
     private func handView(_ side: ShogiSide) -> some View {
@@ -361,7 +471,7 @@ struct ShogiGameView: View {
                             .background(selectedHand == kind && game.turn == side ? Color.irukaBlue.opacity(0.18) : Color.irukaField, in: RoundedRectangle(cornerRadius: 7))
                         }
                         .buttonStyle(.plain)
-                        .disabled(game.turn != side || winner != nil || promotionActions != nil)
+                        .disabled(!canHumanPlay || game.turn != side || promotionActions != nil)
                         .accessibilityLabel("\(side.label) \(L("持ち駒")) \(kind.glyph) \(count)")
                     }
                 }
@@ -374,7 +484,7 @@ struct ShogiGameView: View {
     }
 
     private func tapSquare(row: Int, col: Int) {
-        guard winner == nil, promotionActions == nil else { return }
+        guard canHumanPlay, promotionActions == nil else { return }
         let destination = ShogiPosition(row: row, col: col)
         let choices = selectedActions.filter { $0.to == destination }
         if !choices.isEmpty {
@@ -392,7 +502,7 @@ struct ShogiGameView: View {
     }
 
     private func selectHand(_ kind: ShogiKind) {
-        guard winner == nil, promotionActions == nil, game.hands[game.turn, default: []].contains(kind) else { return }
+        guard canHumanPlay, promotionActions == nil, game.hands[game.turn, default: []].contains(kind) else { return }
         selectedHand = selectedHand == kind ? nil : kind
         selectedSquare = nil
     }
@@ -404,6 +514,7 @@ struct ShogiGameView: View {
         selectedSquare = nil
         selectedHand = nil
         promotionActions = nil
+        DispatchQueue.main.async { scheduleCpuMove() }
     }
 
     private func restart() {
@@ -411,6 +522,35 @@ struct ShogiGameView: View {
         selectedSquare = nil
         selectedHand = nil
         promotionActions = nil
+        cpuTaskID = UUID()
+        isThinking = false
         winner = nil
+        DispatchQueue.main.async { scheduleCpuMove() }
+    }
+
+    private func scheduleCpuMove() {
+        guard isCpuGame, game.turn != humanSide, winner == nil else {
+            isThinking = false
+            return
+        }
+        let taskID = UUID()
+        cpuTaskID = taskID
+        let position = game
+        isThinking = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.32) {
+            guard cpuTaskID == taskID, isCpuGame, game.turn == position.turn, game.turn != humanSide, winner == nil else { return }
+            guard let action = ShogiRules.chooseCpuAction(position) else {
+                winner = humanSide
+                isThinking = false
+                return
+            }
+            let next = ShogiRules.apply(position, action)
+            winner = ShogiRules.isCheckmate(next) ? position.turn : nil
+            game = next
+            selectedSquare = nil
+            selectedHand = nil
+            promotionActions = nil
+            isThinking = false
+        }
     }
 }
