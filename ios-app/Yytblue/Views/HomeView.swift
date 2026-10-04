@@ -74,10 +74,15 @@ struct HomeView: View {
                     NavigationLink { RankingsView(store: store) } label: {
                         Image(systemName: "chart.bar").accessibilityLabel(L("ランキング"))
                     }
+                    NavigationLink { GamesView(store: store, showsSignIn: $showsSignIn) } label: {
+                        Image(systemName: "gamecontroller").accessibilityLabel(L("ゲームセンター"))
+                    }
                     NavigationLink { DiagnosisLibraryView(store: store) } label: {
                         Image(systemName: "sparkles").accessibilityLabel(L("診断を探す"))
                     }
-                    NavigationLink { CommunitiesView() } label: { Label(L("コミュニティ"), systemImage: "person.3") }
+                    NavigationLink { CommunitiesView() } label: {
+                        Image(systemName: "person.3").accessibilityLabel(L("コミュニティ"))
+                    }
                 }
             }
         }

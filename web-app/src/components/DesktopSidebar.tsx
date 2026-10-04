@@ -1,9 +1,9 @@
 import { NotificationBell } from "@/components/NotificationBell";
-import { Bookmark, List, Fish, House, Search, Settings, SquarePen, UserRound, UsersRound, Sparkles, Trophy } from "lucide-react";
+import { Bookmark, List, Fish, Gamepad2, House, Search, Settings, SquarePen, UserRound, UsersRound, Sparkles, Trophy } from "lucide-react";
 import { Link } from "react-router-dom";
 import { t, useLanguage } from "@/lib/language";
 
-export function DesktopSidebar({ tab, onCompose }: { tab: "home" | "mine" | "bookmarks" | "settings" | "notifications" | "search" | "lists" | "communities" | "diagnoses" | "rankings"; onCompose: () => void }) {
+export function DesktopSidebar({ tab, onCompose }: { tab: "home" | "mine" | "bookmarks" | "settings" | "notifications" | "search" | "lists" | "communities" | "diagnoses" | "games" | "rankings"; onCompose: () => void }) {
   useLanguage();
   return (
     <aside className="fixed bottom-0 left-[calc(50%-380px)] top-0 hidden w-[220px] border-r border-border bg-background px-4 py-6 lg:block">
@@ -17,6 +17,9 @@ export function DesktopSidebar({ tab, onCompose }: { tab: "home" | "mine" | "boo
           </Link>
           <Link to="/diagnoses" aria-current={tab === "diagnoses" ? "page" : undefined} className={`flex min-h-12 items-center gap-3 rounded-xl px-3 ${tab === "diagnoses" ? "bg-muted text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
             <Sparkles className="h-5 w-5" aria-hidden />{t("診断を探す")}
+          </Link>
+          <Link to="/games" aria-current={tab === "games" ? "page" : undefined} className={`flex min-h-12 items-center gap-3 rounded-xl px-3 ${tab === "games" ? "bg-muted text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
+            <Gamepad2 className="h-5 w-5" aria-hidden />{t("ゲームセンター")}
           </Link>
           <Link to="/rankings" aria-current={tab === "rankings" ? "page" : undefined} className={`flex min-h-12 items-center gap-3 rounded-xl px-3 ${tab === "rankings" ? "bg-muted text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
             <Trophy className="h-5 w-5" aria-hidden />{t("ランキング")}
