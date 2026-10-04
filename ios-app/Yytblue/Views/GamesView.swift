@@ -1,9 +1,15 @@
 import SwiftUI
 
 private enum ArcadeGame: String, CaseIterable, Identifiable {
-    case memory, game2048
+    case memory, game2048, shogi
     var id: String { rawValue }
-    var title: String { self == .memory ? L("神経衰弱") : "2048" }
+    var title: String {
+        switch self {
+        case .memory: L("神経衰弱")
+        case .game2048: "2048"
+        case .shogi: L("将棋")
+        }
+    }
 }
 
 struct GamesView: View {
@@ -18,7 +24,7 @@ struct GamesView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                Text(L("ゲームのスコアや神経衰弱の手数を投稿で共有できます。"))
+                Text(L("ゲームのスコアや対局結果を投稿で共有できます。"))
                     .font(.system(size: 14))
                     .foregroundStyle(Color.irukaSecondary)
                 Picker(L("ゲームを選択"), selection: $selected) {
@@ -29,6 +35,7 @@ struct GamesView: View {
                     switch selected {
                     case .memory: MemoryGameView(onShare: shareResult)
                     case .game2048: Game2048View(onShare: shareResult)
+                    case .shogi: ShogiGameView(onShare: shareResult)
                     }
                 }
                 .padding(15)

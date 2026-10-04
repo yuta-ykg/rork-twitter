@@ -2,14 +2,15 @@ import { useAuth } from "@/hooks/authContext";
 import { t, useLanguage } from "@/lib/language";
 import { insertPost } from "@/lib/posts";
 import { Shell } from "@/pages/IndexShared";
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Brain, Gamepad2, RotateCcw } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Brain, Crown, Gamepad2, RotateCcw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
+import { ShogiGame } from "@/components/ShogiGame";
 
 const goalTargets = [1024, 2048, 4096, 8192, 16384] as const;
 type GoalTarget = typeof goalTargets[number];
-type MiniGame = "memory" | GoalTarget;
+type MiniGame = "memory" | "shogi" | GoalTarget;
 type MemoryCard = { id: number; symbol: string };
 type Direction = "left" | "right" | "up" | "down";
 
@@ -87,7 +88,9 @@ export default function GamesPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [selected, setSelected] = useState<MiniGame>(() => {
-    const requestedTarget = Number(searchParams.get("game"));
+    const requestedGame = searchParams.get("game");
+    if (requestedGame === "shogi") return "shogi";
+    const requestedTarget = Number(requestedGame);
     return goalTargets.includes(requestedTarget as GoalTarget) ? requestedTarget as GoalTarget : "memory";
   });
 
@@ -109,7 +112,7 @@ export default function GamesPage() {
     <Shell tab="games" onCompose={() => navigate("/", { state: { compose: true } })}>
       <div className="pt-4">
         <h1 className="flex items-center gap-2 text-[28px] font-bold"><Gamepad2 className="h-7 w-7 text-[hsl(var(--brand))]" />{t("ゲームセンター")}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{t("ゲームのスコアや神経衰弱の手数を投稿で共有できます。")}</p>
+        <p className="mt-2 text-sm text-muted-foreground">{t("ゲームのスコアや対局結果を投稿で共有できます。")}</p>
         <div className="mt-4 grid grid-cols-3 gap-2" role="group" aria-label={t("ゲームを選択")}>
           <button type="button" aria-pressed={selected === "memory"} onClick={() => setSelected("memory")}
             className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border text-sm font-semibold ${selected === "memory" ? "border-[hsl(var(--brand))] bg-[hsl(var(--brand))]/10 text-[hsl(var(--brand))]" : "border-input text-muted-foreground"}`}>
@@ -119,10 +122,14 @@ export default function GamesPage() {
             className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border text-sm font-semibold ${selected === target ? "border-[hsl(var(--brand))] bg-[hsl(var(--brand))]/10 text-[hsl(var(--brand))]" : "border-input text-muted-foreground"}`}>
             <span className="font-bold">{target}</span>
           </button>)}
+          <button type="button" aria-pressed={selected === "shogi"} onClick={() => setSelected("shogi")}
+            className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border text-sm font-semibold ${selected === "shogi" ? "border-[hsl(var(--brand))] bg-[hsl(var(--brand))]/10 text-[hsl(var(--brand))]" : "border-input text-muted-foreground"}`}>
+            <Crown className="h-4 w-4" aria-hidden />{t("将棋")}
+          </button>
         </div>
       </div>
       <section className="mt-5 rounded-2xl border border-border bg-card p-4 sm:p-5" aria-live="polite">
-        {selected === "memory" ? <MemoryGame onShare={(body) => void shareResult(body)} /> : <Game2048 key={selected} target={selected} onShare={(body) => void shareResult(body)} />}
+        {selected === "memory" ? <MemoryGame onShare={(body) => void shareResult(body)} /> : selected === "shogi" ? <ShogiGame onShare={(body) => void shareResult(body)} /> : <Game2048 key={selected} target={selected} onShare={(body) => void shareResult(body)} />}
       </section>
     </Shell>
   );

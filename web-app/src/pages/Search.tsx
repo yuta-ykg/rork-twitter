@@ -24,6 +24,12 @@ const miniGames = [
     description: "カードの中から同じ絵柄のペアを見つけましょう。",
     keywords: ["神経衰弱", "memory", "memory match", "matching pairs", "짝 맞추기", "같은 그림 찾기", "记忆配对", "記憶配對"],
   },
+  {
+    id: "shogi",
+    title: "将棋",
+    description: "同じ端末で交互に指す将棋です。駒の移動・成り・持ち駒・王手と詰みを判定します。",
+    keywords: ["将棋", "shogi", "日本将棋", "쇼기", "日本将棋", "将棋游戏"],
+  },
   ...goalTargets.map((target) => ({
     id: target,
     title: String(target),
