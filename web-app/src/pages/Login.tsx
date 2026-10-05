@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Fish } from "lucide-react";
 
 import { AppleMark, GoogleMark } from "@/components/BrandMarks";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,7 +17,7 @@ export default function LoginPage() {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col justify-center px-6 pb-10">
       <div className="mb-8 flex items-center gap-2">
-        <Fish className="h-7 w-7 text-[hsl(var(--brand))]" aria-hidden />
+        <img src="/icon.png" alt="" aria-hidden className="h-8 w-8 rounded-full object-cover" />
         <h1 className="text-2xl font-bold">{t("イルカ")}</h1>
       </div>
       <h2 className="text-[28px] font-bold leading-tight">{t("ログインしてはじめる")}</h2>

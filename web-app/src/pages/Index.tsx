@@ -13,7 +13,7 @@ import { t, useLanguage } from "@/lib/language";
 import { LikeIconGlyph, useLikeIcon } from "@/hooks/useLikeIcon";
 import { isDevelopmentSession, isGuestSession } from "@/lib/development";
 import { toast } from "sonner";
-import { Bookmark, Download, Fish, House, MessageCircle, Search, SquarePen, Settings, UserRound, X } from "lucide-react";
+import { Bookmark, Download, House, MessageCircle, Search, SquarePen, Settings, UserRound, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 
@@ -45,12 +45,33 @@ function Avatar({ initial, index }: { initial: string; index: number }) {
   );
 }
 
+/** 自分のアバター。プロフィール画像があれば表示し、読み込み失敗時は頭文字円に戻す。 */
+function OwnAvatar({ url, initial }: { url?: string | null; initial: string }) {
+  useLanguage();
+  const [failed, setFailed] = useState(false);
+  useEffect(() => { setFailed(false); }, [url]);
+  if (url && !failed) return <img src={url} onError={() => setFailed(true)} referrerPolicy="no-referrer" alt="" className="h-16 w-16 shrink-0 rounded-full object-cover" />;
+  return (
+    <span
+      className="grid h-16 w-16 shrink-0 place-items-center rounded-full text-xl font-semibold text-[rgba(15,20,25,0.7)]"
+      style={{ backgroundColor: avatarFills[0] }}
+      aria-hidden
+    >
+      {initial}
+    </span>
+  );
+}
+
 function Wordmark() {
   useLanguage();
+  const { user } = useAuth();
+  const own = useOwnProfile();
+  const label = user ? (own?.handle ?? userHandle(user)) : t("イルカ");
   return (
-    <span className="inline-flex items-center gap-1.5 text-xl font-bold text-foreground">
-      <Fish className="h-[18px] w-[18px] text-[hsl(var(--brand))]" aria-hidden />
-      {t("イルカ")}</span>
+    <span className="inline-flex items-center gap-2 text-xl font-bold text-foreground">
+      <img src="/icon.png" alt="" aria-hidden className="h-6 w-6 rounded-full object-cover" />
+      {label}
+    </span>
   );
 }
 
@@ -298,6 +319,8 @@ function useOwnProfile() {
     name,
     handle: query.data?.handle ? `@${query.data.handle}` : userHandle(user),
     initial: Array.from(name)[0] ?? "い",
+    avatarUrl: query.data?.avatar_url ?? null,
+    bio: query.data?.bio ?? "",
   };
 }
 
@@ -507,20 +530,29 @@ export function MinePage() {
       <Shell tab="mine" onCompose={() => (user ? setOpen(true) : undefined)}>
         {user ? (
           <>
-            <div className="flex items-center justify-between pt-4">
-              <Link to={`/profile/${encodeURIComponent(user.id)}`} className="text-base font-semibold text-[hsl(var(--brand))]">{t("プロフィールを見る・編集")}</Link>
-              <button type="button" onClick={signOut} className="h-11 text-[hsl(var(--brand))]">
-                {t("ログアウト")}</button>
+            <div className="pt-4">
+              <div className="flex items-start justify-between gap-3">
+                <OwnAvatar url={own?.avatarUrl} initial={own?.initial ?? displayName(user).slice(0, 1)} />
+                <div className="flex shrink-0 items-center gap-1">
+                  <Link to={`/profile/${encodeURIComponent(user.id)}`} className="inline-flex min-h-11 items-center rounded-full border border-input px-4 text-sm font-semibold">{t("プロフィールを編集")}</Link>
+                  <button type="button" onClick={signOut} className="min-h-11 px-2 text-[hsl(var(--brand))]">{t("ログアウト")}</button>
+                </div>
+              </div>
+              <h1 className="mt-3 text-xl font-bold">{own?.name ?? displayName(user)}</h1>
+              <p className="mt-0.5 text-[15px] text-muted-foreground">{own?.handle ?? userHandle(user)}</p>
+              {own?.bio ? <p className="mt-2 whitespace-pre-wrap break-words text-base">{own.bio}</p> : null}
+              <p className="mt-3 flex gap-4 text-sm text-muted-foreground">
+                <span><span className="font-semibold tabular-nums text-foreground">{mine.length}</span> {t("投稿")}</span>
+                <span><span className="font-semibold tabular-nums text-foreground">{count}</span> {t("今週の投稿")}</span>
+              </p>
             </div>
-            <div className="py-6 text-center">
-              <p className="text-[56px] font-bold leading-none tabular-nums">{count}</p>
-              <p className="mt-1 text-base text-muted-foreground">{t("今週の投稿")}</p>
+            <div className="mt-4 border-t border-border">
+              {mine.length === 0 ? (
+                <p className="py-10 text-center text-muted-foreground">{t("まだ投稿がありません")}</p>
+              ) : (
+                mine.map((post) => <Row key={post.id} post={post} showAuthor={false} onLike={() => like(post.id)} />)
+              )}
             </div>
-            {mine.length === 0 ? (
-              <p className="py-10 text-center text-muted-foreground">{t("まだ投稿がありません")}</p>
-            ) : (
-              mine.map((post) => <Row key={post.id} post={post} showAuthor={false} onLike={() => like(post.id)} />)
-            )}
           </>
         ) : (
           <SignInPanel title={t("自分の投稿")} message={t("ログインすると、この端末を超えて自分の投稿が見られます。")} />

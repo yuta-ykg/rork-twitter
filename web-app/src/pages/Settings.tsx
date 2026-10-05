@@ -16,6 +16,7 @@ import { likeIconOptions, useLikeIcon, type LikeIcon } from "@/hooks/useLikeIcon
 import { Link, useNavigate } from "react-router-dom";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { themeOptions, useTheme, type Theme } from "@/hooks/useTheme";
+import { ArrowLeft } from "lucide-react";
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
@@ -37,7 +38,9 @@ export default function SettingsPage() {
     {!useDesktopBottomBar && <DesktopSidebar tab="settings" onCompose={() => navigate("/", { state: { compose: true } })} />}
     <main className="px-5 pb-10">
     <header className="flex min-h-14 items-center gap-5 border-b border-border">
-      <Link to="/" className="flex min-h-11 items-center text-[hsl(var(--brand))]">{t("ホーム")}</Link>
+      <Link to="/" aria-label={t("ホーム")} className="grid min-h-11 min-w-11 place-items-center text-[hsl(var(--brand))]">
+        <ArrowLeft className="h-5 w-5" aria-hidden />
+      </Link>
       <h1 className="text-lg font-semibold">{t("設定")}</h1>
     </header>
     <section className="py-6">
