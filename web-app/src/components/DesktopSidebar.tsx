@@ -1,5 +1,5 @@
 import { NotificationBell } from "@/components/NotificationBell";
-import { Bookmark, Fish, House, List, Search, Settings, SquarePen, UserRound } from "lucide-react";
+import { Bookmark, House, List, Search, Settings, SquarePen, UserRound } from "lucide-react";
 import { Link } from "react-router-dom";
 import { t, useLanguage } from "@/lib/language";
 
@@ -7,7 +7,7 @@ export function DesktopSidebar({ tab, onCompose }: { tab: "home" | "mine" | "boo
   useLanguage();
   return (
     <aside className="fixed bottom-0 left-[calc(50%-380px)] top-0 hidden w-[220px] border-r border-border bg-background px-4 py-6 lg:block">
-        <Link to="/" className="mb-8 inline-flex min-h-11 items-center px-3"><Fish className="h-[18px] w-[18px] text-[hsl(var(--brand))]" aria-hidden /><span className="ml-2 text-xl font-bold">{t("イルカ")}</span></Link>
+        <Link to="/" className="mb-8 inline-flex min-h-11 items-center px-3"><img src="/icon.png" alt="" aria-hidden className="h-6 w-6 rounded-full object-cover" /><span className="ml-2 text-xl font-bold">{t("イルカ")}</span></Link>
         <nav aria-label={t("サイドナビゲーション")} className="flex flex-col gap-2">
           <Link to="/" aria-current={tab === "home" ? "page" : undefined} className={`flex min-h-12 items-center gap-3 rounded-xl px-3 ${tab === "home" ? "bg-muted text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
             <House className="h-5 w-5" aria-hidden />{t("ホーム")}
@@ -37,4 +37,3 @@ export function DesktopSidebar({ tab, onCompose }: { tab: "home" | "mine" | "boo
       </aside>
   );
 }
-
