@@ -3,6 +3,18 @@ import { useLayoutEffect, useSyncExternalStore } from "react";
 export type Language = "ja" | "en" | "ko" | "zh-CN" | "zh-TW";
 const key = "iruka-language";
 const english: Record<string, string> = {
+  "ブロックパズル": "Block puzzle",
+  "3つのピースを置き、行と列を消してスコアを伸ばすゲームです。": "Place three pieces, clear rows and columns, and build your score.",
+  "ピースを選び、盤面の置きたい位置をタップ。行か列を埋めると消えます。": "Select a piece, then tap its top-left position on the board. Filled rows or columns clear.",
+  "消したライン": "Lines cleared",
+  "ブロックパズルの盤面": "Block puzzle board",
+  "ピースを選択": "Choose a piece",
+  "次のピース": "Next pieces",
+  "ピース": "Piece",
+  "使用済み": "Used",
+  "ブロックあり": "Filled",
+  "ここには置けません。": "This piece does not fit here.",
+  "置ける場所がありません。ゲーム終了です。": "No pieces fit. Game over.",
   "囲碁": "Go",
   "石を取り、パスして終局する9路盤の囲碁です。": "Play 9x9 Go with captures and passing.",
   "9路盤で交互に打ちます。2回続けてパスすると終局です。": "Take turns on a 9x9 board. Two consecutive passes end the game.",
@@ -525,6 +537,18 @@ const english: Record<string, string> = {
   "Yesterday": "昨日"
 };
 const korean: Record<string, string> = {
+  "ブロックパズル": "블록 퍼즐",
+  "3つのピースを置き、行と列を消してスコアを伸ばすゲームです。": "세 조각을 놓아 행과 열을 지우고 점수를 올리세요.",
+  "ピースを選び、盤面の置きたい位置をタップ。行か列を埋めると消えます。": "조각을 선택하고 보드의 왼쪽 위 위치를 탭하세요. 행이나 열을 채우면 사라집니다.",
+  "消したライン": "지운 줄",
+  "ブロックパズルの盤面": "블록 퍼즐 판",
+  "ピースを選択": "조각 선택",
+  "次のピース": "다음 조각",
+  "ピース": "조각",
+  "使用済み": "사용함",
+  "ブロックあり": "채워짐",
+  "ここには置けません。": "여기에는 놓을 수 없습니다.",
+  "置ける場所がありません。ゲーム終了です。": "놓을 곳이 없습니다. 게임 종료.",
   "囲碁": "바둑",
   "石を取り、パスして終局する9路盤の囲碁です。": "돌을 잡고 패스하여 끝내는 9줄 바둑입니다.",
   "9路盤で交互に打ちます。2回続けてパスすると終局です。": "9줄 바둑판에서 번갈아 둡니다. 연속 두 번 패스하면 종료됩니다.",
@@ -774,6 +798,18 @@ const koreanExtraMessages: Record<string, string> = {
   "設定からいつでもこのガイドを開けます。": "설정에서 언제든 이 안내를 열 수 있습니다.",
 };
 const simplifiedChinese: Record<string, string> = {
+  "ブロックパズル": "方块拼图",
+  "3つのピースを置き、行と列を消してスコアを伸ばすゲームです。": "放置三个方块，消除整行或整列来提高分数。",
+  "ピースを選び、盤面の置きたい位置をタップ。行か列を埋めると消えます。": "选择方块，然后点击棋盘上要放置的左上角。填满行或列即可消除。",
+  "消したライン": "已消除行列",
+  "ブロックパズルの盤面": "方块拼图棋盘",
+  "ピースを選択": "选择方块",
+  "次のピース": "接下来的方块",
+  "ピース": "方块",
+  "使用済み": "已使用",
+  "ブロックあり": "已填充",
+  "ここには置けません。": "无法放在这里。",
+  "置ける場所がありません。ゲーム終了です。": "没有可放置的位置，游戏结束。",
   "囲碁": "围棋",
   "石を取り、パスして終局する9路盤の囲碁です。": "可提子并以停着结束的九路围棋。",
   "9路盤で交互に打ちます。2回続けてパスすると終局です。": "在九路棋盘上轮流落子。连续两次停着后终局。",
