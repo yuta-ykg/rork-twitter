@@ -185,4 +185,3 @@ private struct ProfileEditor: View {
         .interactiveDismissDisabled(saving)
     }
 }
-

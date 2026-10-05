@@ -9,7 +9,7 @@ import { Link, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/authContext";
 import { ensureProfile, fetchHandleAvailability, fetchProfile, saveProfile, uploadAvatar, type Profile } from "@/lib/profiles";
 import { fetchPosts, type Post } from "@/lib/posts";
-import { ListMembershipPicker } from "@/pages/Lists";
+import { ListMembershipPicker } from "@/components/ListMembershipPicker";
 
 export default function ProfilePage() {
   useLanguage();
@@ -187,4 +187,3 @@ function HandleRule({ ok, touched, label }: { ok: boolean; touched: boolean; lab
     <span>{label}</span>
   </li>;
 }
-

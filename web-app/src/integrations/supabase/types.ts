@@ -18,9 +18,9 @@ export type Database = {
   public: {
     Tables: {
       user_lists: {
-        Row: { id: string; owner_id: string; name: string; created_at: string; updated_at: string }
-        Insert: { id: string; owner_id: string; name: string; created_at?: string; updated_at?: string }
-        Update: { id?: string; owner_id?: string; name?: string; created_at?: string; updated_at?: string }
+        Row: { id: string; owner_id: string; name: string; description: string; is_public: boolean; created_at: string; updated_at: string }
+        Insert: { id: string; owner_id: string; name: string; description?: string; is_public?: boolean; created_at?: string; updated_at?: string }
+        Update: { id?: string; owner_id?: string; name?: string; description?: string; is_public?: boolean; created_at?: string; updated_at?: string }
         Relationships: []
       }
       user_list_members: {
@@ -767,4 +767,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-
