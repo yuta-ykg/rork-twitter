@@ -16,7 +16,7 @@ struct ContentView: View {
     @State private var selectedTab: MainTab = .home
     @State private var composeAfterLogin = false
 
-    private enum MainTab: Hashable { case home, compose, mine, bookmarks, notifications, settings }
+    private enum MainTab: Hashable { case home, compose, mine, bookmarks, games, notifications, settings }
 
     var body: some View {
         TabView(selection: Binding(get: { selectedTab }, set: selectTab)) {
@@ -47,6 +47,9 @@ struct ContentView: View {
                         }
                 }
             }
+            Tab(L("ゲーム"), systemImage: "gamecontroller.fill", value: MainTab.games) {
+                NavigationStack { OthelloView() }
+            }
             Tab(L("通知"), systemImage: "bell.fill", value: MainTab.notifications) {
                 NavigationStack { NotificationsView(store: store) }
             }
@@ -62,6 +65,7 @@ struct ContentView: View {
                 bottomBarButton(.compose, title: "投稿", symbol: "square.and.pencil")
                 bottomBarButton(.mine, title: "自分", symbol: "person.fill")
                 bottomBarButton(.bookmarks, title: "ブックマーク", symbol: "bookmark.fill")
+                bottomBarButton(.games, title: "ゲーム", symbol: "gamecontroller.fill")
                 bottomBarButton(.notifications, title: "通知", symbol: "bell.fill")
                 bottomBarButton(.settings, title: "設定", symbol: "gearshape")
             }
@@ -195,4 +199,3 @@ struct ContentView: View {
         .environment(AuthManager())
 
 }
-

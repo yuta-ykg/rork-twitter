@@ -11,6 +11,20 @@ enum AppLanguage: String, CaseIterable, Identifiable {
 }
 
 private let englishMessages: [String: String] = [
+    "ゲーム": "Games",
+    "オセロ": "Othello",
+    "同じ端末で交互に遊べます。置ける場所を選んでください。": "Take turns on this device. Choose a highlighted square.",
+    "黒": "Black",
+    "白": "White",
+    "の番": "'s turn",
+    "の勝ち": " wins",
+    "引き分け": "Draw",
+    "は置けないためパスしました。": " has no legal move and passes.",
+    "行": " row, ",
+    "列": " column",
+    "置けます": "legal move",
+    "空き": "empty",
+    "新しい対局": "New game",
     "リスト": "Lists",
     "リストを管理": "Manage lists",
     "リストはこの端末に保存されます。": "Lists are saved on this device.",
@@ -241,4 +255,3 @@ struct AppLanguageModifier: ViewModifier {
         content.environment(\.locale, Locale(identifier: language == "en" ? "en" : "ja"))
     }
 }
-

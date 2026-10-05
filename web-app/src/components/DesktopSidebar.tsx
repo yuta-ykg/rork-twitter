@@ -1,9 +1,9 @@
 import { NotificationBell } from "@/components/NotificationBell";
-import { Bookmark, House, List, Search, Settings, SquarePen, UserRound } from "lucide-react";
+import { Bookmark, Gamepad2, House, List, Search, Settings, SquarePen, UserRound } from "lucide-react";
 import { Link } from "react-router-dom";
 import { t, useLanguage } from "@/lib/language";
 
-export function DesktopSidebar({ tab, onCompose }: { tab: "home" | "mine" | "bookmarks" | "settings" | "notifications" | "search" | "lists"; onCompose: () => void }) {
+export function DesktopSidebar({ tab, onCompose }: { tab: "home" | "mine" | "bookmarks" | "settings" | "notifications" | "search" | "lists" | "games"; onCompose: () => void }) {
   useLanguage();
   return (
     <aside className="fixed bottom-0 left-[calc(50%-380px)] top-0 hidden w-[220px] border-r border-border bg-background px-4 py-6 lg:block">
@@ -23,6 +23,9 @@ export function DesktopSidebar({ tab, onCompose }: { tab: "home" | "mine" | "boo
           </Link>
           <Link to="/lists" aria-current={tab === "lists" ? "page" : undefined} className={`flex min-h-12 items-center gap-3 rounded-xl px-3 ${tab === "lists" ? "bg-muted text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
             <List className="h-5 w-5" aria-hidden />{t("リスト")}
+          </Link>
+          <Link to="/games" aria-current={tab === "games" ? "page" : undefined} className={`flex min-h-12 items-center gap-3 rounded-xl px-3 ${tab === "games" ? "bg-muted text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
+            <Gamepad2 className="h-5 w-5" aria-hidden />{t("ゲーム")}
           </Link>
           <Link to="/mine" aria-current={tab === "mine" ? "page" : undefined} className={`flex min-h-12 items-center gap-3 rounded-xl px-3 ${tab === "mine" ? "bg-muted text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
             <UserRound className="h-5 w-5" aria-hidden />{t("自分")}
