@@ -91,4 +91,3 @@ export async function searchListAccounts(userId: string, query: string): Promise
   if (error) throw error;
   return data ?? [];
 }
-

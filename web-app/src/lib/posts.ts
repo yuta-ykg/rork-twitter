@@ -1,9 +1,10 @@
-import { fetchListMembers } from "@/lib/userLists";
-import { getLanguage, t } from "@/lib/language";
+import { formatDateTime } from "@/lib/dateDisplay";
 import { isDevelopmentSession, localUser, readDevelopmentPosts, writeDevelopmentPosts, readDevelopmentProfile } from "@/lib/development";
 import { ensureProfile, fetchProfiles } from "@/lib/profiles";
 import { hiddenDevelopmentUsers } from "@/lib/userRelationships";
 import { supabase } from "@/lib/supabase";
+import { fetchPostPolls, isPollDraftValid, pollFromDraft, type PollDraft, type PostPoll } from "@/lib/polls";
+import { fetchPostDiagnoses, isDiagnosisDraftValid, type DiagnosisDraft, type PostDiagnosis } from "@/lib/diagnoses";
 
 export const MAX_CHARACTERS = 70;
 
@@ -22,6 +23,8 @@ export type Post = {
   parentId?: string | null;
   isLiked?: boolean;
   likeCount?: number;
+  poll?: PostPoll | null;
+  diagnosis?: PostDiagnosis | null;
 };
 
 type Row = {
@@ -62,26 +65,24 @@ function toPost(row: Row, userId?: string | null): Post {
 
 const postColumns = "id, author_name, handle, initial, body, created_at, avatar_index, user_id, parent_id";
 
-export async function fetchPosts(userId?: string | null, listId?: string): Promise<Post[]> {
-  if (listId && !userId) throw new Error("リストを使うにはログインしてください。");
+export async function fetchPosts(userId?: string | null): Promise<Post[]> {
   if (isDevelopmentSession()) {
     const profile = readDevelopmentProfile();
-    const memberIds = listId && userId ? new Set((await fetchListMembers(userId, listId)).map((m) => m.target_id)) : null;
-    return sortTimeline(readDevelopmentPosts()).filter((post) => !hiddenDevelopmentUsers(userId).has(post.userId ?? "") && (!memberIds || memberIds.has(post.userId ?? ""))).map((post) => ({
+    return sortTimeline(readDevelopmentPosts()).filter((post) => !hiddenDevelopmentUsers(userId).has(post.userId ?? "")).map((post) => ({
       ...post, authorName: profile.name, handle: `@${profile.handle}`, initial: Array.from(profile.name)[0] ?? "開",
     }));
   }
-  const { data, error } = listId && userId
-    ? await supabase.rpc("get_user_list_posts", { target_list_id: listId, expected_user_id: userId })
-    : await supabase.rpc("get_visible_posts", { expected_user_id: userId ?? null });
+  const { data, error } = await supabase.rpc("get_visible_posts", { expected_user_id: userId ?? null });
   if (error) throw error;
   const posts = (data ?? []).map((row) => toPost(row, userId));
   if (posts.length === 0) return posts;
-  const { data: stats, error: likesError } = await supabase.rpc("get_post_likes", {
-    post_ids: posts.map((post) => post.id),
-  });
+  const [{ data: stats, error: likesError }, profiles, polls, diagnoses] = await Promise.all([
+    supabase.rpc("get_post_likes", { post_ids: posts.map((post) => post.id) }),
+    fetchProfiles(posts.flatMap((post) => post.userId ? [post.userId] : [])),
+    fetchPostPolls(posts.map((post) => post.id), userId),
+    fetchPostDiagnoses(posts.map((post) => post.id), userId),
+  ]);
   if (likesError) throw likesError;
-  const profiles = await fetchProfiles(posts.flatMap((post) => post.userId ? [post.userId] : []));
   const profileById = new Map(profiles.map((profile) => [profile.id, profile]));
   const byId = new Map((stats ?? []).map((stat) => [stat.post_id, stat]));
   return posts.map((post) => {
@@ -91,7 +92,9 @@ export async function fetchPosts(userId?: string | null, listId?: string): Promi
       authorName: profile?.name ?? post.authorName,
       handle: profile?.handle ? `@${profile.handle}` : post.handle,
       initial: (profile?.name ?? post.authorName).slice(0, 1),
-      likeCount: Number(stat?.like_count ?? 0), isLiked: Boolean(userId && stat?.is_liked) };
+      likeCount: Number(stat?.like_count ?? 0), isLiked: Boolean(userId && stat?.is_liked),
+      poll: polls.get(post.id) ?? null,
+      diagnosis: diagnoses.get(post.id) ?? null };
   });
 }
 
@@ -99,22 +102,89 @@ export async function syncProfile(author: Author): Promise<void> {
   await ensureProfile(author);
 }
 
-export async function insertPost(body: string, author: Author): Promise<Post> {
+export async function insertPost(body: string, author: Author, pollDraft: PollDraft | null = null, diagnosisDraft: DiagnosisDraft | null = null): Promise<Post> {
+  if (!isPollDraftValid(pollDraft)) throw new Error("投票の入力内容を確認してください。");
+  if (!isDiagnosisDraftValid(diagnosisDraft) || (pollDraft && diagnosisDraft)) throw new Error("診断の入力内容を確認してください。");
   if (isDevelopmentSession()) {
     const trimmed = body.trim();
     if (!trimmed || Array.from(trimmed).length > MAX_CHARACTERS) throw new Error("投稿は1〜70文字で入力してください。");
     const profile = readDevelopmentProfile();
     const post: Post = { id: crypto.randomUUID(), userId: localUser().id, authorName: profile.name,
       handle: `@${profile.handle}`, initial: Array.from(profile.name)[0] ?? "開", body: trimmed,
-      createdAt: new Date().toISOString(), isMine: true, avatarIndex: 0, isLiked: false, likeCount: 0 };
+      createdAt: new Date().toISOString(), isMine: true, avatarIndex: 0, isLiked: false, likeCount: 0,
+      poll: pollDraft ? pollFromDraft(pollDraft) : null,
+      diagnosis: diagnosisDraft ? {
+        ...diagnosisDraft, id: crypto.randomUUID(), creatorId: localUser().id, resultIndex: null, result: null,
+      } : null };
     writeDevelopmentPosts([post, ...readDevelopmentPosts()]);
     return post;
   }
   const trimmed = body.trim();
   await syncProfile(author);
-  const { data, error } = await supabase.rpc("create_post", { post_id: crypto.randomUUID(), post_body: trimmed, expected_user_id: author.id });
+  const postId = crypto.randomUUID();
+  const diagnosisId = diagnosisDraft ? crypto.randomUUID() : null;
+  const request = diagnosisDraft ? supabase.rpc("create_post_with_diagnosis", {
+    post_id: postId,
+    post_body: trimmed,
+    diagnosis_id: diagnosisId!,
+    diagnosis_title: diagnosisDraft.title.trim(),
+    diagnosis_description: diagnosisDraft.description.trim(),
+    diagnosis_outcomes: diagnosisDraft.outcomes.map((outcome) => ({ title: outcome.title.trim(), description: outcome.description.trim() })),
+    diagnosis_questions: diagnosisDraft.questions.map((question) => ({
+      prompt: question.prompt.trim(),
+      options: question.options.map((option) => ({ text: option.text.trim(), result_index: option.resultIndex })),
+    })),
+    expected_user_id: author.id,
+  }) : pollDraft ? supabase.rpc("create_post_with_poll", {
+    post_id: postId,
+    post_body: trimmed,
+    poll_kind: pollDraft.kind,
+    poll_allows_multiple: pollDraft.allowsMultiple,
+    poll_explanation: pollDraft.explanation.trim(),
+    poll_options: pollDraft.options.map((option) => ({
+      text: option.text.trim(),
+      result: option.result,
+      feedback: option.feedback.trim(),
+    })),
+    expected_user_id: author.id,
+  }) : supabase.rpc("create_post", { post_id: postId, post_body: trimmed, expected_user_id: author.id });
+  const { data, error } = await request;
   if (error || !data?.[0]) throw error ?? new Error("投稿できませんでした");
-  return toPost(data[0], author.id);
+  const post = toPost(data[0], author.id);
+  if (pollDraft) post.poll = (await fetchPostPolls([post.id], author.id)).get(post.id) ?? null;
+  if (diagnosisDraft) post.diagnosis = (await fetchPostDiagnoses([post.id], author.id)).get(post.id) ?? null;
+  return post;
+}
+
+export async function shareDiagnosisResultPost(diagnosis: PostDiagnosis, resultIndex: number, author: Author): Promise<Post> {
+  const outcome = diagnosis.outcomes[resultIndex];
+  if (!outcome) throw new Error("診断結果が見つかりません。");
+  const body = Array.from(`診断結果：${outcome.title}（${diagnosis.title}）`).slice(0, MAX_CHARACTERS).join("");
+  const diagnosisWithResult = { ...diagnosis, resultIndex, result: outcome };
+  if (isDevelopmentSession()) {
+    const profile = readDevelopmentProfile();
+    const post: Post = {
+      id: crypto.randomUUID(), userId: localUser().id, authorName: profile.name,
+      handle: `@${profile.handle}`, initial: Array.from(profile.name)[0] ?? "開", body,
+      createdAt: new Date().toISOString(), isMine: true, avatarIndex: 0, isLiked: false, likeCount: 0,
+      diagnosis: diagnosisWithResult,
+    };
+    writeDevelopmentPosts([post, ...readDevelopmentPosts()]);
+    return post;
+  }
+  await syncProfile(author);
+  const postId = crypto.randomUUID();
+  const { data, error } = await supabase.rpc("create_diagnosis_result_post", {
+    post_id: postId,
+    post_body: body,
+    diagnosis_id: diagnosis.id,
+    result_index: resultIndex,
+    expected_user_id: author.id,
+  });
+  if (error || !data?.[0]) throw error ?? new Error("診断結果を投稿できませんでした。");
+  const post = toPost(data[0], author.id);
+  post.diagnosis = diagnosisWithResult;
+  return post;
 }
 
 export function sortTimeline(posts: Post[]): Post[] {
@@ -132,14 +202,7 @@ export function thisWeekCount(posts: Post[]): number {
 }
 
 export function timeLabel(iso: string): string {
-  const date = new Date(iso);
-  const time = date.toLocaleTimeString(getLanguage() === "en" ? "en-US" : "ja-JP", { hour: "numeric", minute: "2-digit" });
-  const today = new Date();
-  const yesterday = new Date();
-  yesterday.setDate(today.getDate() - 1);
-  if (date.toDateString() === today.toDateString()) return `${t("今朝")} ${time}`;
-  if (date.toDateString() === yesterday.toDateString()) return `${t("昨日")} ${time}`;
-  return date.toLocaleString(getLanguage() === "en" ? "en-US" : "ja-JP", { month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" });
+  return formatDateTime(iso);
 }
 
 export async function setPostLike(id: string, liked: boolean, userId: string) {
@@ -186,4 +249,3 @@ export async function insertReply(body: string, parentId: string, author: Author
   if (error || !data?.[0]) throw error ?? new Error("返信を保存できませんでした。");
   return toPost(data[0], author.id);
 }
-

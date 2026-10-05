@@ -32,11 +32,7 @@ enum PostPDFExporter {
             draw(post.authorName, font: .boldSystemFont(ofSize: 17), color: .darkText, gap: 4)
             draw(post.handle, font: .systemFont(ofSize: 12), color: .gray, gap: 40)
             draw(post.body, font: .systemFont(ofSize: 21), color: .darkText, gap: 30)
-            let date = DateFormatter()
-            date.locale = AppLanguage.locale
-            date.dateStyle = .long
-            date.timeStyle = .short
-            draw(date.string(from: post.createdAt), font: .systemFont(ofSize: 11), color: .gray, gap: 0)
+            draw(formatDate(post.createdAt), font: .systemFont(ofSize: 11), color: .gray, gap: 0)
             let footer: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 9), .foregroundColor: UIColor.gray]
             ("ID: " + post.id.uuidString).draw(in: CGRect(x: 48, y: 770, width: width, height: 20), withAttributes: footer)
         }
