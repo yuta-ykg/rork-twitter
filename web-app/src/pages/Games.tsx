@@ -8,11 +8,12 @@ import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { ShogiGame } from "@/components/ShogiGame";
 import { OthelloGame } from "@/components/OthelloGame";
+import { GoGame } from "@/components/GoGame";
 import { isDevelopmentSession } from "@/lib/development";
 
 const goalTargets = [1024, 2048, 4096, 8192, 16384] as const;
 type GoalTarget = typeof goalTargets[number];
-type MiniGame = "memory" | "shogi" | "othello" | GoalTarget;
+type MiniGame = "memory" | "shogi" | "othello" | "go" | GoalTarget;
 type MemoryCard = { id: number; symbol: string };
 type Direction = "left" | "right" | "up" | "down";
 
@@ -94,6 +95,7 @@ export default function GamesPage() {
     const requestedGame = searchParams.get("game");
     if (requestedGame === "shogi") return "shogi";
     if (requestedGame === "othello") return "othello";
+    if (requestedGame === "go") return "go";
     const requestedTarget = Number(requestedGame);
     return goalTargets.includes(requestedTarget as GoalTarget) ? requestedTarget as GoalTarget : "memory";
   });
@@ -135,6 +137,10 @@ export default function GamesPage() {
             className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border text-sm font-semibold ${selected === "othello" ? "border-[hsl(var(--brand))] bg-[hsl(var(--brand))]/10 text-[hsl(var(--brand))]" : "border-input text-muted-foreground"}`}>
             <Gamepad2 className="h-4 w-4" aria-hidden />{t("オセロ")}
           </button>
+          <button type="button" aria-pressed={selected === "go"} onClick={() => setSelected("go")}
+            className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border text-sm font-semibold ${selected === "go" ? "border-[hsl(var(--brand))] bg-[hsl(var(--brand))]/10 text-[hsl(var(--brand))]" : "border-input text-muted-foreground"}`}>
+            <Gamepad2 className="h-4 w-4" aria-hidden />{t("囲碁")}
+          </button>
           <button type="button" aria-pressed={selected === "shogi"} onClick={() => setSelected("shogi")}
             className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border text-sm font-semibold ${selected === "shogi" ? "border-[hsl(var(--brand))] bg-[hsl(var(--brand))]/10 text-[hsl(var(--brand))]" : "border-input text-muted-foreground"}`}>
             <Crown className="h-4 w-4" aria-hidden />{t("将棋")}
@@ -142,7 +148,7 @@ export default function GamesPage() {
         </div>
       </div>
       <section className="mt-5 rounded-2xl border border-border bg-card p-4 sm:p-5" aria-live="polite">
-        {selected === "memory" ? <MemoryGame onShare={(body) => void shareResult(body)} /> : selected === "othello" ? <OthelloGame /> : selected === "shogi" ? (
+        {selected === "memory" ? <MemoryGame onShare={(body) => void shareResult(body)} /> : selected === "othello" ? <OthelloGame /> : selected === "go" ? <GoGame /> : selected === "shogi" ? (
           <ShogiGame author={user} initialRoomKey={searchParams.get("room")} onShare={(body) => void shareResult(body)} onRequestSignIn={requestShogiSignIn} />
         ) : (
           <Game2048 key={selected} target={selected} onShare={(body) => void shareResult(body)} />

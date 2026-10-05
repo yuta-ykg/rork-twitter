@@ -1,13 +1,14 @@
 import SwiftUI
 
 private enum ArcadeGame: String, CaseIterable, Identifiable {
-    case memory, game2048, othello, shogi
+    case memory, game2048, othello, go, shogi
     var id: String { rawValue }
     var title: String {
         switch self {
         case .memory: L("神経衰弱")
         case .game2048: "2048"
         case .othello: L("オセロ")
+        case .go: L("囲碁")
         case .shogi: L("将棋")
         }
     }
@@ -31,12 +32,13 @@ struct GamesView: View {
                 Picker(L("ゲームを選択"), selection: $selected) {
                     ForEach(ArcadeGame.allCases) { game in Text(game.title).tag(game) }
                 }
-                .pickerStyle(.segmented)
+                .pickerStyle(.menu)
                 Group {
                     switch selected {
                     case .memory: MemoryGameView(onShare: shareResult)
                     case .game2048: Game2048View(onShare: shareResult)
                     case .othello: OthelloView()
+                    case .go: GoGameView()
                     case .shogi:
                         ShogiGameView(
                             user: DevelopmentData.isActive ? nil : auth.user,

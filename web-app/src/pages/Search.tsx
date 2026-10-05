@@ -31,6 +31,7 @@ const miniGames = [
     keywords: ["将棋", "shogi", "日本将棋", "쇼기", "日本将棋", "将棋游戏"],
   },
   { id: "othello", title: "オセロ", description: "CPUまたは同じ端末で2人対戦できます。", keywords: ["オセロ", "リバーシ", "othello", "reversi"] },
+  { id: "go", title: "囲碁", description: "石を取り、パスして終局する9路盤の囲碁です。", keywords: ["囲碁", "igo", "go", "baduk", "weiqi"] },
   ...goalTargets.map((target) => ({
     id: target,
     title: String(target),
@@ -68,7 +69,7 @@ export default function SearchPage() {
   const keyword = query.trim().toLowerCase();
   const gameResults = useMemo(() => {
     if (keyword.length < 2) return [];
-    const matchesTerm = (terms: readonly string[]) => terms.some((term) => term.includes(keyword) || keyword.includes(term));
+    const matchesTerm = (terms: readonly string[]) => terms.some((term) => term === "go" ? keyword === "go" : term.includes(keyword) || keyword.includes(term));
     if (matchesTerm(gameSearchTerms)) return miniGames;
     return miniGames.filter((game) => matchesTerm(game.keywords));
   }, [keyword]);

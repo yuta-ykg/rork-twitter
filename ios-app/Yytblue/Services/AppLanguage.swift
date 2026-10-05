@@ -53,6 +53,13 @@ func formatDate(_ date: Date, includeTime: Bool = true) -> String {
 }
 
 private let englishMessages: [String: String] = [
+    "囲碁": "Go",
+    "石を取り、パスして終局する9路盤の囲碁です。": "Play 9x9 Go with captures and passing.",
+    "9路盤で交互に打ちます。2回続けてパスすると終局です。": "Take turns on a 9x9 board. Two consecutive passes end the game.",
+    "中国式の面積計算・白にコミ5.5目。死石は終局前に取り除いてください。": "Chinese area scoring with 5.5 komi for white. Capture dead stones before ending.",
+    "囲碁盤": "Go board",
+    "パス": "Pass",
+    "相手がパスしました。続けてパスすると終局です。": "Your opponent passed. Passing now ends the game.",
     "オセロ": "Othello",
     "CPUまたは同じ端末で2人対戦できます。": "Play against the CPU or another person on this device.",
     "対戦モード": "Game mode",
@@ -488,6 +495,13 @@ private let englishMessages: [String: String] = [
     "Yesterday": "昨日"
 ]
 private let koreanMessages: [String: String] = [
+    "囲碁": "바둑",
+    "石を取り、パスして終局する9路盤の囲碁です。": "돌을 잡고 패스하여 끝내는 9줄 바둑입니다.",
+    "9路盤で交互に打ちます。2回続けてパスすると終局です。": "9줄 바둑판에서 번갈아 둡니다. 연속 두 번 패스하면 종료됩니다.",
+    "中国式の面積計算・白にコミ5.5目。死石は終局前に取り除いてください。": "중국식 면적 계산, 백 덤 5.5집. 끝내기 전에 죽은 돌을 잡아 주세요.",
+    "囲碁盤": "바둑판",
+    "パス": "패스",
+    "相手がパスしました。続けてパスすると終局です。": "상대가 패스했습니다. 이제 패스하면 종료됩니다.",
     "オセロ": "오델로",
     "CPUまたは同じ端末で2人対戦できます。": "CPU 또는 같은 기기에서 2인 대전을 할 수 있습니다.",
     "対戦モード": "대전 모드",
@@ -674,6 +688,13 @@ private let koreanExtraMessages: [String: String] = [
     "設定からいつでもこのガイドを開けます。": "설정에서 언제든 이 안내를 열 수 있습니다.",
 ]
 private let simplifiedChineseMessages: [String: String] = [
+    "囲碁": "围棋",
+    "石を取り、パスして終局する9路盤の囲碁です。": "可提子并以停着结束的九路围棋。",
+    "9路盤で交互に打ちます。2回続けてパスすると終局です。": "在九路棋盘上轮流落子。连续两次停着后终局。",
+    "中国式の面積計算・白にコミ5.5目。死石は終局前に取り除いてください。": "采用中国规则数子，白棋贴目5.5。终局前请提掉死子。",
+    "囲碁盤": "围棋棋盘",
+    "パス": "停着",
+    "相手がパスしました。続けてパスすると終局です。": "对方已停着。再次停着即终局。",
     "オセロ": "黑白棋",
     "CPUまたは同じ端末で2人対戦できます。": "可与 CPU 对战，也可在同一设备上双人对战。",
     "対戦モード": "对战模式",
