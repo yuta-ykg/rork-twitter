@@ -13,7 +13,7 @@ import { t, useLanguage } from "@/lib/language";
 import { LikeIconGlyph, useLikeIcon } from "@/hooks/useLikeIcon";
 import { isDevelopmentSession, isGuestSession } from "@/lib/development";
 import { toast } from "sonner";
-import { Bookmark, Download, Fish, House, MessageCircle, Search, SquarePen, Settings, UserRound, X } from "lucide-react";
+import { Bookmark, Download, Fish, House, List as ListIcon, MessageCircle, Search, SquarePen, Settings, UserRound, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 
@@ -30,7 +30,7 @@ import {
   type Post,
 } from "@/lib/posts";
 
-type Tab = "home" | "mine" | "bookmarks" | "notifications" | "search";
+type Tab = "home" | "mine" | "bookmarks" | "notifications" | "search" | "lists";
 
 function Avatar({ initial, index }: { initial: string; index: number }) {
   useLanguage();
@@ -171,7 +171,7 @@ function ComposeSheet({
   );
 }
 
-function Shell({
+export function Shell({
   tab,
   children,
   onCompose,
@@ -219,7 +219,7 @@ function Shell({
         >
           <SquarePen className="h-6 w-6" aria-hidden />
         </button>
-        <nav aria-label={t("メインナビゲーション")} className="grid grid-cols-5 border-t border-border/60 bg-background/70 px-3 pb-[max(8px,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl">
+        <nav aria-label={t("メインナビゲーション")} className="grid grid-cols-6 border-t border-border/60 bg-background/70 px-2 pb-[max(8px,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl">
           <Link to="/" aria-label={t("ホーム")} className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "home" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
             <House className="h-5 w-5" aria-hidden />
             {showBottomBarLabels && <span>{t("ホーム")}</span>}</Link>
@@ -230,6 +230,10 @@ function Shell({
           <Link to="/bookmarks" aria-label={t("ブックマーク")} className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "bookmarks" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
             <Bookmark className="h-5 w-5" aria-hidden />
             {showBottomBarLabels && <span>{t("ブックマーク")}</span>}
+          </Link>
+          <Link to="/lists" aria-label={t("リスト")} className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "lists" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
+            <ListIcon className="h-5 w-5" aria-hidden />
+            {showBottomBarLabels && <span>{t("リスト")}</span>}
           </Link>
           <Link to="/notifications" className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "notifications" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
             <span className="sr-only">{t("通知")}</span><NotificationBell />
@@ -244,7 +248,7 @@ function Shell({
   );
 }
 
-function Row({ post, showAuthor, onLike }: { post: Post; showAuthor: boolean; onLike: () => void | Promise<void> }) {
+export function Row({ post, showAuthor, onLike }: { post: Post; showAuthor: boolean; onLike: () => void | Promise<void> }) {
   useLanguage();
   return (
     <div className="border-b border-border py-3">

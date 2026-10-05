@@ -12,6 +12,7 @@ struct ProfileView: View {
     @State private var editing = false
     @State private var retry = 0
     @State private var relationBusy = false
+    @State private var showingLists = false
 
     private var own: Bool { auth.user?.id == profileId }
     private var userPosts: [Post] { store.timeline.filter { $0.userId == profileId } }
@@ -41,6 +42,7 @@ struct ProfileView: View {
                         if !profile.bio.isEmpty { Text(profile.bio).font(.body) }
                         Text(L("post_count", profile.postCount)).foregroundStyle(Color.irukaSecondary)
                         if own { Button(L("プロフィールを編集")) { editing = true }.buttonStyle(.bordered) }
+                        if !own { Button(L("リストに追加")) { showingLists = true }.buttonStyle(.bordered) }
                     }
                     .padding(.vertical, 12)
                 }
@@ -50,7 +52,7 @@ struct ProfileView: View {
                     } else {
                         ForEach(userPosts) { post in
                             VStack(alignment: .leading, spacing: 0) {
-                                PostRowView(post: post, showsAuthor: false)
+                                NavigationLink(value: post) { PostRowView(post: post, showsAuthor: false) }
                                 HStack(spacing: 8) {
                                     LikeButton(post: post) { store.toggleLike(id: post.id) }
                                     BookmarkButton(postId: post.id)
@@ -67,6 +69,7 @@ struct ProfileView: View {
         .listStyle(.plain)
         .navigationTitle(L("プロフィール"))
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showingLists) { ListMembershipSheet(targetId: profileId) }
         .task(id: "\(profileId):\(auth.user?.id ?? ""):\(retry)") {
             loading = true
             error = nil
@@ -176,3 +179,4 @@ private struct ProfileEditor: View {
         .interactiveDismissDisabled(saving)
     }
 }
+

@@ -1,3 +1,4 @@
+import { fetchListMembers } from "@/lib/userLists";
 import { getLanguage, t } from "@/lib/language";
 import { isDevelopmentSession, localUser, readDevelopmentPosts, writeDevelopmentPosts, readDevelopmentProfile } from "@/lib/development";
 import { ensureProfile, fetchProfiles } from "@/lib/profiles";
@@ -61,14 +62,18 @@ function toPost(row: Row, userId?: string | null): Post {
 
 const postColumns = "id, author_name, handle, initial, body, created_at, avatar_index, user_id, parent_id";
 
-export async function fetchPosts(userId?: string | null): Promise<Post[]> {
+export async function fetchPosts(userId?: string | null, listId?: string): Promise<Post[]> {
+  if (listId && !userId) throw new Error("リストを使うにはログインしてください。");
   if (isDevelopmentSession()) {
     const profile = readDevelopmentProfile();
-    return sortTimeline(readDevelopmentPosts()).filter((post) => !hiddenDevelopmentUsers(userId).has(post.userId ?? "")).map((post) => ({
+    const memberIds = listId && userId ? new Set((await fetchListMembers(userId, listId)).map((m) => m.target_id)) : null;
+    return sortTimeline(readDevelopmentPosts()).filter((post) => !hiddenDevelopmentUsers(userId).has(post.userId ?? "") && (!memberIds || memberIds.has(post.userId ?? ""))).map((post) => ({
       ...post, authorName: profile.name, handle: `@${profile.handle}`, initial: Array.from(profile.name)[0] ?? "開",
     }));
   }
-  const { data, error } = await supabase.rpc("get_visible_posts", { expected_user_id: userId ?? null });
+  const { data, error } = listId && userId
+    ? await supabase.rpc("get_user_list_posts", { target_list_id: listId, expected_user_id: userId })
+    : await supabase.rpc("get_visible_posts", { expected_user_id: userId ?? null });
   if (error) throw error;
   const posts = (data ?? []).map((row) => toPost(row, userId));
   if (posts.length === 0) return posts;
@@ -181,3 +186,4 @@ export async function insertReply(body: string, parentId: string, author: Author
   if (error || !data?.[0]) throw error ?? new Error("返信を保存できませんでした。");
   return toPost(data[0], author.id);
 }
+
