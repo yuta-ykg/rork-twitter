@@ -437,6 +437,8 @@ export function SearchPage() {
   }, [user?.id, retry]);
 
   const keyword = query.trim().toLowerCase();
+  const showOthello = !keyword || ["オセロ", "リバーシ", "othello", "reversi", "ゲーム", "game"]
+    .some((term) => term.includes(keyword) || keyword.includes(term));
   const results = useMemo(() => {
     if (!keyword) return [];
     return sortTimeline(posts).filter((post) =>
@@ -484,11 +486,24 @@ export function SearchPage() {
             />
           </div>
         </div>
+        {showOthello && (
+          <Link to="/games" aria-label={t("オセロを開く")}
+            className="mt-5 flex min-h-20 items-center gap-4 rounded-2xl border border-border bg-muted/40 px-4 transition-colors hover:bg-muted">
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-emerald-600 text-white">
+              <Gamepad2 className="h-6 w-6" aria-hidden />
+            </span>
+            <span className="flex-1">
+              <span className="block font-semibold">{t("オセロ")}</span>
+              <span className="block text-sm text-muted-foreground">{t("CPU対戦・2人で対戦")}</span>
+            </span>
+            <span className="text-[hsl(var(--brand))]" aria-hidden>›</span>
+          </Link>
+        )}
         {error ? <p role="alert" className="mt-4 text-sm text-red-500">{t(error)}</p> : null}
         {loading ? <p role="status" className="py-10 text-muted-foreground">{t("読み込み中…")}</p> :
           !keyword ? <p className="py-10 text-center text-muted-foreground">{t("ユーザー名や本文のキーワードで投稿を探せます。")}</p> :
           results.length ? results.map((post) => <Row key={post.id} post={post} showAuthor onLike={() => like(post.id)} />) :
-          <p className="py-10 text-center text-muted-foreground">{t("該当する投稿がありません。")}</p>}
+          !showOthello ? <p className="py-10 text-center text-muted-foreground">{t("該当する投稿がありません。")}</p> : null}
       </Shell>
       {open && user ? <ComposeSheet onClose={() => setOpen(false)} onPost={add}
         authorName={own?.name ?? displayName(user)} handle={own?.handle ?? userHandle(user)} initial={own?.initial ?? displayName(user).slice(0, 1)} /> : null}

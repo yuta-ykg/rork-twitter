@@ -7,6 +7,8 @@ const english: Record<string, string> = {
   "CPU対戦": "Play CPU",
   "2人で対戦": "Two players",
   "CPU": "CPU",
+  "CPU対戦・2人で対戦": "Play CPU or two players",
+  "オセロを開く": "Open Othello",
   "CPUが考えています…": "CPU is thinking…",
   "黒の石でCPUと対戦します。": "Play as black against the CPU.",
   "ゲーム": "Games",
