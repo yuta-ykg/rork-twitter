@@ -10,6 +10,7 @@ test('private list RPC authorization, membership and account cleanup', async () 
     await db.exec(`
       create role anon; create role authenticated;
       create table public.profiles(id text primary key,name text,handle text);
+      create table public.posts(id uuid primary key,user_id text,parent_id uuid,body text,created_at timestamptz default now());
       create table public.test_blocks(first_id text,second_id text);
       create function public.user_id() returns text language sql stable as
         $$ select nullif(current_setting('test.user_id',true),'') $$;

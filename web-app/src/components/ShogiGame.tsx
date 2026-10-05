@@ -22,10 +22,11 @@ import {
   type ShogiSide,
 } from "@/lib/shogi";
 
-export function ShogiGame({ onShare, author, initialRoomKey }: {
+export function ShogiGame({ onShare, author, initialRoomKey, onRequestSignIn }: {
   onShare: (body: string) => void;
   author: Author | null;
   initialRoomKey: string | null;
+  onRequestSignIn: () => void;
 }) {
   const [, setSearchParams] = useSearchParams();
   const [game, setGame] = useState(createShogiGame);
@@ -103,7 +104,7 @@ export function ShogiGame({ onShare, author, initialRoomKey }: {
     }).catch((error: unknown) => {
       setRoomError(error instanceof Error ? error.message : "部屋が見つからないか、参加できませんでした。");
     }).finally(() => setIsRoomBusy(false));
-  }, [author?.id, gameMode, initialRoomKey]);
+  }, [author, gameMode, initialRoomKey]);
 
   useEffect(() => {
     if (gameMode !== "online" || !room?.room_key || !author?.id) return;
@@ -310,7 +311,12 @@ export function ShogiGame({ onShare, author, initialRoomKey }: {
     </div>
     {gameMode === "online" ? <div className="space-y-3 rounded-xl border border-border bg-muted/30 p-3">
       {!room ? <div className="space-y-3">
-        {!author || isDevelopmentSession() ? <p className="text-sm text-muted-foreground">{t("オンライン対局にはログインが必要です。")}</p> : <div className="flex flex-wrap gap-2">
+        {!author || isDevelopmentSession() ? <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">{t("オンライン対局にはログインが必要です。")}</p>
+          <button type="button" onClick={onRequestSignIn} className="min-h-10 rounded-lg bg-[hsl(var(--brand))] px-3 text-sm font-semibold text-white">
+            {t("ログインしてはじめる")}
+          </button>
+        </div> : <div className="flex flex-wrap gap-2">
           <button type="button" disabled={isRoomBusy} onClick={() => void createRoom()}
             className="min-h-10 flex-1 rounded-lg bg-[hsl(var(--brand))] px-3 text-sm font-semibold text-white disabled:opacity-50">
             {t(isRoomBusy ? "作成中…" : "部屋を作成")}

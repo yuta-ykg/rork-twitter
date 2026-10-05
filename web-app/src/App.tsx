@@ -16,6 +16,7 @@ const LoginPage = lazy(() => import("./pages/Login"));
 const SettingsPage = lazy(() => import("./pages/Settings"));
 const FeatureGuidePage = lazy(() => import("./pages/FeatureGuide"));
 const ProfilePage = lazy(() => import("./pages/Profile"));
+const ProfileEditPage = lazy(() => import("./pages/ProfileEdit"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 const HomePage = lazy(() => import("./pages/Home"));
 const NotificationsPage = lazy(() => import("./pages/Notifications"));
@@ -62,6 +63,7 @@ const App = () => (
             <Route path="/diagnoses" element={<RequireAuth><DiagnosesPage /></RequireAuth>} />
             <Route path="/games" element={<RequireAuth><GamesPage /></RequireAuth>} />
             <Route path="/rankings" element={<RequireAuth><RankingsPage /></RequireAuth>} />
+            <Route path="/profile/edit" element={<RequireAuth><ProfileEditPage /></RequireAuth>} />
             <Route path="/profile/:id" element={<RequireAuth><ProfilePage /></RequireAuth>} />
             <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />
             <Route path="/guide" element={<RequireAuth><FeatureGuidePage /></RequireAuth>} />

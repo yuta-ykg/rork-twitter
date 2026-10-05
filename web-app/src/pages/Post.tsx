@@ -4,7 +4,7 @@ import { BookmarkButton } from "@/components/BookmarkButton";
 import { t, useLanguage } from "@/lib/language";
 import { useDateDisplay } from "@/lib/dateDisplay";
 import { toast } from "sonner";
-import { Download } from "lucide-react";
+import { ArrowLeft, Download } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/authContext";
@@ -56,8 +56,9 @@ export default function PostPage() {
   if (!post) {
     return (
       <div className="mx-auto flex min-h-dvh max-w-[430px] flex-col bg-background px-5 pt-6">
-        <button type="button" onClick={() => navigate(-1)} className="mb-6 h-11 text-left text-[hsl(var(--brand))]">
-          {t("戻る")}</button>
+        <button type="button" onClick={() => navigate(-1)} aria-label={t("戻る")} className="mb-6 grid h-11 w-11 place-items-center text-[hsl(var(--brand))]">
+          <ArrowLeft className="h-5 w-5" aria-hidden />
+        </button>
         <p className="text-muted-foreground">{t("投稿が見つかりません。")}</p>
       </div>
     );
@@ -66,8 +67,9 @@ export default function PostPage() {
   return (
     <div className="mx-auto min-h-dvh w-full max-w-[430px] bg-background px-5 pb-10 text-foreground">
       <header className="sticky top-0 flex h-14 items-center bg-background/75 backdrop-blur-xl">
-        <button type="button" onClick={() => navigate(-1)} className="h-11 pr-4 text-[hsl(var(--brand))]">
-          {t("戻る")}</button>
+        <button type="button" onClick={() => navigate(-1)} aria-label={t("戻る")} className="grid h-11 w-11 place-items-center text-[hsl(var(--brand))]">
+          <ArrowLeft className="h-5 w-5" aria-hidden />
+        </button>
         <span className="text-[17px] font-semibold">{t("投稿")}</span>
       </header>
       <div className="mt-2 flex items-center gap-3">
