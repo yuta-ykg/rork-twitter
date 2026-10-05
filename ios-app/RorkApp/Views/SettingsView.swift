@@ -11,6 +11,9 @@ struct SettingsView: View {
     @State private var pendingRelationship: String?
     var body: some View {
         Form {
+            Section(L("リスト")) {
+                NavigationLink(L("リストを管理")) { UserListsView() }
+            }
             if auth.user != nil {
                 Section(L("ミュート中")) {
                     ForEach(relationships.rows.filter { $0.kind == "mute" }, id: \.targetId) { row in
@@ -87,3 +90,4 @@ struct SettingsView: View {
         }
     }
 }
+

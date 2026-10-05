@@ -185,3 +185,60 @@ struct UserListEditor: View {
         .interactiveDismissDisabled(lists.busy)
     }
 }
+
+struct ListMembershipSheet: View {
+    let targetId: String
+    @Environment(UserListStore.self) private var lists
+    @Environment(AuthManager.self) private var auth
+    @Environment(\.dismiss) private var dismiss
+    @State private var member: ListMember?
+    @State private var loading = true
+    @State private var creating = false
+    @State private var error: String?
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if loading { ProgressView() }
+                if let error { Text(L(error)).foregroundStyle(.red) }
+                if !loading, lists.lists.isEmpty {
+                    Text(L("まだリストがありません。"))
+                    Button(L("リストを作成")) { creating = true }
+                }
+                ForEach(lists.lists) { list in
+                    let included = member.map { person in list.members.contains { $0.id == person.id } } ?? false
+                    Button {
+                        guard let member else { return }
+                        Task {
+                            let succeeded = await lists.perform(included ? "remove" : "add", id: list.id, member: member)
+                            if !succeeded { error = lists.error }
+                        }
+                    } label: {
+                        HStack {
+                            Text(list.name)
+                            Spacer()
+                            Image(systemName: included ? "checkmark.circle.fill" : "circle")
+                                .foregroundStyle(included ? Color.accentColor : Color.secondary)
+                        }
+                    }
+                    .disabled(loading || lists.busy || member == nil)
+                }
+            }
+            .navigationTitle(L("リストに追加"))
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button(L("閉じる")) { dismiss() } } }
+            .sheet(isPresented: $creating) { UserListEditor(list: nil) }
+            .task(id: "\(auth.user?.id ?? ""):\(targetId)") {
+                loading = true; error = nil
+                await lists.refresh()
+                do {
+                    let profiles = try await ProfileService.fetch(ids: [targetId])
+                    member = profiles.first.map {
+                        ListMember(id: $0.id, name: $0.name, handle: $0.handle)
+                    }
+                    if member == nil { error = "プロフィールが見つかりません。" }
+                } catch { self.error = "プロフィールを読み込めませんでした。" }
+                loading = false
+            }
+        }
+    }
+}

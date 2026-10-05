@@ -9,6 +9,7 @@ import { Link, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/authContext";
 import { ensureProfile, fetchHandleAvailability, fetchProfile, saveProfile, uploadAvatar, type Profile } from "@/lib/profiles";
 import { fetchPosts, type Post } from "@/lib/posts";
+import { ListMembershipPicker } from "@/pages/Lists";
 
 export default function ProfilePage() {
   useLanguage();
@@ -121,6 +122,7 @@ export default function ProfilePage() {
     {user && id && !own && <div className="mt-3 flex flex-wrap gap-2">
       <button type="button" disabled={relationshipBusy} onClick={() => void changeRelationship("mute")} className="min-h-11 rounded-full border border-input px-4 disabled:opacity-50">{t(relationship.is_muted ? "ミュートを解除" : "ミュート")}</button>
       <button type="button" disabled={relationshipBusy} onClick={() => void changeRelationship("block")} className="min-h-11 rounded-full border border-input px-4 text-red-600 disabled:opacity-50">{t(relationship.is_blocked ? "ブロックを解除" : "ブロック")}</button>
+      <ListMembershipPicker userId={user.id} targetId={id} />
     </div>}
     {error ? <p role="alert" className="my-4 text-red-600">{t(error)}</p> : null}
     {loading ? <p role="status" className="py-10 text-muted-foreground">{t("読み込み中…")}</p> : !profile ? <div className="py-10">
@@ -185,3 +187,4 @@ function HandleRule({ ok, touched, label }: { ok: boolean; touched: boolean; lab
     <span>{label}</span>
   </li>;
 }
+
