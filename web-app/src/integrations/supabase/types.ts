@@ -18,6 +18,18 @@ export type Database = {
   }
   public: {
     Tables: {
+      user_lists: {
+        Row: { id: string; owner_id: string; name: string; created_at: string; updated_at: string }
+        Insert: { id: string; owner_id: string; name: string; created_at?: string; updated_at?: string }
+        Update: { id?: string; owner_id?: string; name?: string; created_at?: string; updated_at?: string }
+        Relationships: []
+      }
+      user_list_members: {
+        Row: { list_id: string; target_id: string; added_at: string }
+        Insert: { list_id: string; target_id: string; added_at?: string }
+        Update: { list_id?: string; target_id?: string; added_at?: string }
+        Relationships: [{ foreignKeyName: "user_list_members_list_id_fkey"; columns: ["list_id"]; isOneToOne: false; referencedRelation: "user_lists"; referencedColumns: ["id"] }]
+      }
       notifications: {
         Row: {
           actor_id: string
@@ -218,6 +230,39 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_user_lists: {
+        Args: { expected_user_id: string }
+        Returns: { id: string; name: string; member_count: number; created_at: string }[]
+      }
+      create_user_list: {
+        Args: { target_list_id: string; list_name: string; expected_user_id: string }
+        Returns: undefined
+      }
+      rename_user_list: {
+        Args: { target_list_id: string; list_name: string; expected_user_id: string }
+        Returns: undefined
+      }
+      delete_user_list: {
+        Args: { target_list_id: string; expected_user_id: string }
+        Returns: undefined
+      }
+      set_user_list_member: {
+        Args: { target_list_id: string; target_user_id: string; included: boolean; expected_user_id: string }
+        Returns: undefined
+      }
+      get_user_list_members: {
+        Args: { target_list_id: string; expected_user_id: string }
+        Returns: { target_id: string; target_name: string | null; target_handle: string | null; is_blocked: boolean }[]
+      }
+      get_user_list_posts: {
+        Args: { target_list_id: string; expected_user_id: string }
+        Returns: Database["public"]["Tables"]["posts"]["Row"][]
+        SetofOptions: { from: "*"; to: "posts"; isOneToOne: false; isSetofReturn: true }
+      }
+      search_list_accounts: {
+        Args: { search_query: string; expected_user_id: string }
+        Returns: { id: string; name: string; handle: string | null }[]
+      }
       can_view_account: {
         Args: { author_id: string; viewer_id: string }
         Returns: boolean
@@ -578,3 +623,4 @@ export const Constants = {
     Enums: {},
   },
 } as const
+
