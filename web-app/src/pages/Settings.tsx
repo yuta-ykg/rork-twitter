@@ -4,7 +4,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/authContext";
 import { isGuestSession } from "@/lib/development";
 import { listUserRelationships, setUserRelationship, type UserRelationship } from "@/lib/userRelationships";
 import { DesktopSidebar } from "@/components/DesktopSidebar";
@@ -12,11 +12,11 @@ import { useDesktopNavigation } from "@/hooks/useDesktopNavigation";
 import { useBottomBarLabels } from "@/hooks/useBottomBarLabels";
 import { Switch } from "@/components/ui/switch";
 import { t, useLanguage } from "@/lib/language";
-import { likeIconOptions, useLikeIcon, type LikeIcon } from "@/hooks/useLikeIcon";
+import { likeIconOptions, useLikeIcon, type LikeIcon } from "@/hooks/likeIconState";
 import { Link, useNavigate } from "react-router-dom";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { themeOptions, useTheme, type Theme } from "@/hooks/useTheme";
-import { ArrowLeft } from "lucide-react";
+import { themeOptions, useTheme, type Theme } from "@/hooks/themeState";
+import { dateDisplayOptions, setDateDisplay, useDateDisplay, type DateDisplayStyle } from "@/lib/dateDisplay";
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
@@ -26,7 +26,8 @@ export default function SettingsPage() {
   const [relationships, setRelationships] = useState<UserRelationship[]>([]);
   const [relationshipError, setRelationshipError] = useState("");
   const [relationshipBusy, setRelationshipBusy] = useState(false);
-  useEffect(() => { let cancelled = false; setRelationships([]); if (user) listUserRelationships(user.id).then((rows) => { if (!cancelled) setRelationships(rows); }).catch(() => { if (!cancelled) setRelationshipError("設定を読み込めませんでした。"); }); return () => { cancelled = true; }; }, [user?.id]);
+  const userId = user?.id;
+  useEffect(() => { let cancelled = false; setRelationships([]); if (userId) listUserRelationships(userId).then((rows) => { if (!cancelled) setRelationships(rows); }).catch(() => { if (!cancelled) setRelationshipError("設定を読み込めませんでした。"); }); return () => { cancelled = true; }; }, [userId]);
   async function removeRelationship(row: UserRelationship) { if (!user || relationshipBusy) return; setRelationshipBusy(true); setRelationshipError(""); try { await setUserRelationship(user.id, row.target_id, row.kind, false); setRelationships((rows) => rows.filter((item) => !(item.kind === row.kind && item.target_id === row.target_id))); } catch { setRelationshipError("設定を保存できませんでした。"); } finally { setRelationshipBusy(false); } }
   const { showBottomBarLabels, setShowBottomBarLabels } = useBottomBarLabels();
   const navigate = useNavigate();
@@ -34,13 +35,12 @@ export default function SettingsPage() {
   const { language, setLanguage } = useLanguage();
   const { theme, setTheme } = useTheme();
   const { likeIcon, setLikeIcon } = useLikeIcon();
+  const dateDisplay = useDateDisplay();
   return <div className={`mx-auto min-h-dvh w-full max-w-[430px] bg-background text-foreground ${useDesktopBottomBar ? "" : "lg:max-w-[760px] lg:pl-[220px]"}`}>
     {!useDesktopBottomBar && <DesktopSidebar tab="settings" onCompose={() => navigate("/", { state: { compose: true } })} />}
     <main className="px-5 pb-10">
     <header className="flex min-h-14 items-center gap-5 border-b border-border">
-      <Link to="/" aria-label={t("ホーム")} className="grid min-h-11 min-w-11 place-items-center text-[hsl(var(--brand))]">
-        <ArrowLeft className="h-5 w-5" aria-hidden />
-      </Link>
+      <Link to="/" className="flex min-h-11 items-center text-[hsl(var(--brand))]">{t("ホーム")}</Link>
       <h1 className="text-lg font-semibold">{t("設定")}</h1>
     </header>
     <section className="py-6">
@@ -138,6 +138,21 @@ export default function SettingsPage() {
         </label>)}
       </RadioGroup>
     </section>
+    <section className="border-t border-border py-6">
+      <h2 id="date-display-label" className="mb-5 text-xl font-semibold">{t("日付表示")}</h2>
+      <RadioGroup aria-labelledby="date-display-label" value={dateDisplay} onValueChange={(value) => setDateDisplay(value as DateDisplayStyle)}>
+        {dateDisplayOptions.map((option) => <label key={option.value} htmlFor={`date-display-${option.value}`}
+          className="flex min-h-14 cursor-pointer items-center justify-between rounded-xl border border-border bg-card px-4 py-3 text-base">
+          {t(option.label)}<RadioGroupItem id={`date-display-${option.value}`} value={option.value} />
+        </label>)}
+      </RadioGroup>
+    </section>
+    <section className="border-t border-border py-6">
+      <Link to="/guide" className="flex min-h-14 items-center justify-between rounded-xl border border-border bg-card px-4 py-3 text-base">
+        <span className="font-semibold">{t("機能ガイド")}</span>
+        <span aria-hidden className="text-muted-foreground">›</span>
+      </Link>
+    </section>
     {user && <section className="border-t border-border py-6">
       <h2 className="mb-4 text-xl font-semibold">{t("ミュート・ブロック中のアカウント")}</h2>
       {relationshipError && <p role="alert" className="text-red-600">{t(relationshipError)}</p>}
@@ -150,8 +165,8 @@ export default function SettingsPage() {
     </section>}
     <section className="border-t border-border py-6">
       <h2 id="language-label" className="mb-5 text-xl font-semibold">{t("言語")}</h2>
-      <RadioGroup aria-labelledby="language-label" value={language} onValueChange={(value) => setLanguage(value === "en" ? "en" : "ja")}>
-        {[{ value: "ja", label: "日本語" }, { value: "en", label: "English" }].map((option) => <label key={option.value} htmlFor={`language-${option.value}`}
+      <RadioGroup aria-labelledby="language-label" value={language} onValueChange={(value) => setLanguage(value === "en" || value === "ko" || value === "zh-CN" || value === "zh-TW" ? value : "ja")}>
+        {[{ value: "ja", label: "日本語" }, { value: "en", label: "English" }, { value: "ko", label: "한국어" }, { value: "zh-CN", label: "简体中文" }, { value: "zh-TW", label: "繁體中文" }].map((option) => <label key={option.value} htmlFor={`language-${option.value}`}
           className="flex min-h-14 cursor-pointer items-center justify-between rounded-xl border border-border bg-card px-4 py-3 text-base">
           {option.label}<RadioGroupItem id={`language-${option.value}`} value={option.value} />
         </label>)}

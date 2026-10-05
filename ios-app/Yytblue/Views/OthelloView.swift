@@ -122,7 +122,7 @@ struct OthelloView: View {
     }
 
     var body: some View {
-        ScrollView {
+        VStack {
             VStack(alignment: .leading, spacing: 16) {
                 Text(L("オセロ")).font(.largeTitle.bold())
                 Text(L(mode == .cpu ? "黒の石でCPUと対戦します。" : "同じ端末で交互に遊べます。置ける場所を選んでください。"))
@@ -189,7 +189,6 @@ struct OthelloView: View {
             }
             .padding()
         }
-        .navigationTitle(L("ゲーム"))
         .task(id: cpuTurnID) {
             guard mode == .cpu, game.turn == .white, !game.finished else { return }
             do { try await Task.sleep(for: .milliseconds(450)) } catch { return }

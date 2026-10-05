@@ -161,4 +161,3 @@ grant execute on function public.get_user_list_posts(uuid,text) to anon,authenti
 grant execute on function public.search_list_accounts(text,text) to anon,authenticated;
 notify pgrst,'reload schema';
 commit;
-

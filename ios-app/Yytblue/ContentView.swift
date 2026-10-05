@@ -5,79 +5,36 @@ struct ContentView: View {
     @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
     @Environment(AuthManager.self) private var auth
     @State private var store = PostStore()
+    @State private var lists = UserListStore()
     @State private var bookmarks = BookmarkStore()
     @State private var notifications = NotificationStore()
     @State private var relationships = RelationshipStore.shared
-    @State private var userLists = UserListStore.shared
     @Environment(\.scenePhase) private var scenePhase
     @State private var showsComposer = false
     @State private var showsSignIn = false
     @State private var selectedTab: MainTab = .home
     @State private var composeAfterLogin = false
 
-    private enum MainTab: Hashable { case home, compose, mine, bookmarks, games, notifications, settings }
+    private enum MainTab: Hashable { case home, compose, mine, bookmarks, notifications, lists, settings }
 
     var body: some View {
-        TabView(selection: Binding(get: { selectedTab }, set: selectTab)) {
-            Tab(L("ホーム"), systemImage: "house.fill", value: MainTab.home) {
-                NavigationStack {
-                    HomeView(store: store, showsComposer: $showsComposer, showsSignIn: $showsSignIn)
-                        .navigationDestination(for: Post.self) { post in
-                            PostDetailView(initialPost: post, store: store)
-                        }
-                }
+        Group {
+            if auth.isLoading {
+                ProgressView()
+                    .tint(Color.irukaBlue)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if auth.user == nil {
+                // ログインしていないときはアプリの内容を見せない。
+                NavigationStack { SignInView() }
+            } else {
+                mainTabs
             }
-            Tab(L("投稿"), systemImage: "square.and.pencil", value: MainTab.compose) {
-                Color.clear
-            }
-            Tab(L("自分"), systemImage: "person.fill", value: MainTab.mine) {
-                NavigationStack {
-                    MineView(store: store, showsComposer: $showsComposer, showsSignIn: $showsSignIn)
-                        .navigationDestination(for: Post.self) { post in
-                            PostDetailView(initialPost: post, store: store)
-                        }
-                }
-            }
-            Tab(L("ブックマーク"), systemImage: "bookmark.fill", value: MainTab.bookmarks) {
-                NavigationStack {
-                    BookmarksView(store: store)
-                        .navigationDestination(for: Post.self) { post in
-                            PostDetailView(initialPost: post, store: store)
-                        }
-                }
-            }
-            Tab(L("ゲーム"), systemImage: "gamecontroller.fill", value: MainTab.games) {
-                NavigationStack { OthelloView() }
-            }
-            Tab(L("通知"), systemImage: "bell.fill", value: MainTab.notifications) {
-                NavigationStack { NotificationsView(store: store) }
-            }
-            Tab(L("設定"), systemImage: "gearshape", value: MainTab.settings) {
-                NavigationStack { SettingsView() }
-            }
-        }
-        .toolbar(.hidden, for: .tabBar)
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            HStack(spacing: 0) {
-                bottomBarButton(.home, title: "ホーム", symbol: "house.fill")
-                bottomBarButton(.compose, title: "投稿", symbol: "square.and.pencil")
-                bottomBarButton(.mine, title: "自分", symbol: "person.fill")
-                bottomBarButton(.bookmarks, title: "ブックマーク", symbol: "bookmark.fill")
-                bottomBarButton(.games, title: "ゲーム", symbol: "gamecontroller.fill")
-                bottomBarButton(.notifications, title: "通知", symbol: "bell.fill")
-                bottomBarButton(.settings, title: "設定", symbol: "gearshape")
-            }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 8)
-            .background(.bar)
         }
         .tint(Color.irukaBlue)
         .task(id: auth.user?.id) {
             bookmarks.configure(userId: auth.user?.id)
             relationships.configure(userId: auth.user?.id)
             await relationships.refresh()
-            userLists.configure(userId: auth.user?.id ?? (DevelopmentData.isActive ? DevelopmentData.userId : nil))
-            await userLists.refresh()
             await bookmarks.refresh()
             if let user = auth.user {
                 await store.syncProfile(user)
@@ -89,11 +46,17 @@ struct ContentView: View {
                 authorName: auth.user?.displayName ?? "あなた",
                 handle: auth.user?.handle ?? "@you",
                 initial: auth.user?.initial ?? "あ"
-            ) { body in
+            ) { body, poll, diagnosis in
                 guard let user = auth.user else { return }
-                store.add(body: body, user: user)
+                store.add(body: body, poll: poll, diagnosis: diagnosis, user: user)
             }
         }
+        .alert(L("投稿"), isPresented: Binding(
+            get: { store.composeError != nil },
+            set: { if !$0 { store.composeError = nil } }
+        )) {
+            Button("OK") { store.composeError = nil }
+        } message: { Text(L(store.composeError ?? "")) }
         .sheet(isPresented: $showsSignIn, onDismiss: {
             if composeAfterLogin && auth.user != nil { showsComposer = true }
             composeAfterLogin = false
@@ -125,6 +88,7 @@ struct ContentView: View {
         )) {
             Button("OK") { bookmarks.error = nil }
         } message: { Text(L(bookmarks.error ?? "")) }
+        .environment(store)
         .environment(notifications)
         .task(id: auth.user?.id) {
             notifications.configure(userId: auth.user?.id)
@@ -139,23 +103,108 @@ struct ContentView: View {
             set: { if !$0 { notifications.readError = nil } }
         )) { Button("OK") { notifications.readError = nil } }
         message: { Text(L(notifications.readError ?? "")) }
+        .environment(lists)
+        .task(id: auth.user?.id) {
+            lists.configure(userId: auth.user?.id)
+            await lists.refresh()
+        }
         .environment(bookmarks)
         .environment(relationships)
-        .environment(userLists)
-        .environment(store)
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { Task { await relationships.refresh(); await store.refresh(userId: auth.user?.id); await bookmarks.refresh(); await notifications.refresh() } }
+            if phase == .active { Task { await relationships.refresh(); await store.refresh(userId: auth.user?.id); await bookmarks.refresh(); await notifications.refresh(); await lists.refresh() } }
         }
         .onChange(of: auth.user?.id) { _, newValue in
+            lists.configure(userId: newValue)
             bookmarks.configure(userId: newValue)
             relationships.configure(userId: newValue)
-            userLists.configure(userId: newValue ?? (DevelopmentData.isActive ? DevelopmentData.userId : nil))
             notifications.configure(userId: newValue)
             if newValue != nil {
                 showsSignIn = false
             }
         }
     }
+
+    private var mainTabs: some View {
+        TabView(selection: Binding(get: { selectedTab }, set: selectTab)) {
+            Tab(L("ホーム"), systemImage: "house.fill", value: MainTab.home) {
+                NavigationStack {
+                    HomeView(store: store, showsComposer: $showsComposer, showsSignIn: $showsSignIn, onSelectTab: { destination in
+                        switch destination {
+                        case "compose": selectTab(.compose)
+                        case "mine": selectTab(.mine)
+                        case "bookmarks": selectTab(.bookmarks)
+                        case "notifications": selectTab(.notifications)
+                        default: selectTab(.home)
+                        }
+                    })
+                        .navigationDestination(for: Post.self) { post in
+                            PostDetailView(initialPost: post, store: store)
+                        }
+                        .navigationDestination(for: ProfileRoute.self) { route in
+                            ProfileView(profileId: route.id, store: store)
+                        }
+                }
+            }
+            Tab(L("投稿"), systemImage: "square.and.pencil", value: MainTab.compose) {
+                Color.clear
+            }
+            Tab(L("自分"), systemImage: "person.fill", value: MainTab.mine) {
+                NavigationStack {
+                    MineView(store: store, showsComposer: $showsComposer, showsSignIn: $showsSignIn)
+                        .navigationDestination(for: Post.self) { post in
+                            PostDetailView(initialPost: post, store: store)
+                        }
+                        .navigationDestination(for: ProfileRoute.self) { route in
+                            ProfileView(profileId: route.id, store: store)
+                        }
+                }
+            }
+            Tab(L("ブックマーク"), systemImage: "bookmark.fill", value: MainTab.bookmarks) {
+                NavigationStack {
+                    BookmarksView(store: store)
+                        .navigationDestination(for: Post.self) { post in
+                            PostDetailView(initialPost: post, store: store)
+                        }
+                        .navigationDestination(for: ProfileRoute.self) { route in
+                            ProfileView(profileId: route.id, store: store)
+                        }
+                }
+            }
+            Tab(L("通知"), systemImage: "bell.fill", value: MainTab.notifications) {
+                NavigationStack { NotificationsView(store: store) }
+                        .navigationDestination(for: Post.self) { post in
+                            PostDetailView(initialPost: post, store: store)
+                        }
+                        .navigationDestination(for: ProfileRoute.self) { route in
+                            ProfileView(profileId: route.id, store: store)
+                        }
+            }
+            Tab(L("リスト"), systemImage: "list.bullet.rectangle", value: MainTab.lists) {
+                NavigationStack {
+                    UserListsView(store: store)
+                        .navigationDestination(for: Post.self) { post in PostDetailView(initialPost: post, store: store) }
+                        .navigationDestination(for: ProfileRoute.self) { route in ProfileView(profileId: route.id, store: store) }
+                }
+            }
+            Tab(L("設定"), systemImage: "gearshape", value: MainTab.settings) {
+                NavigationStack { SettingsView() }
+            }
+        }
+        .toolbar(.hidden, for: .tabBar)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            HStack(spacing: 0) {
+                bottomBarButton(.home, title: "ホーム", symbol: "house.fill")
+                bottomBarButton(.compose, title: "投稿", symbol: "square.and.pencil")
+                bottomBarButton(.mine, title: "自分", symbol: "person.fill")
+                bottomBarButton(.bookmarks, title: "ブックマーク", symbol: "bookmark.fill")
+                bottomBarButton(.notifications, title: "通知", symbol: "bell.fill")
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 8)
+            .background(.bar)
+        }
+    }
+
     private func selectTab(_ tab: MainTab) {
         if tab == .compose {
             if auth.user == nil {
@@ -189,11 +238,9 @@ struct ContentView: View {
         .accessibilityValue(tab == .notifications && notifications.unreadCount > 0 ? L("未読の通知") + ": " + String(notifications.unreadCount) : "")
         .accessibilityAddTraits(selectedTab == tab ? .isSelected : [])
     }
-
 }
 
 #Preview {
     ContentView()
         .environment(AuthManager())
-
 }

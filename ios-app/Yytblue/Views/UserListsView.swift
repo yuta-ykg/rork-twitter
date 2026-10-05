@@ -1,298 +1,244 @@
 import SwiftUI
 
 struct UserListsView: View {
-    @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
+    @Environment(UserListStore.self) private var lists
     @Environment(AuthManager.self) private var auth
-    @Environment(UserListStore.self) private var listStore
-    @Environment(PostStore.self) private var postStore
-    @Environment(\.irukaPalette) private var palette
-    @State private var newName = ""
-    @State private var nameToCreate = ""
-    @State private var createAlert = false
-    @State private var renameTarget: UserListRow?
-    @State private var renameText = ""
-    @State private var deleteTarget: UserListRow?
-    @State private var error: String?
-
+    @Bindable var store: PostStore
+    @State private var creating = false
+    @State private var publicLists: [UserList] = []
+    @State private var publicQuery = ""
+    @State private var publicError: String?
     var body: some View {
         List {
-            if let error { Text(L(error)).foregroundStyle(.red) }
-            Section(L("新しいリスト")) {
-                TextField(L("リスト名（1〜40文字）"), text: $newName).textInputAutocapitalization(.sentences)
-                    .onSubmit { beginCreate() }
-                Button(L("リストを作成")) { beginCreate() }.disabled(newName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            Text(L(DevelopmentData.isActive ? "リストはこの端末に保存されます。" : "リストは初期状態では非公開です。公開すると共有リンクから誰でも閲覧できます。"))
+                .font(.footnote).foregroundStyle(.secondary)
+            if lists.loading { ProgressView() }
+            if let error = lists.error {
+                Text(L(error)).foregroundStyle(.red)
+                Button(L("再読み込み")) { Task { await lists.refresh() } }
             }
-            Section(L("リスト")) {
-                if listStore.lists.isEmpty {
-                    Text(L("まだリストがありません。")).foregroundStyle(palette.secondary)
-                } else {
-                    ForEach(listStore.lists) { row in
-                        NavigationLink {
-                            UserListDetailView(list: row)
-                        } label: {
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(row.name).font(.headline)
-                                Text(L("メンバー") + " · " + String(row.memberCount)).font(.caption).foregroundStyle(palette.secondary)
-                            }
-                        }
-                        .contextMenu {
-                            Button(L("名前を変更")) { renameTarget = row; renameText = row.name }
-                            Button(L("リストを削除"), role: .destructive) { deleteTarget = row }
-                        }
+            ForEach(lists.lists) { list in
+                NavigationLink {
+                    UserListDetailView(listId: list.id, store: store)
+                } label: {
+                    VStack(alignment: .leading) {
+                        Text(list.name).font(.headline)
+                        Text(L(list.isPublic == true ? "公開" : "非公開")).font(.caption)
+                        if !list.description.isEmpty { Text(list.description).font(.subheadline).foregroundStyle(.secondary) }
+                        Text("\(L("メンバー")): \(list.members.count)").font(.caption)
+                    }
+                }
+            }
+            if lists.lists.isEmpty && !lists.loading { Text(L("まだリストがありません。")) }
+            if !DevelopmentData.isActive {
+                Section(L("公開リストを探す")) {
+                    TextField(L("リスト名で検索"), text: $publicQuery)
+                    if let publicError {
+                        Text(L(publicError)).foregroundStyle(.red)
+                        Button(L("再読み込み")) { Task { await loadPublicLists() } }
+                    }
+                    ForEach(publicLists) { list in
+                        NavigationLink { PublicUserListView(id: list.id) } label: { Text(list.name) }
                     }
                 }
             }
         }
-        .scrollContentBackground(.hidden)
-        .background(palette.background)
         .navigationTitle(L("リスト"))
-        .task(id: auth.user?.id) {
-            listStore.configure(userId: auth.user?.id ?? (DevelopmentData.isActive ? DevelopmentData.userId : nil))
-            await listStore.refresh()
-        }
-        .refreshable { await listStore.refresh() }
-        .alert(L("新しいリスト"), isPresented: $createAlert) {
-            TextField(L("リスト名"), text: $nameToCreate)
-            Button(L("キャンセル"), role: .cancel) {}
-            Button(L("作成")) { Task { await create(nameToCreate) } }
-        }
-        .alert(L("名前を変更"), isPresented: Binding(get: { renameTarget != nil }, set: { if !$0 { renameTarget = nil } })) {
-            TextField(L("リスト名"), text: $renameText)
-            Button(L("キャンセル"), role: .cancel) { renameTarget = nil }
-            Button(L("保存")) { if let row = renameTarget { Task { await rename(row, renameText) } } }
-        }
-        .confirmationDialog(L("リストを削除しますか？"), isPresented: Binding(get: { deleteTarget != nil }, set: { if !$0 { deleteTarget = nil } }), titleVisibility: .visible) {
-            Button(L("削除"), role: .destructive) { if let row = deleteTarget { Task { await remove(row) } } }
-            Button(L("キャンセル"), role: .cancel) { deleteTarget = nil }
-        } message: { Text(L("リストとメンバー登録を削除します。投稿やユーザーは削除されません。")) }
+        .toolbar { Button(L("リストを作成"), systemImage: "plus") { creating = true }.disabled(lists.busy) }
+        .sheet(isPresented: $creating) { UserListEditor(list: nil) }
+        .task(id: auth.user?.id) { await lists.refresh() }
+        .task(id: "\(auth.user?.id ?? ""):\(publicQuery)") { await loadPublicLists() }
+        .refreshable { await lists.refresh(); await store.refresh(userId: auth.user?.id) }
     }
-
-    private func beginCreate() {
-        guard !newName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-        nameToCreate = newName; createAlert = true
-    }
-    private func create(_ name: String) async {
-        do { try await listStore.create(id: UUID(), name: name); newName = ""; error = nil }
-        catch { self.error = error.localizedDescription == "リスト名は1〜40文字で入力してください。" ? error.localizedDescription : "リストを保存できませんでした。" }
-    }
-    private func rename(_ row: UserListRow, _ name: String) async {
-        do { try await listStore.rename(id: row.id, name: name); error = nil }
-        catch { self.error = error.localizedDescription == "リスト名は1〜40文字で入力してください。" ? error.localizedDescription : "リストを保存できませんでした。" }
-        renameTarget = nil
-    }
-    private func remove(_ row: UserListRow) async {
-        do { try await listStore.delete(id: row.id); error = nil }
-        catch { error = "リストを保存できませんでした。" }
-        deleteTarget = nil
+    private func loadPublicLists() async {
+        publicLists = []; publicError = nil
+        guard !DevelopmentData.isActive, publicQuery.unicodeScalars.count <= 40 else { return }
+        do {
+            let result = try await PublicListService.find(publicQuery)
+            if !Task.isCancelled { publicLists = result }
+        } catch { if !Task.isCancelled { publicError = "公開リストを読み込めませんでした。" } }
     }
 }
 
-private struct UserListDetailView: View {
-    @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
+struct UserListDetailView: View {
+    let listId: UUID
+    @Environment(UserListStore.self) private var lists
     @Environment(AuthManager.self) private var auth
-    @Environment(UserListStore.self) private var listStore
-    @Environment(PostStore.self) private var postStore
-    @Environment(\.irukaPalette) private var palette
     @Environment(\.dismiss) private var dismiss
-    let list: UserListRow
-    @State private var members: [ListMemberRow] = []
-    @State private var posts: [Post] = []
-    @State private var accounts: [ListAccountRow] = []
-    @State private var query = ""
-    @State private var selection = "投稿"
-    @State private var error: String?
-    @State private var loading = true
-    @State private var saving = false
-    @State private var renameText = ""
-    @State private var showRename = false
-    @State private var showDelete = false
-    private var displayedName: String { listStore.lists.first(where: { $0.id == list.id })?.name ?? list.name }
-
+    @Bindable var store: PostStore
+    @State private var editing = false
+    @State private var deleting = false
+    @State private var keyword = ""
+    @State private var results: [ListMember] = []
+    @State private var searching = false
+    @State private var searchVersion = 0
+    @State private var searchError: String?
+    private var list: UserList? { lists.lists.first { $0.id == listId } }
+    private var timeline: [Post] {
+        let members = Set(list?.members.map(\.id) ?? [])
+        return store.timeline.filter { $0.parentId == nil && members.contains($0.userId ?? "") }
+    }
     var body: some View {
         List {
-            if let error { Text(L(error)).foregroundStyle(.red) }
-            Section {
-                Picker(L("表示"), selection: $selection) {
-                    Text(L("投稿")).tag("投稿")
-                    Text(L("メンバー")).tag("メンバー")
-                }.pickerStyle(.segmented)
-            }
-            if selection == "投稿" {
-                Section(L("投稿")) {
-                    if loading { ProgressView(L("読み込み中…")) }
-                    else if posts.isEmpty { Text(L("このリストに表示できる投稿はありません。メンバーを追加してください。")).foregroundStyle(palette.secondary) }
+            if let list {
+                if !list.description.isEmpty { Text(list.description) }
+                if let error = lists.error { Text(L(error)).foregroundStyle(.red) }
+                Section(L(list.isPublic == true ? "公開" : "非公開")) {
+                    if DevelopmentData.isActive { Text(L("公開するにはAppleかGoogleでログインしてください。")) }
                     else {
-                        ForEach(posts) { post in
-                            NavigationLink(value: post) { PostRowView(post: post) }
-                                VStack(alignment: .leading, spacing: 2) {
-                                    NavigationLink(value: post) { PostRowView(post: post) }
-                                    HStack(spacing: 8) {
-                                        LikeButton(post: post) { toggleLike(post) }
-                                        BookmarkButton(postId: post.id)
-                                    }
-                                }
-                        }
-                    }
-                }
-            } else {
-                Section(L("メンバーを追加")) {
-                    TextField(L("名前やユーザー名で検索"), text: $query)
-                        .textInputAutocapitalization(.never).autocorrectionDisabled()
-                    ForEach(accounts) { account in
-                        let included = members.contains { $0.targetId == account.id }
-                        HStack {
-                            VStack(alignment: .leading) {
-                                Text(account.name)
-                                if let handle = account.handle { Text("@\(handle)").font(.caption).foregroundStyle(palette.secondary) }
+                        Button(L(list.isPublic == true ? "非公開にする" : "リストを公開")) {
+                            Task { await lists.perform(list.isPublic == true ? "unpublish" : "publish", id: listId) }
+                        }.disabled(lists.busy)
+                        if list.isPublic == true {
+                            NavigationLink(L("公開ページを見る")) { PublicUserListView(id: listId) }
+                            if let url = PublicListService.shareURL(listId) {
+                                ShareLink(item: url) { Label(L("共有リンク"), systemImage: "square.and.arrow.up") }
                             }
-                            Spacer()
-                            Button(L(included ? "登録済み" : "追加")) { Task { await changeMember(account.id, included: !included) } }
-                                .disabled(saving || included)
                         }
                     }
                 }
-                Section(L("登録メンバー")) {
-                    if members.isEmpty { Text(L("まだメンバーがいません。")).foregroundStyle(palette.secondary) }
-                    ForEach(members) { member in
+                Section(L("メンバー")) {
+                    ForEach(list.members) { member in
                         HStack {
-                            Text(member.isBlocked ? L("ブロック中のアカウント") : (member.targetName ?? L("ユーザー")))
+                            NavigationLink(value: ProfileRoute(id: member.id)) { Text("\(member.name) @\(member.handle ?? "")") }
+                            Button(L("解除")) { Task { await lists.perform("remove", id: listId, member: member) } }
+                                .buttonStyle(.borderless).disabled(lists.busy)
+                        }
+                    }
+                    if list.members.isEmpty { Text(L("ユーザーを追加すると投稿が表示されます。")) }
+                    TextField(L("ユーザー名・表示名"), text: $keyword)
+                        .onChange(of: keyword) { _, _ in searchVersion += 1; results = []; searching = false }
+                    Button(L(searching ? "読み込み中…" : "ユーザーを検索")) { search() }
+                        .disabled(searching || keyword.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || keyword.unicodeScalars.count > 40)
+                    if let searchError { Text(L(searchError)).foregroundStyle(.red) }
+                    ForEach(results) { member in
+                        HStack {
+                            Text("\(member.name) @\(member.handle ?? "")")
                             Spacer()
-                            Button(L("解除")) { Task { await changeMember(member.targetId, included: false) } }.disabled(saving)
+                            Button(L("追加")) { Task { await lists.perform("add", id: listId, member: member) } }
+                                .buttonStyle(.borderless).disabled(lists.busy || list.members.contains { $0.id == member.id })
                         }
                     }
                 }
-            }
+                Section(L("リストの投稿")) {
+                    ForEach(timeline) { post in
+                        VStack(alignment: .leading) {
+                            PostRowView(post: post)
+                            HStack { LikeButton(post: post) { store.toggleLike(id: post.id) }; BookmarkButton(postId: post.id) }
+                        }
+                    }
+                    if timeline.isEmpty { Text(L("まだ投稿がありません。")) }
+                }
+                Button(L("リストを削除"), role: .destructive) { deleting = true }.disabled(lists.busy)
+            } else { Text(L("リストが見つかりません。")) }
         }
-        .scrollContentBackground(.hidden)
-        .background(palette.background)
-        .navigationTitle(displayedName)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    Button(L("名前を変更")) { renameText = displayedName; showRename = true }
-                    Button(L("リストを削除"), role: .destructive) { showDelete = true }
-                } label: { Image(systemName: "ellipsis") }
-            }
-        }
-        .navigationDestination(for: Post.self) { post in PostDetailView(initialPost: post, store: postStore) }
-        .task(id: "\(list.id):\(auth.user?.id ?? "")") { await refresh() }
-        .task(id: query) {
-            let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !trimmed.isEmpty else { accounts = []; return }
-            do { accounts = try await listStore.search(trimmed) }
-            catch { self.error = "ユーザーを検索できませんでした。" }
-        }
-        .refreshable { await refresh() }
-        .alert(L("名前を変更"), isPresented: $showRename) {
-            TextField(L("リスト名"), text: $renameText)
+        .navigationTitle(list?.name ?? L("リスト"))
+        .toolbar { Button(L("リストを編集")) { editing = true }.disabled(list == nil || lists.busy) }
+        .sheet(isPresented: $editing) { if let list { UserListEditor(list: list) } }
+        .alert(L("リストを削除しますか？"), isPresented: $deleting) {
             Button(L("キャンセル"), role: .cancel) {}
-            Button(L("保存")) { Task {
-                do { try await listStore.rename(id: list.id, name: renameText); error = nil }
-                catch { error = "リストを保存できませんでした。" }
-            } }
-        }
-        .confirmationDialog(L("リストを削除しますか？"), isPresented: $showDelete, titleVisibility: .visible) {
-            Button(L("削除"), role: .destructive) { Task {
-                do { try await listStore.delete(id: list.id); error = nil; dismiss() }
-                catch { error = "リストを保存できませんでした。" }
-            } }
-            Button(L("キャンセル"), role: .cancel) {}
-        } message: { Text(L("リストとメンバー登録を削除します。投稿やユーザーは削除されません。")) }
-    }
-
-    private func refresh() async {
-        loading = true
-        do {
-            let rows = try await listStore.posts(id: list.id)
-            members = try await listStore.members(id: list.id)
-            let likes: [PostLikeStats]
-            if rows.isEmpty || DevelopmentData.isActive { likes = [] }
-            else { likes = try await IrukaDatabase.client.rpc("get_post_likes", params: LikeStatsParams(post_ids: rows.map(\.id))).execute().value }
-            let profiles = try await ProfileService.fetch(ids: rows.compactMap(\.userId))
-            let profileById = Dictionary(uniqueKeysWithValues: profiles.map { ($0.id, $0) })
-            let likeById = Dictionary(uniqueKeysWithValues: likes.map { ($0.postId, $0) })
-            posts = rows.map { row in
-                let profile = row.userId.flatMap { profileById[$0] }
-                var post = Post(id: row.id, authorName: profile?.name ?? row.authorName,
-                    handle: profile?.handle.map { "@" + $0 } ?? row.handle,
-                    initial: profile.map { String($0.name.prefix(1)) } ?? row.initial,
-                    body: row.body, createdAt: row.createdAt, isMine: row.userId == auth.user?.id,
-                    avatarIndex: row.avatarIndex, userId: row.userId, parentId: row.parentId, avatarUrl: profile?.avatarUrl)
-                if let like = likeById[row.id] { post.likedByMe = like.isLiked; post.storedLikeCount = like.likeCount }
-                return post
+            Button(L("削除する"), role: .destructive) {
+                Task { if await lists.perform("delete", id: listId) { dismiss() } }
             }
-            error = nil
-        } catch { error = "リストを読み込めませんでした。" }
-        loading = false
+        } message: { Text(L("リストとメンバー設定が削除されます。投稿は削除されません。")) }
+        .refreshable { await lists.refresh(); await store.refresh(userId: auth.user?.id) }
+        .onDisappear { searchVersion += 1 }
     }
-    private func changeMember(_ target: String, included: Bool) async {
-        saving = true
-        do { try await listStore.setMember(listId: list.id, targetId: target, included: included); await refresh(); error = nil }
-        catch { error = "リストを保存できませんでした。" }
-        saving = false
-    }
-    private func toggleLike(_ post: Post) {
-        guard let user = auth.user else { return }
-        if DevelopmentData.isActive {
-            postStore.toggleLike(id: post.id)
-            if let next = postStore.timeline.first(where: { $0.id == post.id }),
-               let index = posts.firstIndex(where: { $0.id == post.id }) { posts[index] = next }
-            return
-        }
+    private func search() {
+        searchVersion += 1
+        let version = searchVersion; let userId = auth.user?.id; let query = keyword
+        searching = true; results = []; searchError = nil
         Task {
             do {
-                let rows: [PostLikeStats] = try await IrukaDatabase.client.rpc("set_post_like", params: SetLikeParams(target_post_id: post.id, liked: !post.isLiked, expected_user_id: user.id)).execute().value
-                guard let state = rows.first, let index = posts.firstIndex(where: { $0.id == post.id }) else { return }
-                posts[index].likedByMe = state.isLiked; posts[index].storedLikeCount = state.likeCount
-            } catch { error = "いいねを保存できませんでした。もう一度試してください。" }
+                let next = try await lists.search(query)
+                if version == searchVersion && userId == auth.user?.id { results = next }
+            } catch { if version == searchVersion { searchError = "ユーザーを検索できませんでした。" } }
+            if version == searchVersion { searching = false }
         }
+    }
+}
+
+struct UserListEditor: View {
+    let list: UserList?
+    @Environment(UserListStore.self) private var lists
+    @Environment(\.dismiss) private var dismiss
+    @State private var name = ""
+    @State private var description = ""
+    var body: some View {
+        NavigationStack {
+            Form {
+                TextField(L("リスト名（1〜40文字）"), text: $name)
+                TextField(L("説明（160文字まで）"), text: $description, axis: .vertical)
+                if let error = lists.error { Text(L(error)).foregroundStyle(.red) }
+            }
+            .navigationTitle(L(list == nil ? "リストを作成" : "リストを編集"))
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button(L("キャンセル")) { dismiss() }.disabled(lists.busy) }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(L("保存")) { Task {
+                        if await lists.perform(list == nil ? "create" : "update", id: list?.id, name: name, description: description) { dismiss() }
+                    } }.disabled(lists.busy || name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || name.unicodeScalars.count > 40 || description.unicodeScalars.count > 160)
+                }
+            }
+            .onAppear { name = list?.name ?? ""; description = list?.description ?? "" }
+        }
+        .interactiveDismissDisabled(lists.busy)
     }
 }
 
 struct ListMembershipSheet: View {
-    @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
-    @Environment(\.dismiss) private var dismiss
-    @Environment(UserListStore.self) private var store
     let targetId: String
-    @State private var selected: Set<UUID> = []
-    @State private var loaded = false
+    @Environment(UserListStore.self) private var lists
+    @Environment(AuthManager.self) private var auth
+    @Environment(\.dismiss) private var dismiss
+    @State private var member: ListMember?
+    @State private var loading = true
+    @State private var creating = false
     @State private var error: String?
 
     var body: some View {
         NavigationStack {
             List {
+                if loading { ProgressView() }
                 if let error { Text(L(error)).foregroundStyle(.red) }
-                ForEach(store.lists) { row in
-                    Toggle(row.name, isOn: Binding(get: { selected.contains(row.id) }, set: { value in Task { await toggle(row, value) } }))
-                        .disabled(!loaded)
+                if !loading, lists.lists.isEmpty {
+                    Text(L("まだリストがありません。"))
+                    Button(L("リストを作成")) { creating = true }
                 }
-                if store.lists.isEmpty, loaded {
-                    NavigationLink(L("リストを作成")) { UserListsView() }
+                ForEach(lists.lists) { list in
+                    let included = member.map { person in list.members.contains { $0.id == person.id } } ?? false
+                    Button {
+                        guard let member else { return }
+                        Task {
+                            let succeeded = await lists.perform(included ? "remove" : "add", id: list.id, member: member)
+                            if !succeeded { error = lists.error }
+                        }
+                    } label: {
+                        HStack {
+                            Text(list.name)
+                            Spacer()
+                            Image(systemName: included ? "checkmark.circle.fill" : "circle")
+                                .foregroundStyle(included ? Color.accentColor : Color.secondary)
+                        }
+                    }
+                    .disabled(loading || lists.busy || member == nil)
                 }
             }
             .navigationTitle(L("リストに追加"))
-            .navigationBarTitleDisplayMode(.inline)
-            .task {
-                store.configure(userId: store.userId ?? DevelopmentData.userId)
-                await store.refresh()
-                do {
-                    var values: Set<UUID> = []
-                    for row in store.lists {
-                        let members = try await store.members(id: row.id)
-                        if members.contains(where: { $0.targetId == targetId }) { values.insert(row.id) }
-                    }
-                    selected = values
-                } catch { self.error = "リストを読み込めませんでした。" }
-                loaded = true
-            }
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button(L("閉じる")) { dismiss() } } }
+            .sheet(isPresented: $creating) { UserListEditor(list: nil) }
+            .task(id: "\(auth.user?.id ?? ""):\(targetId)") {
+                loading = true; error = nil
+                await lists.refresh()
+                do {
+                    let profiles = try await ProfileService.fetch(ids: [targetId])
+                    member = profiles.first.map {
+                        ListMember(id: $0.id, name: $0.name, handle: $0.handle)
+                    }
+                    if member == nil { error = "プロフィールが見つかりません。" }
+                } catch { self.error = "プロフィールを読み込めませんでした。" }
+                loading = false
+            }
         }
     }
-    private func toggle(_ row: UserListRow, _ included: Bool) async {
-        do { try await store.setMember(listId: row.id, targetId: targetId, included: included)
-            if included { selected.insert(row.id) } else { selected.remove(row.id) }
-        } catch { self.error = "リストを保存できませんでした。" }
-    }
 }
-

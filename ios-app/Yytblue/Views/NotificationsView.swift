@@ -2,6 +2,7 @@ import SwiftUI
 
 struct NotificationsView: View {
     @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
+    @AppStorage("iruka-date-display") private var dateDisplay = DateDisplayStyle.relative.rawValue
     @Environment(AuthManager.self) private var auth
     @Environment(NotificationStore.self) private var notifications
     
@@ -42,7 +43,7 @@ struct NotificationsView: View {
                                 Text(item.isGrouped ? L("{count}人があなたの投稿にいいねしました。").replacingOccurrences(of: "{count}", with: "20+") : L("{name}さんがいいねしました。").replacingOccurrences(of: "{name}", with: item.actorName ?? L("ユーザー")))
                                     .fontWeight(item.readAt == nil ? .semibold : .regular)
                                 Text(item.postBody).font(.subheadline).foregroundStyle(Color.irukaSecondary)
-                                Text(item.date, style: .date).font(.caption).foregroundStyle(Color.irukaSecondary)
+                                Text(formatDate(item.date, includeTime: false)).font(.caption).foregroundStyle(Color.irukaSecondary)
                             }
                         }
                     }
@@ -69,4 +70,3 @@ struct NotificationsView: View {
         .refreshable { await notifications.refresh() }
     }
 }
-
