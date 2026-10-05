@@ -13,7 +13,7 @@ import { t, useLanguage } from "@/lib/language";
 import { LikeIconGlyph, useLikeIcon } from "@/hooks/useLikeIcon";
 import { isDevelopmentSession, isGuestSession } from "@/lib/development";
 import { toast } from "sonner";
-import { Bookmark, Download, House, List as ListIcon, MessageCircle, Search, SquarePen, Settings, UserRound, X } from "lucide-react";
+import { ArrowLeft, Bookmark, Download, House, MessageCircle, Search, SquarePen, Settings, UserRound, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 
@@ -240,7 +240,7 @@ export function Shell({
         >
           <SquarePen className="h-6 w-6" aria-hidden />
         </button>
-        <nav aria-label={t("メインナビゲーション")} className="grid grid-cols-6 border-t border-border/60 bg-background/70 px-2 pb-[max(8px,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl">
+        <nav aria-label={t("メインナビゲーション")} className="grid grid-cols-5 border-t border-border/60 bg-background/70 px-3 pb-[max(8px,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl">
           <Link to="/" aria-label={t("ホーム")} className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "home" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
             <House className="h-5 w-5" aria-hidden />
             {showBottomBarLabels && <span>{t("ホーム")}</span>}</Link>
@@ -251,10 +251,6 @@ export function Shell({
           <Link to="/bookmarks" aria-label={t("ブックマーク")} className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "bookmarks" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
             <Bookmark className="h-5 w-5" aria-hidden />
             {showBottomBarLabels && <span>{t("ブックマーク")}</span>}
-          </Link>
-          <Link to="/lists" aria-label={t("リスト")} className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "lists" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
-            <ListIcon className="h-5 w-5" aria-hidden />
-            {showBottomBarLabels && <span>{t("リスト")}</span>}
           </Link>
           <Link to="/notifications" className={`flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs ${tab === "notifications" ? "text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
             <span className="sr-only">{t("通知")}</span><NotificationBell />
@@ -617,8 +613,9 @@ export function PostPage() {
   if (!post) {
     return (
       <div className="mx-auto flex min-h-dvh max-w-[430px] flex-col bg-background px-5 pt-6">
-        <button type="button" onClick={() => navigate(-1)} className="mb-6 h-11 text-left text-[hsl(var(--brand))]">
-          {t("戻る")}</button>
+        <button type="button" onClick={() => navigate(-1)} aria-label={t("戻る")} className="mb-6 grid h-11 w-11 place-items-center text-[hsl(var(--brand))]">
+          <ArrowLeft className="h-5 w-5" aria-hidden />
+        </button>
         <p className="text-muted-foreground">{t("投稿が見つかりません。")}</p>
       </div>
     );
@@ -627,8 +624,9 @@ export function PostPage() {
   return (
     <div className="mx-auto min-h-dvh w-full max-w-[430px] bg-background px-5 pb-10 text-foreground">
       <header className="sticky top-0 flex h-14 items-center bg-background/75 backdrop-blur-xl">
-        <button type="button" onClick={() => navigate(-1)} className="h-11 pr-4 text-[hsl(var(--brand))]">
-          {t("戻る")}</button>
+        <button type="button" onClick={() => navigate(-1)} aria-label={t("戻る")} className="grid h-11 w-11 place-items-center text-[hsl(var(--brand))]">
+          <ArrowLeft className="h-5 w-5" aria-hidden />
+        </button>
         <span className="text-[17px] font-semibold">{t("投稿")}</span>
       </header>
       <div className="mt-2 flex items-center gap-3">

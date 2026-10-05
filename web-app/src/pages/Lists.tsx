@@ -200,6 +200,7 @@ export function ListMembershipPicker({ userId, targetId }: { userId: string; tar
   const [membersByList, setMembersByList] = useState<Record<string, string[]>>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [loadingLists, setLoadingLists] = useState(false);
   useEffect(() => {
     let cancelled = false;
     if (!open) return;

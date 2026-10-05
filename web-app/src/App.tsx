@@ -11,7 +11,7 @@ import type { ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
-import ProfilePage from "./pages/Profile";
+import ProfilePage, { ProfileEditPage } from "./pages/Profile";
 import AuthCallback from "./pages/AuthCallback";
 import { NotificationsPage, BookmarksPage, HomePage, MinePage, PostPage, SearchPage } from "./pages/Index";
 import { ListPage, ListsPage } from "./pages/Lists";
@@ -42,6 +42,7 @@ const App = () => (
           <Route path="/login" element={<LoginPage />} />
           <Route path="/" element={<RequireAuth><HomePage /></RequireAuth>} />
           <Route path="/search" element={<RequireAuth><SearchPage /></RequireAuth>} />
+          <Route path="/profile/edit" element={<RequireAuth><ProfileEditPage /></RequireAuth>} />
           <Route path="/profile/:id" element={<RequireAuth><ProfilePage /></RequireAuth>} />
           <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />
           <Route path="/notifications" element={<RequireAuth><NotificationsPage /></RequireAuth>} />
