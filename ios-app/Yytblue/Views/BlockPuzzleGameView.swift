@@ -63,16 +63,24 @@ private struct BlockPuzzleState {
     }
 }
 
+private struct BlockBoardFrameKey: PreferenceKey {
+    static var defaultValue: CGRect = .zero
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) { value = nextValue() }
+}
+
 struct BlockPuzzleGameView: View {
     @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
     @State private var game = BlockPuzzleState()
     @State private var selected = 0
     @State private var notice = ""
+    @State private var boardFrame: CGRect = .zero
+    @State private var draggingIndex: Int?
+    @State private var dragLocation: CGPoint?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text(L("ブロックパズル")).font(.system(size: 20, weight: .bold))
-            Text(L("ピースを選び、盤面の置きたい位置をタップ。行か列を埋めると消えます。"))
+            Text(L("ピースを選んで盤面をタップ、またはドラッグして置きます。行か列を埋めると消えます。"))
                 .font(.system(size: 13)).foregroundStyle(.secondary)
             HStack {
                 Text("\(L("スコア"))  \(game.score)").bold()
@@ -89,7 +97,7 @@ struct BlockPuzzleGameView: View {
                     ForEach(0..<64, id: \.self) { index in
                         Button { place(index) } label: {
                             RoundedRectangle(cornerRadius: 4)
-                                .fill(game.board[index] ? Color.cyan : Color(red: 0.25, green: 0.33, blue: 0.44))
+                                .fill(game.board[index] ? Color.cyan : isPreview(index) ? Color.cyan.opacity(0.5) : Color(red: 0.25, green: 0.33, blue: 0.44))
                                 .frame(width: side, height: side)
                         }
                         .buttonStyle(.plain)
@@ -101,6 +109,10 @@ struct BlockPuzzleGameView: View {
                 .background(Color(red: 0.08, green: 0.13, blue: 0.2), in: RoundedRectangle(cornerRadius: 10))
             }
             .aspectRatio(1, contentMode: .fit)
+            .background(GeometryReader { geometry in
+                Color.clear.preference(key: BlockBoardFrameKey.self, value: geometry.frame(in: .named("blockPuzzle")))
+            })
+            .onPreferenceChange(BlockBoardFrameKey.self) { boardFrame = $0 }
 
             Text(L("ピースを選択")).font(.system(size: 14, weight: .semibold))
             HStack(spacing: 8) {
@@ -109,17 +121,7 @@ struct BlockPuzzleGameView: View {
                         Group {
                             if let pieceIndex = game.tray[index] {
                                 let piece = BlockPuzzleState.pieces[pieceIndex]
-                                VStack(spacing: 2) {
-                                    ForEach(0..<piece.height, id: \.self) { row in
-                                        HStack(spacing: 2) {
-                                            ForEach(0..<piece.width, id: \.self) { col in
-                                                RoundedRectangle(cornerRadius: 2)
-                                                    .fill(piece.cells.contains { $0.0 == row && $0.1 == col } ? Color.cyan : Color.clear)
-                                                    .frame(width: 13, height: 13)
-                                            }
-                                        }
-                                    }
-                                }
+                                piecePreview(piece)
                             } else {
                                 Text("—").foregroundStyle(.secondary)
                             }
@@ -130,6 +132,20 @@ struct BlockPuzzleGameView: View {
                         .overlay(RoundedRectangle(cornerRadius: 12).stroke(selected == index ? Color.cyan : Color.clear, lineWidth: 2))
                     }
                     .buttonStyle(.plain)
+                    .simultaneousGesture(
+                        DragGesture(minimumDistance: 8, coordinateSpace: .named("blockPuzzle"))
+                            .onChanged { value in
+                                guard game.tray[index] != nil else { return }
+                                selected = index
+                                draggingIndex = index
+                                dragLocation = value.location
+                            }
+                            .onEnded { value in
+                                defer { draggingIndex = nil; dragLocation = nil }
+                                guard let point = boardCell(at: value.location) else { return }
+                                place(point, trayIndex: index)
+                            }
+                    )
                     .disabled(game.tray[index] == nil || game.ended)
                     .accessibilityLabel("\(L("ピース")) \(index + 1)")
                     .accessibilityAddTraits(selected == index ? .isSelected : [])
@@ -145,14 +161,58 @@ struct BlockPuzzleGameView: View {
             .buttonStyle(.bordered)
             .frame(maxWidth: .infinity)
         }
+        .coordinateSpace(name: "blockPuzzle")
+        .overlay(alignment: .topLeading) {
+            if let draggingIndex, let dragLocation, let pieceIndex = game.tray[draggingIndex] {
+                piecePreview(BlockPuzzleState.pieces[pieceIndex], cellSize: 18)
+                    .padding(8)
+                    .background(Color.black.opacity(0.8), in: RoundedRectangle(cornerRadius: 8))
+                    .position(dragLocation)
+                    .allowsHitTesting(false)
+            }
+        }
     }
 
-    private func place(_ index: Int) {
-        if game.place(trayIndex: selected, row: index / 8, col: index % 8) {
+    private func place(_ index: Int, trayIndex: Int? = nil) {
+        if game.place(trayIndex: trayIndex ?? selected, row: index / 8, col: index % 8) {
             notice = ""
             if let next = game.tray.firstIndex(where: { $0 != nil }) { selected = next }
         } else {
             notice = L("ここには置けません。")
+        }
+    }
+
+    private func boardCell(at point: CGPoint) -> Int? {
+        guard boardFrame.contains(point) else { return nil }
+        let side = (boardFrame.width - 31) / 8
+        let col = Int((point.x - boardFrame.minX - 5) / (side + 3))
+        let row = Int((point.y - boardFrame.minY - 5) / (side + 3))
+        guard (0..<8).contains(row), (0..<8).contains(col) else { return nil }
+        return row * 8 + col
+    }
+
+    private func isPreview(_ index: Int) -> Bool {
+        guard let draggingIndex, let dragLocation,
+              let pieceIndex = game.tray[draggingIndex],
+              let anchor = boardCell(at: dragLocation) else { return false }
+        let piece = BlockPuzzleState.pieces[pieceIndex]
+        let row = anchor / 8
+        let col = anchor % 8
+        guard game.canPlace(piece, row: row, col: col) else { return false }
+        return piece.cells.contains { row + $0.0 == index / 8 && col + $0.1 == index % 8 }
+    }
+
+    private func piecePreview(_ piece: PuzzlePiece, cellSize: CGFloat = 13) -> some View {
+        VStack(spacing: 2) {
+            ForEach(0..<piece.height, id: \.self) { row in
+                HStack(spacing: 2) {
+                    ForEach(0..<piece.width, id: \.self) { col in
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(piece.cells.contains { $0.0 == row && $0.1 == col } ? Color.cyan : Color.clear)
+                            .frame(width: cellSize, height: cellSize)
+                    }
+                }
+            }
         }
     }
 }

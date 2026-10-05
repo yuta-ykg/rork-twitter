@@ -53,6 +53,7 @@ func formatDate(_ date: Date, includeTime: Bool = true) -> String {
 }
 
 private let englishMessages: [String: String] = [
+    "ピースを選んで盤面をタップ、またはドラッグして置きます。行か列を埋めると消えます。": "Select a piece, then tap or drag it onto the board. Filled rows or columns clear.",
     "ブロックパズル": "Block puzzle",
     "3つのピースを置き、行と列を消してスコアを伸ばすゲームです。": "Place three pieces, clear rows and columns, and build your score.",
     "ピースを選び、盤面の置きたい位置をタップ。行か列を埋めると消えます。": "Select a piece, then tap its top-left position on the board. Filled rows or columns clear.",
@@ -507,6 +508,7 @@ private let englishMessages: [String: String] = [
     "Yesterday": "昨日"
 ]
 private let koreanMessages: [String: String] = [
+    "ピースを選んで盤面をタップ、またはドラッグして置きます。行か列を埋めると消えます。": "조각을 선택한 뒤 보드를 탭하거나 드래그해서 놓으세요. 행이나 열을 채우면 사라집니다.",
     "ブロックパズル": "블록 퍼즐",
     "3つのピースを置き、行と列を消してスコアを伸ばすゲームです。": "세 조각을 놓아 행과 열을 지우고 점수를 올리세요.",
     "ピースを選び、盤面の置きたい位置をタップ。行か列を埋めると消えます。": "조각을 선택하고 보드의 왼쪽 위 위치를 탭하세요. 행이나 열을 채우면 사라집니다.",
@@ -712,6 +714,7 @@ private let koreanExtraMessages: [String: String] = [
     "設定からいつでもこのガイドを開けます。": "설정에서 언제든 이 안내를 열 수 있습니다.",
 ]
 private let simplifiedChineseMessages: [String: String] = [
+    "ピースを選んで盤面をタップ、またはドラッグして置きます。行か列を埋めると消えます。": "选择方块，然后点击或拖到棋盘上。填满行或列即可消除。",
     "ブロックパズル": "方块拼图",
     "3つのピースを置き、行と列を消してスコアを伸ばすゲームです。": "放置三个方块，消除整行或整列来提高分数。",
     "ピースを選び、盤面の置きたい位置をタップ。行か列を埋めると消えます。": "选择方块，然后点击棋盘上要放置的左上角。填满行或列即可消除。",
