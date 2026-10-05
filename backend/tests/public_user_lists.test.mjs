@@ -28,7 +28,7 @@ test('public sharing is opt-in, read-only, revocable and respects viewer relatio
         ('00000000-0000-4000-8000-000000000012','alice',null,'Not a member'),
         ('00000000-0000-4000-8000-000000000013','bob','00000000-0000-4000-8000-000000000010','Reply');
     `);
-    for (const file of ['20261003000000_user_lists.sql','20261003010000_public_user_lists.sql']) {
+    for (const file of ['20261003010000_user_lists.sql','20261003015000_public_user_lists.sql']) {
       await db.exec(await readFile(new URL(`../migrations/${file}`,import.meta.url),'utf8'));
     }
     const id = '00000000-0000-4000-8000-000000000001';
@@ -50,7 +50,7 @@ test('public sharing is opt-in, read-only, revocable and respects viewer relatio
     assert.equal(publicData.list.owner_id,'alice'); assert.equal(publicData.list.members.length,2);
     assert.deepEqual(publicData.posts.map(p=>p.body).sort(),['Bob post','Carol post']);
     assert.equal((await find()).length,1);
-    await assert.rejects(db.query('select * from public.user_lists'),/permission denied/);
+    assert.equal((await db.query('select count(*)::int as count from public.user_lists')).rows[0].count,0);
     await db.exec("set test.user_id='bob';");
     for (const op of ['publish','unpublish','delete','update','add','remove']) {
       await assert.rejects(manage('bob',op,'Stolen','alice'),/List not found/);

@@ -17,7 +17,9 @@ test('private list RPC authorization, membership and account cleanup', async () 
         $$ select exists(select 1 from public.test_blocks where (first_id=a and second_id=b) or (first_id=b and second_id=a)) $$;
       insert into public.profiles values ('alice','Alice','alice'),('bob','Bob','bob'),('carol','Carol','carol');
     `);
-    await db.exec(await readFile(new URL('../migrations/20261003000000_user_lists.sql', import.meta.url), 'utf8'));
+    for (const file of ['20261003010000_user_lists.sql','20261003015000_public_user_lists.sql']) {
+      await db.exec(await readFile(new URL(`../migrations/${file}`, import.meta.url), 'utf8'));
+    }
     const id = '00000000-0000-4000-8000-000000000001';
     const invoke = async (expected, op = 'read', target = null, name = '', description = '', member = null) => {
       const result = await db.query('select public.manage_user_lists($1,$2,$3::uuid,$4,$5,$6) as lists', [expected,op,target,name,description,member]);
@@ -27,7 +29,10 @@ test('private list RPC authorization, membership and account cleanup', async () 
     assert.equal((await invoke('alice','create',id,' Friends ','People'))[0].name,'Friends');
     await invoke('alice','add',id,'','','bob');
     assert.equal((await invoke('alice','add',id,'','','bob'))[0].members.length,1);
-    await assert.rejects(db.query('select * from public.user_lists'), /permission denied/);
+    assert.equal((await db.query('select count(*)::int as count from public.user_lists')).rows[0].count,1);
+    await db.exec("set test.user_id='carol';");
+    assert.equal((await db.query('select count(*)::int as count from public.user_lists')).rows[0].count,0);
+    await db.exec("set test.user_id='alice';");
     await assert.rejects(invoke('bob'), /Login required/);
     await assert.rejects(invoke('alice','update',id,' '.repeat(3)), /check constraint/);
     await assert.rejects(invoke('alice','update',id,'😀'.repeat(41)), /check constraint/);
