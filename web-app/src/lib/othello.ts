@@ -51,6 +51,37 @@ export function legalMoves(board: Board, player: Disc): number[] {
   return board.flatMap((_, index) => flipsForMove(board, index, player).length ? [index] : []);
 }
 
+const positionWeights = [
+  120, -35, 20, 20, 20, 20, -35, 120,
+  -35, -50, -5, -5, -5, -5, -50, -35,
+  20, -5, 10, 4, 4, 10, -5, 20,
+  20, -5, 4, 2, 2, 4, -5, 20,
+  20, -5, 4, 2, 2, 4, -5, 20,
+  20, -5, 10, 4, 4, 10, -5, 20,
+  -35, -50, -5, -5, -5, -5, -50, -35,
+  120, -35, 20, 20, 20, 20, -35, 120,
+];
+
+/** One-ply, deterministic CPU: prefer stable squares and limit the opponent's options. */
+export function chooseCpuMove(board: Board, player: Disc): number | null {
+  const moves = legalMoves(board, player);
+  if (!moves.length) return null;
+  let best = moves[0];
+  let bestValue = -Infinity;
+  for (const move of moves) {
+    const flips = flipsForMove(board, move, player);
+    const next = [...board];
+    next[move] = player;
+    for (const index of flips) next[index] = player;
+    const value = positionWeights[move] + flips.length * 2 - legalMoves(next, other(player)).length * 3;
+    if (value > bestValue) {
+      best = move;
+      bestValue = value;
+    }
+  }
+  return best;
+}
+
 export function playMove(game: OthelloGame, index: number): OthelloGame {
   if (game.finished) return game;
   const flips = flipsForMove(game.board, index, game.turn);

@@ -11,6 +11,12 @@ enum AppLanguage: String, CaseIterable, Identifiable {
 }
 
 private let englishMessages: [String: String] = [
+    "対戦モード": "Game mode",
+    "CPU対戦": "Play CPU",
+    "2人で対戦": "Two players",
+    "CPU": "CPU",
+    "CPUが考えています…": "CPU is thinking…",
+    "黒の石でCPUと対戦します。": "Play as black against the CPU.",
     "ゲーム": "Games",
     "オセロ": "Othello",
     "同じ端末で交互に遊べます。置ける場所を選んでください。": "Take turns on this device. Choose a highlighted square.",

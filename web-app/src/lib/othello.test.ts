@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createGame, flipsForMove, legalMoves, playMove, score, type Board, type OthelloGame } from "./othello";
+import { chooseCpuMove, createGame, flipsForMove, legalMoves, playMove, score, type Board, type OthelloGame } from "./othello";
 
 describe("Othello rules", () => {
   it("starts with four discs and four legal black moves", () => {
@@ -42,5 +42,19 @@ describe("Othello rules", () => {
     expect(next.finished).toBe(true);
     expect(score(next.board)).toEqual({ black: 64, white: 0 });
     expect(playMove(next, 1)).toBe(next);
+  });
+
+  it("chooses a legal move and prefers an available corner", () => {
+    const board: Board = Array(64).fill(null);
+    board[1] = "black";
+    board[2] = "white";
+    board[9] = "black";
+    board[18] = "white";
+    expect(legalMoves(board, "white")).toContain(0);
+    expect(chooseCpuMove(board, "white")).toBe(0);
+  });
+
+  it("returns no CPU move when there is no legal square", () => {
+    expect(chooseCpuMove(Array(64).fill("black"), "white")).toBeNull();
   });
 });
