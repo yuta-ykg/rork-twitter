@@ -41,16 +41,6 @@ struct ContentView: View {
             }
             await store.refresh(userId: auth.user?.id)
         }
-        .sheet(isPresented: $showsComposer) {
-            ComposeSheet(
-                authorName: auth.user?.displayName ?? "あなた",
-                handle: auth.user?.handle ?? "@you",
-                initial: auth.user?.initial ?? "あ"
-            ) { body, poll, diagnosis in
-                guard let user = auth.user else { return }
-                store.add(body: body, poll: poll, diagnosis: diagnosis, user: user)
-            }
-        }
         .alert(L("投稿"), isPresented: Binding(
             get: { store.composeError != nil },
             set: { if !$0 { store.composeError = nil } }
@@ -137,6 +127,7 @@ struct ContentView: View {
                         default: selectTab(.home)
                         }
                     })
+                        .navigationDestination(isPresented: composerVisible(.home)) { ComposeView() }
                         .navigationDestination(for: Post.self) { post in
                             PostDetailView(initialPost: post, store: store)
                         }
@@ -150,7 +141,8 @@ struct ContentView: View {
             }
             Tab(L("自分"), systemImage: "person.fill", value: MainTab.mine) {
                 NavigationStack {
-                    MineView(store: store, showsComposer: $showsComposer, showsSignIn: $showsSignIn)
+                    MineView(store: store, showsSignIn: $showsSignIn)
+                        .navigationDestination(isPresented: composerVisible(.mine)) { ComposeView() }
                         .navigationDestination(for: Post.self) { post in
                             PostDetailView(initialPost: post, store: store)
                         }
@@ -162,6 +154,7 @@ struct ContentView: View {
             Tab(L("ブックマーク"), systemImage: "bookmark.fill", value: MainTab.bookmarks) {
                 NavigationStack {
                     BookmarksView(store: store)
+                        .navigationDestination(isPresented: composerVisible(.bookmarks)) { ComposeView() }
                         .navigationDestination(for: Post.self) { post in
                             PostDetailView(initialPost: post, store: store)
                         }
@@ -171,23 +164,30 @@ struct ContentView: View {
                 }
             }
             Tab(L("通知"), systemImage: "bell.fill", value: MainTab.notifications) {
-                NavigationStack { NotificationsView(store: store) }
+                NavigationStack {
+                    NotificationsView(store: store)
+                        .navigationDestination(isPresented: composerVisible(.notifications)) { ComposeView() }
                         .navigationDestination(for: Post.self) { post in
                             PostDetailView(initialPost: post, store: store)
                         }
                         .navigationDestination(for: ProfileRoute.self) { route in
                             ProfileView(profileId: route.id, store: store)
                         }
+                }
             }
             Tab(L("リスト"), systemImage: "list.bullet.rectangle", value: MainTab.lists) {
                 NavigationStack {
                     UserListsView(store: store)
+                        .navigationDestination(isPresented: composerVisible(.lists)) { ComposeView() }
                         .navigationDestination(for: Post.self) { post in PostDetailView(initialPost: post, store: store) }
                         .navigationDestination(for: ProfileRoute.self) { route in ProfileView(profileId: route.id, store: store) }
                 }
             }
             Tab(L("設定"), systemImage: "gearshape", value: MainTab.settings) {
-                NavigationStack { SettingsView() }
+                NavigationStack {
+                    SettingsView()
+                        .navigationDestination(isPresented: composerVisible(.settings)) { ComposeView() }
+                }
             }
         }
         .toolbar(.hidden, for: .tabBar)
@@ -203,6 +203,14 @@ struct ContentView: View {
             .padding(.vertical, 8)
             .background(.bar)
         }
+    }
+
+    /// ComposeViewのpush状態。選択中のタブのスタックだけが反応し、タブを切り替えると閉じる。
+    private func composerVisible(_ tab: MainTab) -> Binding<Bool> {
+        Binding(
+            get: { showsComposer && selectedTab == tab },
+            set: { showsComposer = $0 }
+        )
     }
 
     private func selectTab(_ tab: MainTab) {

@@ -95,7 +95,7 @@ private struct ShogiState: Codable, Sendable {
     }
 }
 
-private struct ShogiRoomSnapshot: Decodable, Sendable {
+private nonisolated struct ShogiRoomSnapshot: Decodable, Sendable {
     let id: UUID
     let roomKey: String
     let senteUserId: String
