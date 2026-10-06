@@ -217,19 +217,21 @@ final class PostStore {
             var pollRows: [PostPollRow] = []
             var diagnosisRows: [PostDiagnosisRow] = []
             if !rows.isEmpty {
-                stats = try await IrukaDatabase.client
+                // 装飾データ（いいね・投票・診断）は任意。対応RPCのマイグレーションが
+                // 未適用でもタイムライン自体は表示されるよう、失敗時は空にフォールバックする。
+                stats = (try? await IrukaDatabase.client
                     .rpc("get_post_likes", params: LikeStatsParams(post_ids: rows.map(\.id)))
-                    .execute().value
-                pollRows = try await IrukaDatabase.client
+                    .execute().value) ?? []
+                pollRows = (try? await IrukaDatabase.client
                     .rpc("get_post_polls", params: GetPostPollsParams(
                         requested_post_ids: rows.map(\.id), expected_user_id: userId
-                    )).execute().value
-                diagnosisRows = try await IrukaDatabase.client
+                    )).execute().value) ?? []
+                diagnosisRows = (try? await IrukaDatabase.client
                     .rpc("get_post_diagnoses", params: GetPostDiagnosesParams(
                         requested_post_ids: rows.map(\.id), expected_user_id: userId
-                    )).execute().value
+                    )).execute().value) ?? []
             }
-            let profiles = try await ProfileService.fetch(ids: rows.compactMap(\.userId))
+            let profiles = (try? await ProfileService.fetch(ids: rows.compactMap(\.userId))) ?? []
             guard currentUserId == userId else { return }
             let profileById = Dictionary(uniqueKeysWithValues: profiles.map { ($0.id, $0) })
             let likes = Dictionary(uniqueKeysWithValues: stats.map { ($0.postId, $0) })

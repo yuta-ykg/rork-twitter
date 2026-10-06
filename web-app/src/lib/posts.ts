@@ -1,6 +1,6 @@
 import { formatDateTime } from "@/lib/dateDisplay";
 import { isDevelopmentSession, localUser, readDevelopmentPosts, writeDevelopmentPosts, readDevelopmentProfile } from "@/lib/development";
-import { ensureProfile, fetchProfiles } from "@/lib/profiles";
+import { ensureProfile, fetchProfiles, type Profile } from "@/lib/profiles";
 import { hiddenDevelopmentUsers } from "@/lib/userRelationships";
 import { supabase } from "@/lib/supabase";
 import { fetchPostPolls, isPollDraftValid, pollFromDraft, type PollDraft, type PostPoll } from "@/lib/polls";
@@ -65,6 +65,10 @@ function toPost(row: Row, userId?: string | null): Post {
 
 const postColumns = "id, author_name, handle, initial, body, created_at, avatar_index, user_id, parent_id";
 
+async function withFallback<T>(task: PromiseLike<T>, fallback: T): Promise<T> {
+  try { return await task; } catch { return fallback; }
+}
+
 export async function fetchPosts(userId?: string | null): Promise<Post[]> {
   if (isDevelopmentSession()) {
     const profile = readDevelopmentProfile();
@@ -76,13 +80,15 @@ export async function fetchPosts(userId?: string | null): Promise<Post[]> {
   if (error) throw error;
   const posts = (data ?? []).map((row) => toPost(row, userId));
   if (posts.length === 0) return posts;
-  const [{ data: stats, error: likesError }, profiles, polls, diagnoses] = await Promise.all([
-    supabase.rpc("get_post_likes", { post_ids: posts.map((post) => post.id) }),
-    fetchProfiles(posts.flatMap((post) => post.userId ? [post.userId] : [])),
-    fetchPostPolls(posts.map((post) => post.id), userId),
-    fetchPostDiagnoses(posts.map((post) => post.id), userId),
+  // 投いいね・投票・診断・プロフィールは任意の装飾データ。対応RPCのマイグレーションが
+  // 未適用でもタイムライン自体は表示できるよう、失敗時は既定値にフォールバックする。
+  const [likesData, profiles, polls, diagnoses] = await Promise.all([
+    withFallback(supabase.rpc("get_post_likes", { post_ids: posts.map((post) => post.id) }).then((result) => result.data), null),
+    withFallback(fetchProfiles(posts.flatMap((post) => post.userId ? [post.userId] : [])), [] as Profile[]),
+    withFallback(fetchPostPolls(posts.map((post) => post.id), userId), new Map<string, PostPoll>()),
+    withFallback(fetchPostDiagnoses(posts.map((post) => post.id), userId), new Map<string, PostDiagnosis>()),
   ]);
-  if (likesError) throw likesError;
+  const stats = likesData;
   const profileById = new Map(profiles.map((profile) => [profile.id, profile]));
   const byId = new Map((stats ?? []).map((stat) => [stat.post_id, stat]));
   return posts.map((post) => {
