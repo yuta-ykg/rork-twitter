@@ -10,14 +10,10 @@ import { useDateDisplay } from "@/lib/dateDisplay";
 import { isDevelopmentSession, isGuestSession } from "@/lib/development";
 import { Bookmark, List, Fish, Gamepad2, House, Menu, MessageCircle, Search, SquarePen, Settings, UserRound, UsersRound, X, Sparkles, Trophy } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/authContext";
-import { MAX_CHARACTERS, avatarFills, type Post } from "@/lib/posts";
-import { PollDraftEditor } from "@/components/PollDraftEditor";
+import { avatarFills, type Post } from "@/lib/posts";
 import { PostPollCard } from "@/components/PostPollCard";
-import { isPollDraftValid, type PollDraft } from "@/lib/polls";
-import { DiagnosisDraftEditor } from "@/components/DiagnosisDraftEditor";
-import { isDiagnosisDraftValid, newDiagnosisDraft, type DiagnosisDraft } from "@/lib/diagnoses";
 import { PostDiagnosisCard } from "@/components/PostDiagnosisCard";
 
 type Tab = "home" | "mine" | "bookmarks" | "notifications" | "search" | "lists" | "communities" | "diagnoses" | "games" | "rankings" | "settings";
@@ -88,115 +84,21 @@ export function SignInPanel({ title, message }: { title: string; message: string
   );
 }
 
-export function ComposeSheet({
-  onClose,
-  onPost,
-  authorName,
-  handle,
-  initial,
-}: {
-  onClose: () => void;
-  onPost: (body: string, poll: PollDraft | null, diagnosis: DiagnosisDraft | null) => void;
-  authorName: string;
-  handle: string;
-  initial: string;
-}) {
-  useLanguage();
-  const [draft, setDraft] = useState("");
-  const [poll, setPoll] = useState<PollDraft | null>(null);
-  const [diagnosis, setDiagnosis] = useState<DiagnosisDraft | null>(null);
-  const count = draft.length;
-  const canPost = draft.trim().length > 0 && count <= MAX_CHARACTERS && isPollDraftValid(poll) && isDiagnosisDraftValid(diagnosis);
-
-  return (
-    <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/30 sm:items-center" role="presentation">
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="compose-title"
-        className="flex max-h-[92dvh] w-full max-w-[430px] flex-col overflow-y-auto rounded-t-[28px] bg-background px-5 pb-6 pt-3 shadow-2xl sm:rounded-[28px]"
-      >
-        <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-[#ECF0F2]" />
-        <div className="mb-4 flex items-center justify-between">
-          <h2 id="compose-title" className="text-[17px] font-semibold text-foreground">
-            {t("新しい投稿")}</h2>
-          <button type="button" onClick={onClose} className="grid h-11 w-11 place-items-center text-muted-foreground" aria-label={t("閉じる")}>
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-        <div className="mb-4 flex items-center gap-3">
-          <Avatar initial={initial} index={0} />
-          <div>
-            <p className="text-base font-semibold text-foreground">{authorName}</p>
-            <p className="text-sm text-muted-foreground">{handle}</p>
-          </div>
-        </div>
-        <div className="relative min-h-[220px] rounded-2xl bg-muted">
-          {draft.length === 0 ? (
-            <p className="pointer-events-none absolute left-3.5 top-4 text-[17px] text-muted-foreground">{t("今の気持ちを、70字まで。")}</p>
-          ) : null}
-          <textarea
-            autoFocus
-            value={draft}
-            maxLength={MAX_CHARACTERS}
-            onChange={(event) => setDraft(event.target.value.slice(0, MAX_CHARACTERS))}
-            className="h-[220px] w-full resize-none bg-transparent p-3.5 text-[17px] text-foreground outline-none"
-            aria-label={t("投稿本文")}
-          />
-        </div>
-        <p className={`mt-3 text-right font-mono text-[15px] ${count >= MAX_CHARACTERS ? "text-red-500" : "text-muted-foreground"}`}>
-          {count} / {MAX_CHARACTERS}
-        </p>
-        <div className="mt-3">
-          <button type="button" aria-pressed={Boolean(diagnosis)}
-            onClick={() => { setDiagnosis((current) => current ? null : newDiagnosisDraft()); setPoll(null); }}
-            className={`min-h-11 rounded-full border px-4 text-sm font-semibold ${diagnosis ? "border-[hsl(var(--brand))] text-[hsl(var(--brand))]" : "border-input text-muted-foreground"}`}>
-            {t(diagnosis ? "診断を外す" : "診断を作る")}
-          </button>
-        </div>
-        {diagnosis ? <DiagnosisDraftEditor value={diagnosis} onChange={setDiagnosis} /> : <PollDraftEditor value={poll} onChange={setPoll} />}
-        <div className="mt-4">
-          <PostButton
-            label={t("投稿する")}
-            disabled={!canPost}
-            onClick={() => {
-              if (!canPost) return;
-              onPost(draft, poll, diagnosis);
-              onClose();
-            }}
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function Shell({
   tab,
   children,
-  onCompose,
 }: {
   tab: Tab;
   children: ReactNode;
-  onCompose: () => void;
 }) {
   useLanguage();
   useDateDisplay();
-  const { user } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const { showBottomBarLabels } = useBottomBarLabels();
   const { useDesktopBottomBar } = useDesktopNavigation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
   const mobileMenuPanelRef = useRef<HTMLElement>(null);
-  useEffect(() => {
-    if (location.state?.compose === true) {
-      navigate(location.pathname, { replace: true, state: null });
-      if (!user) navigate("/mine");
-      else onCompose();
-    }
-  }, [location.state, location.pathname, navigate, user, onCompose]);
   useEffect(() => {
     if (!mobileMenuOpen) return;
     const focusableElements = () => Array.from(mobileMenuPanelRef.current?.querySelectorAll<HTMLElement>("a[href], button:not([disabled])") ?? []);
@@ -226,8 +128,7 @@ export function Shell({
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [mobileMenuOpen]);
   function compose() {
-    if (!user) { navigate("/mine"); return; }
-    onCompose();
+    navigate("/compose");
   }
   function closeMobileMenu() {
     setMobileMenuOpen(false);

@@ -90,7 +90,7 @@ export default function CommunitiesPage() {
       {canUse && (canModerate || post.user_id === userId) && <button disabled={busy || loadingMore} className="ml-3 min-h-11 text-red-600" aria-label={`${t("投稿を削除")}: ${post.body}`} onClick={() => setDeleting({ operation: "delete_post", target: post.id })}>{t("投稿を削除")}</button>}
     </article>;
   }
-  return <Shell tab="communities" onCompose={() => navigate("/", { state: { compose: true } })}>
+  return <Shell tab="communities">
     <div className="flex items-center justify-between gap-3 py-4"><h1 className="break-words text-2xl font-bold">{community?.name ?? t("コミュニティ")}</h1><Link className="min-h-11 content-center underline" to={id ? "/communities" : "/"}>{t("戻る")}</Link></div>
     <p className="mb-4 text-sm text-muted-foreground">{t("誰でも閲覧・参加できます。投稿するには参加が必要です。")}</p>
     {!canUse && <p className="my-3 text-muted-foreground">{t("コミュニティを利用するにはAppleかGoogleでログインしてください。")} <Link className="underline" to="/login">{t("ログイン")}</Link></p>}

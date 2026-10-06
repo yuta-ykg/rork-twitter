@@ -3,17 +3,14 @@ import { toast } from "sonner";
 import { Brain, Gamepad2, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/hooks/authContext";
-import { displayName, userHandle } from "@/hooks/authUser";
-import { fetchPosts, insertPost, sortTimeline, setPostLike, type Post } from "@/lib/posts";
-import { Shell, Row, ComposeSheet } from "@/pages/IndexShared";
-import { useOwnProfile } from "@/hooks/useOwnProfile";
+import { fetchPosts, sortTimeline, setPostLike, type Post } from "@/lib/posts";
+import { Shell, Row } from "@/pages/IndexShared";
 import { isConsumerProtectionSearchQuery, isCrimePreventionSearchQuery, isSupportSearchQuery } from "@/lib/safetySearch";
 import { SearchSupportNotice } from "@/components/SearchSupportNotice";
 import { CrimePreventionNotice } from "@/components/CrimePreventionNotice";
 import { ConsumerProtectionNotice } from "@/components/ConsumerProtectionNotice";
 import { PostDiagnosisCard } from "@/components/PostDiagnosisCard";
-import type { PollDraft } from "@/lib/polls";
-import { searchUserDiagnoses, type DiagnosisDraft, type DiagnosisSearchResult } from "@/lib/diagnoses";
+import { searchUserDiagnoses, type DiagnosisSearchResult } from "@/lib/diagnoses";
 import { Link, useNavigate } from "react-router-dom";
 
 const goalTargets = [1024, 2048, 4096, 8192, 16384] as const;
@@ -42,13 +39,11 @@ const gameSearchTerms = ["ゲーム", "game", "mini game", "ゲームセンタ�
 export default function SearchPage() {
   useLanguage();
   const { user } = useAuth();
-  const own = useOwnProfile();
   const [posts, setPosts] = useState<Post[]>([]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
-  const [open, setOpen] = useState(false);
   const [diagnoses, setDiagnoses] = useState<DiagnosisSearchResult[]>([]);
   const [diagnosisLoading, setDiagnosisLoading] = useState(false);
   const [diagnosisError, setDiagnosisError] = useState("");
@@ -112,17 +107,8 @@ export default function SearchPage() {
       }
     } catch { toast.error(t("いいねを保存できませんでした。もう一度試してください。")); }
   }
-  async function add(body: string, poll: PollDraft | null, diagnosis: DiagnosisDraft | null) {
-    if (!user) return;
-    try {
-      const post = await insertPost(body, user, poll, diagnosis);
-      if (activeUser.current === user.id) setPosts((current) => [post, ...current]);
-    } catch { toast.error(t("投稿できませんでした。もう一度試してください。")); }
-  }
-
   return (
-    <>
-      <Shell tab="search" onCompose={() => setOpen(true)}>
+    <Shell tab="search">
         <div className="pt-4">
           <h1 className="text-[28px] font-bold">{t("検索")}</h1>
           <div className="relative mt-3">
@@ -171,9 +157,6 @@ export default function SearchPage() {
               <p className="py-6 text-center text-sm text-muted-foreground">{t("該当する投稿がありません。")}</p>}
           </section>
         </>}
-      </Shell>
-      {open && user ? <ComposeSheet onClose={() => setOpen(false)} onPost={add}
-        authorName={own?.name ?? displayName(user)} handle={own?.handle ?? userHandle(user)} initial={own?.initial ?? displayName(user).slice(0, 1)} /> : null}
-    </>
+    </Shell>
   );
 }

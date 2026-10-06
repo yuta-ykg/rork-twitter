@@ -116,7 +116,7 @@ export default function GamesPage() {
   }
 
   return (
-    <Shell tab="games" onCompose={() => navigate("/", { state: { compose: true } })}>
+    <Shell tab="games">
       <div className="pt-4">
         <h1 className="flex items-center gap-2 text-[28px] font-bold"><Gamepad2 className="h-7 w-7 text-[hsl(var(--brand))]" />{t("ゲームセンター")}</h1>
         <p className="mt-2 text-sm text-muted-foreground">{t("ゲームのスコアや対局結果を投稿で共有できます。")}</p>

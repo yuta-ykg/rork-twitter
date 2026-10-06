@@ -106,7 +106,7 @@ export default function RankingsPage() {
       : "診断ランキングは診断結果を共有した投稿数を基準にしています。";
 
   return (
-    <Shell tab="rankings" onCompose={() => navigate("/", { state: { compose: true } })}>
+    <Shell tab="rankings">
       <div className="pt-4">
         <h1 className="text-[28px] font-bold">{t("ランキング")}</h1>
         <div className="mt-4 grid grid-cols-3 gap-1 rounded-full bg-muted p-1" role="tablist" aria-label={t("ランキング") }>

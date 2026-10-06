@@ -37,7 +37,7 @@ export default function SettingsPage() {
   const { likeIcon, setLikeIcon } = useLikeIcon();
   const dateDisplay = useDateDisplay();
   return <div className={`mx-auto min-h-dvh w-full max-w-[430px] bg-background text-foreground ${useDesktopBottomBar ? "" : "lg:max-w-[760px] lg:pl-[220px]"}`}>
-    {!useDesktopBottomBar && <DesktopSidebar tab="settings" onCompose={() => navigate("/", { state: { compose: true } })} />}
+    {!useDesktopBottomBar && <DesktopSidebar tab="settings" onCompose={() => navigate("/compose")} />}
     <main className="px-5 pb-10">
     <header className="flex min-h-14 items-center gap-5 border-b border-border">
       <Link to="/" className="flex min-h-11 items-center text-[hsl(var(--brand))]">{t("ホーム")}</Link>

@@ -87,7 +87,7 @@ export default function ListsPage() {
     } catch { if (active.current === userId && version === searchVersion.current) setError(t("ユーザーを検索できませんでした。")); }
     finally { if (version === searchVersion.current) setSearching(false); }
   }
-  return <Shell tab="lists" onCompose={() => navigate("/", { state: { compose: true } })}>
+  return <Shell tab="lists">
     <div className="flex items-center justify-between gap-3 py-4">
       <h1 className="text-2xl font-bold">{list?.name ?? t("リスト")}</h1>
       <Link to={id ? "/lists" : "/"} className="min-h-11 content-center text-[hsl(var(--brand))]">{t("戻る")}</Link>

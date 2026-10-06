@@ -17,6 +17,7 @@ const SettingsPage = lazy(() => import("./pages/Settings"));
 const FeatureGuidePage = lazy(() => import("./pages/FeatureGuide"));
 const ProfilePage = lazy(() => import("./pages/Profile"));
 const ProfileEditPage = lazy(() => import("./pages/ProfileEdit"));
+const ComposePage = lazy(() => import("./pages/Compose"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 const HomePage = lazy(() => import("./pages/Home"));
 const NotificationsPage = lazy(() => import("./pages/Notifications"));
@@ -71,6 +72,7 @@ const App = () => (
             <Route path="/bookmarks" element={<RequireAuth><BookmarksPage /></RequireAuth>} />
             <Route path="/mine" element={<RequireAuth><MinePage /></RequireAuth>} />
             <Route path="/post/:id" element={<RequireAuth><PostPage /></RequireAuth>} />
+            <Route path="/compose" element={<RequireAuth><ComposePage /></RequireAuth>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<RequireAuth><NotFound /></RequireAuth>} />
           </Routes>

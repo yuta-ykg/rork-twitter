@@ -31,7 +31,7 @@ export default function DiagnosesPage() {
   }, [query, user?.id]);
 
   return (
-    <Shell tab="diagnoses" onCompose={() => navigate("/", { state: { compose: true } })}>
+    <Shell tab="diagnoses">
       <div className="pt-4">
         <h1 className="text-[28px] font-bold">{t("診断を探す")}</h1>
         <p className="mt-2 text-sm text-muted-foreground">{t("診断一覧の説明")}</p>

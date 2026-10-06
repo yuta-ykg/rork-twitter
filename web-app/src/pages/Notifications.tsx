@@ -2,34 +2,22 @@ import { useNotifications, type AppNotification } from "@/hooks/useNotifications
 import { t, useLanguage } from "@/lib/language";
 import { isDevelopmentSession, isGuestSession } from "@/lib/development";
 import { toast } from "sonner";
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/authContext";
-import { displayName, userHandle } from "@/hooks/authUser";
-import { insertPost, timeLabel } from "@/lib/posts";
-import { Shell, ComposeSheet, SignInPanel } from "@/pages/IndexShared";
-import { useOwnProfile } from "@/hooks/useOwnProfile";
-import type { PollDraft } from "@/lib/polls";
-import type { DiagnosisDraft } from "@/lib/diagnoses";
+import { timeLabel } from "@/lib/posts";
+import { Shell, SignInPanel } from "@/pages/IndexShared";
 
 export default function NotificationsPage() {
   useLanguage();
   const { user } = useAuth();
   const notifications = useNotifications();
-  const own = useOwnProfile();
   const navigate = useNavigate();
-  const [open, setOpen] = useState(false);
-  async function add(body: string, poll: PollDraft | null, diagnosis: DiagnosisDraft | null) {
-    if (!user) return;
-    try { const post = await insertPost(body, user, poll, diagnosis); navigate(`/post/${post.id}`); }
-    catch { toast.error(t("投稿できませんでした。もう一度試してください。")); }
-  }
   async function openNotification(item: AppNotification) {
     try { await notifications.markRead(item); navigate(`/post/${item.post_id}`); }
     catch { toast.error(t("通知を既読にできませんでした。")); }
   }
   return <>
-    <Shell tab="notifications" onCompose={() => setOpen(true)}>
+    <Shell tab="notifications">
       <div className="flex items-center justify-between gap-3 pt-4">
         <h1 className="text-[28px] font-bold">{t("通知")}</h1>
         {notifications.unreadCount > 0 && <button type="button" disabled={notifications.marking}
@@ -57,7 +45,5 @@ export default function NotificationsPage() {
             className="min-h-11 w-full text-[hsl(var(--brand))]">{t("もっと見る")}</button>}
         </> : <p className="py-10 text-center text-muted-foreground">{t("まだ通知がありません。")}</p>}
     </Shell>
-    {open && user ? <ComposeSheet onClose={() => setOpen(false)} onPost={add}
-      authorName={own?.name ?? displayName(user)} handle={own?.handle ?? userHandle(user)} initial={own?.initial ?? displayName(user).slice(0, 1)} /> : null}
   </>;
 }
