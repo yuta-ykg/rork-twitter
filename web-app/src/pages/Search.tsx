@@ -33,6 +33,7 @@ const miniGames = [
   { id: "othello", title: "オセロ", description: "CPUまたは同じ端末で2人対戦できます。", keywords: ["オセロ", "リバーシ", "othello", "reversi"] },
   { id: "go", title: "囲碁", description: "石を取り、パスして終局する9路盤の囲碁です。", keywords: ["囲碁", "igo", "go", "baduk", "weiqi"] },
   { id: "blocks", title: "ブロックパズル", description: "3つのピースを置き、行と列を消してスコアを伸ばすゲームです。", keywords: ["ブロックパズル", "ブロックブラスト", "block blast", "block puzzle"] },
+  { id: "puyo", title: "カラーペアパズル", description: "同じ色を4つ以上つなげて消す落ちものパズルです。", keywords: ["ぷよぷよ", "ぷよパズル", "puyo", "カラーペアパズル", "落ちもの"] },
   ...goalTargets.map((target) => ({
     id: target,
     title: String(target),

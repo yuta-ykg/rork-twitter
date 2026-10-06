@@ -10,11 +10,12 @@ import { ShogiGame } from "@/components/ShogiGame";
 import { OthelloGame } from "@/components/OthelloGame";
 import { GoGame } from "@/components/GoGame";
 import { BlockBlastGame } from "@/components/BlockBlastGame";
+import { PuyoPuzzleGame } from "@/components/PuyoPuzzleGame";
 import { isDevelopmentSession } from "@/lib/development";
 
 const goalTargets = [1024, 2048, 4096, 8192, 16384] as const;
 type GoalTarget = typeof goalTargets[number];
-type MiniGame = "memory" | "shogi" | "othello" | "go" | "blocks" | GoalTarget;
+type MiniGame = "memory" | "shogi" | "othello" | "go" | "blocks" | "puyo" | GoalTarget;
 type MemoryCard = { id: number; symbol: string };
 type Direction = "left" | "right" | "up" | "down";
 
@@ -98,6 +99,7 @@ export default function GamesPage() {
     if (requestedGame === "othello") return "othello";
     if (requestedGame === "go") return "go";
     if (requestedGame === "blocks") return "blocks";
+    if (requestedGame === "puyo") return "puyo";
     const requestedTarget = Number(requestedGame);
     return goalTargets.includes(requestedTarget as GoalTarget) ? requestedTarget as GoalTarget : "memory";
   });
@@ -147,6 +149,10 @@ export default function GamesPage() {
             className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border text-sm font-semibold ${selected === "blocks" ? "border-[hsl(var(--brand))] bg-[hsl(var(--brand))]/10 text-[hsl(var(--brand))]" : "border-input text-muted-foreground"}`}>
             <Gamepad2 className="h-4 w-4" aria-hidden />{t("ブロックパズル")}
           </button>
+          <button type="button" aria-pressed={selected === "puyo"} onClick={() => setSelected("puyo")}
+            className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border text-sm font-semibold ${selected === "puyo" ? "border-[hsl(var(--brand))] bg-[hsl(var(--brand))]/10 text-[hsl(var(--brand))]" : "border-input text-muted-foreground"}`}>
+            <Gamepad2 className="h-4 w-4" aria-hidden />{t("カラーペアパズル")}
+          </button>
           <button type="button" aria-pressed={selected === "shogi"} onClick={() => setSelected("shogi")}
             className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border text-sm font-semibold ${selected === "shogi" ? "border-[hsl(var(--brand))] bg-[hsl(var(--brand))]/10 text-[hsl(var(--brand))]" : "border-input text-muted-foreground"}`}>
             <Crown className="h-4 w-4" aria-hidden />{t("将棋")}
@@ -154,7 +160,7 @@ export default function GamesPage() {
         </div>
       </div>
       <section className="mt-5 rounded-2xl border border-border bg-card p-4 sm:p-5" aria-live="polite">
-        {selected === "memory" ? <MemoryGame onShare={(body) => void shareResult(body)} /> : selected === "othello" ? <OthelloGame /> : selected === "go" ? <GoGame /> : selected === "blocks" ? <BlockBlastGame /> : selected === "shogi" ? (
+        {selected === "memory" ? <MemoryGame onShare={(body) => void shareResult(body)} /> : selected === "othello" ? <OthelloGame /> : selected === "go" ? <GoGame /> : selected === "blocks" ? <BlockBlastGame /> : selected === "puyo" ? <PuyoPuzzleGame /> : selected === "shogi" ? (
           <ShogiGame author={user} initialRoomKey={searchParams.get("room")} onShare={(body) => void shareResult(body)} onRequestSignIn={requestShogiSignIn} />
         ) : (
           <Game2048 key={selected} target={selected} onShare={(body) => void shareResult(body)} />
