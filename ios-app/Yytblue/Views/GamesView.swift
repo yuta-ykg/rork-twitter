@@ -1,12 +1,17 @@
 import SwiftUI
 
-private enum ArcadeGame: String, CaseIterable, Identifiable {
-    case memory, game2048, shogi
+private enum ArcadeGame: String, CaseIterable, Identifiable, Hashable {
+    case memory, game2048, othello, go, blocks, puyo, snake, shogi
     var id: String { rawValue }
     var title: String {
         switch self {
         case .memory: L("神経衰弱")
         case .game2048: "2048"
+        case .othello: L("オセロ")
+        case .go: L("囲碁")
+        case .blocks: L("ブロックパズル")
+        case .puyo: L("カラーペアパズル")
+        case .snake: L("スネーク")
         case .shogi: L("将棋")
         }
     }
@@ -17,7 +22,6 @@ struct GamesView: View {
     @Environment(AuthManager.self) private var auth
     let store: PostStore
     @Binding var showsSignIn: Bool
-    @State private var selected: ArcadeGame = .memory
     @State private var shareMessage: String?
     @State private var isSharing = false
 
@@ -27,25 +31,33 @@ struct GamesView: View {
                 Text(L("ゲームのスコアや対局結果を投稿で共有できます。"))
                     .font(.system(size: 14))
                     .foregroundStyle(Color.irukaSecondary)
-                Picker(L("ゲームを選択"), selection: $selected) {
-                    ForEach(ArcadeGame.allCases) { game in Text(game.title).tag(game) }
-                }
-                .pickerStyle(.segmented)
-                Group {
-                    switch selected {
-                    case .memory: MemoryGameView(onShare: shareResult)
-                    case .game2048: Game2048View(onShare: shareResult)
-                    case .shogi:
-                        ShogiGameView(
-                            user: DevelopmentData.isActive ? nil : auth.user,
-                            onShare: shareResult,
-                            onRequestSignIn: { showsSignIn = true }
-                        )
+                LazyVStack(spacing: 10) {
+                    ForEach(ArcadeGame.allCases) { game in
+                        NavigationLink {
+                            gameDestination(game)
+                                .navigationTitle(game.title)
+                                .navigationBarTitleDisplayMode(.inline)
+                        } label: {
+                            HStack(spacing: 14) {
+                                Image(systemName: game == .shogi ? "crown.fill" : game == .memory ? "brain.head.profile" : "gamecontroller.fill")
+                                    .font(.system(size: 20, weight: .semibold))
+                                    .foregroundStyle(Color.irukaBlue)
+                                    .frame(width: 32)
+                                Text(game.title)
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundStyle(Color.irukaInk)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 13, weight: .bold))
+                                    .foregroundStyle(Color.irukaSecondary)
+                            }
+                            .padding(15)
+                            .background(Color.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Color.irukaHairline, lineWidth: 1))
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
-                .padding(15)
-                .background(Color.white, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(Color.irukaHairline, lineWidth: 1))
             }
             .padding(16)
         }
@@ -55,6 +67,31 @@ struct GamesView: View {
         .alert(L("ゲーム"), isPresented: Binding(get: { shareMessage != nil }, set: { if !$0 { shareMessage = nil } })) {
             Button("OK") { shareMessage = nil }
         } message: { Text(L(shareMessage ?? "")) }
+    }
+
+    @ViewBuilder
+    private func gameDestination(_ game: ArcadeGame) -> some View {
+        ScrollView {
+            Group {
+                switch game {
+                case .memory: MemoryGameView(onShare: shareResult)
+                case .game2048: Game2048View(onShare: shareResult)
+                case .othello: OthelloView()
+                case .go: GoGameView()
+                case .blocks: BlockPuzzleGameView()
+                case .puyo: PuyoPuzzleGameView()
+                case .snake: SnakeGameView()
+                case .shogi:
+                    ShogiGameView(
+                        user: DevelopmentData.isActive ? nil : auth.user,
+                        onShare: shareResult,
+                        onRequestSignIn: { showsSignIn = true }
+                    )
+                }
+            }
+            .padding(16)
+        }
+        .background(Color.irukaField.opacity(0.45))
     }
 
     private func shareResult(_ body: String) {

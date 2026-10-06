@@ -1,7 +1,8 @@
 import { NotificationBell } from "@/components/NotificationBell";
-import { Bookmark, List, Fish, Gamepad2, House, Search, Settings, SquarePen, UserRound, UsersRound, Sparkles, Trophy } from "lucide-react";
+import { Bookmark, List, Fish, Gamepad2, House, MoreHorizontal, Search, Settings, SquarePen, UserRound, UsersRound, Sparkles, Trophy } from "lucide-react";
 import { Link } from "react-router-dom";
 import { t, useLanguage } from "@/lib/language";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export function DesktopSidebar({ tab, onCompose }: { tab: "home" | "mine" | "bookmarks" | "settings" | "notifications" | "search" | "lists" | "communities" | "diagnoses" | "games" | "rankings"; onCompose: () => void }) {
   useLanguage();
@@ -24,27 +25,25 @@ export function DesktopSidebar({ tab, onCompose }: { tab: "home" | "mine" | "boo
           <Link to="/rankings" aria-current={tab === "rankings" ? "page" : undefined} className={`flex min-h-12 items-center gap-3 rounded-xl px-3 ${tab === "rankings" ? "bg-muted text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
             <Trophy className="h-5 w-5" aria-hidden />{t("ランキング")}
           </Link>
-          <button type="button" onClick={onCompose} aria-label={t("投稿を作成")} className="flex min-h-12 items-center gap-3 rounded-xl px-3 text-[hsl(var(--brand))]">
-            <SquarePen className="h-5 w-5" aria-hidden />{t("投稿")}
-          </button>
-          <Link to="/bookmarks" aria-current={tab === "bookmarks" ? "page" : undefined} className={`flex min-h-12 items-center gap-3 rounded-xl px-3 ${tab === "bookmarks" ? "bg-muted text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
-            <Bookmark className="h-5 w-5" aria-hidden />{t("ブックマーク")}
-          </Link>
-          <Link to="/communities" aria-current={tab === "communities" ? "page" : undefined} className={`flex min-h-12 items-center gap-3 rounded-xl px-3 ${tab === "communities" ? "bg-muted text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
-            <UsersRound className="h-5 w-5" aria-hidden />{t("コミュニティ")}
-          </Link>
-          <Link to="/lists" aria-current={tab === "lists" ? "page" : undefined} className={`flex min-h-12 items-center gap-3 rounded-xl px-3 ${tab === "lists" ? "bg-muted text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
-            <List className="h-5 w-5" aria-hidden />{t("リスト")}
-          </Link>
-          <Link to="/mine" aria-current={tab === "mine" ? "page" : undefined} className={`flex min-h-12 items-center gap-3 rounded-xl px-3 ${tab === "mine" ? "bg-muted text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
-            <UserRound className="h-5 w-5" aria-hidden />{t("自分")}
-          </Link>
-          <Link to="/notifications" aria-current={tab === "notifications" ? "page" : undefined} className={`flex min-h-12 items-center gap-3 rounded-xl px-3 ${tab === "notifications" ? "bg-muted text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
-            <NotificationBell />{t("通知")}
-          </Link>
-          <Link to="/settings" aria-current={tab === "settings" ? "page" : undefined} className={`flex min-h-12 items-center gap-3 rounded-xl px-3 ${tab === "settings" ? "bg-muted text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
-            <Settings className="h-5 w-5" aria-hidden />{t("設定")}
-          </Link>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button type="button" aria-label={t("もっと見る")} aria-current={tab === "bookmarks" || tab === "communities" || tab === "lists" || tab === "mine" || tab === "notifications" || tab === "settings" ? "page" : undefined}
+                className={`flex min-h-12 items-center gap-3 rounded-xl px-3 ${tab === "bookmarks" || tab === "communities" || tab === "lists" || tab === "mine" || tab === "notifications" || tab === "settings" ? "bg-muted text-[hsl(var(--brand))]" : "text-muted-foreground"}`}>
+                <MoreHorizontal className="h-5 w-5" aria-hidden />{t("もっと見る")}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent side="right" align="start" className="w-56">
+              <DropdownMenuItem onSelect={onCompose} className="min-h-11 gap-3">
+                <SquarePen className="h-5 w-5" aria-hidden />{t("投稿")}
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild><Link to="/bookmarks" className="min-h-11 gap-3"><Bookmark className="h-5 w-5" aria-hidden />{t("ブックマーク")}</Link></DropdownMenuItem>
+              <DropdownMenuItem asChild><Link to="/communities" className="min-h-11 gap-3"><UsersRound className="h-5 w-5" aria-hidden />{t("コミュニティ")}</Link></DropdownMenuItem>
+              <DropdownMenuItem asChild><Link to="/lists" className="min-h-11 gap-3"><List className="h-5 w-5" aria-hidden />{t("リスト")}</Link></DropdownMenuItem>
+              <DropdownMenuItem asChild><Link to="/mine" className="min-h-11 gap-3"><UserRound className="h-5 w-5" aria-hidden />{t("自分")}</Link></DropdownMenuItem>
+              <DropdownMenuItem asChild><Link to="/notifications" className="min-h-11 gap-3"><NotificationBell />{t("通知")}</Link></DropdownMenuItem>
+              <DropdownMenuItem asChild><Link to="/settings" className="min-h-11 gap-3"><Settings className="h-5 w-5" aria-hidden />{t("設定")}</Link></DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </nav>
       </aside>
   );

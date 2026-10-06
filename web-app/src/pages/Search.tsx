@@ -27,6 +27,11 @@ const miniGames = [
     description: "同じ端末で交互に指す将棋です。駒の移動・成り・持ち駒・王手と詰みを判定します。",
     keywords: ["将棋", "shogi", "日本将棋", "쇼기", "日本将棋", "将棋游戏"],
   },
+  { id: "othello", title: "オセロ", description: "CPUまたは同じ端末で2人対戦できます。", keywords: ["オセロ", "リバーシ", "othello", "reversi"] },
+  { id: "go", title: "囲碁", description: "石を取り、パスして終局する9路盤の囲碁です。", keywords: ["囲碁", "igo", "go", "baduk", "weiqi"] },
+  { id: "blocks", title: "ブロックパズル", description: "3つのピースを置き、行と列を消してスコアを伸ばすゲームです。", keywords: ["ブロックパズル", "ブロックブラスト", "block blast", "block puzzle"] },
+  { id: "puyo", title: "カラーペアパズル", description: "同じ色を4つ以上つなげて消す落ちものパズルです。", keywords: ["ぷよぷよ", "ぷよパズル", "puyo", "カラーペアパズル", "落ちもの"] },
+  { id: "snake", title: "スネーク", description: "エサを集めて長くなり、壁や自分の体を避けるゲームです。", keywords: ["スネーク", "snake", "へび", "蛇ゲーム"] },
   ...goalTargets.map((target) => ({
     id: target,
     title: String(target),
@@ -62,7 +67,7 @@ export default function SearchPage() {
   const keyword = query.trim().toLowerCase();
   const gameResults = useMemo(() => {
     if (keyword.length < 2) return [];
-    const matchesTerm = (terms: readonly string[]) => terms.some((term) => term.includes(keyword) || keyword.includes(term));
+    const matchesTerm = (terms: readonly string[]) => terms.some((term) => term === "go" ? keyword === "go" : term.includes(keyword) || keyword.includes(term));
     if (matchesTerm(gameSearchTerms)) return miniGames;
     return miniGames.filter((game) => matchesTerm(game.keywords));
   }, [keyword]);
