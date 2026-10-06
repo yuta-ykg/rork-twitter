@@ -212,7 +212,6 @@ struct MineView: View {
     @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
     @Environment(AuthManager.self) private var auth
     @Bindable var store: PostStore
-    @Binding var showsComposer: Bool
     @Binding var showsSignIn: Bool
 
     var body: some View {
