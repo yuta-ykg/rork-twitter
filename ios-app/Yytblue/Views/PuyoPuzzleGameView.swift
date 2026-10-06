@@ -47,7 +47,7 @@ private struct FallingPuzzleState {
     private func fits(_ pair: FallingPair) -> Bool {
         pair.cells.allSatisfy { cell in
             let (row, col, _) = cell
-            (0..<12).contains(row) && (0..<6).contains(col) && board[row * 6 + col] == nil
+            return (0..<12).contains(row) && (0..<6).contains(col) && board[row * 6 + col] == nil
         }
     }
 
