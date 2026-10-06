@@ -11,11 +11,12 @@ import { OthelloGame } from "@/components/OthelloGame";
 import { GoGame } from "@/components/GoGame";
 import { BlockBlastGame } from "@/components/BlockBlastGame";
 import { PuyoPuzzleGame } from "@/components/PuyoPuzzleGame";
+import { SnakeGame } from "@/components/SnakeGame";
 import { isDevelopmentSession } from "@/lib/development";
 
 const goalTargets = [1024, 2048, 4096, 8192, 16384] as const;
 type GoalTarget = typeof goalTargets[number];
-type MiniGame = "memory" | "shogi" | "othello" | "go" | "blocks" | "puyo" | GoalTarget;
+type MiniGame = "memory" | "shogi" | "othello" | "go" | "blocks" | "puyo" | "snake" | GoalTarget;
 type MemoryCard = { id: number; symbol: string };
 type Direction = "left" | "right" | "up" | "down";
 
@@ -95,7 +96,7 @@ export default function GamesPage() {
   const [searchParams] = useSearchParams();
   const requestedGame = searchParams.get("game");
   const selected: MiniGame | null = requestedGame === "memory" || requestedGame === "shogi" || requestedGame === "othello"
-    || requestedGame === "go" || requestedGame === "blocks" || requestedGame === "puyo"
+    || requestedGame === "go" || requestedGame === "blocks" || requestedGame === "puyo" || requestedGame === "snake"
     ? requestedGame
     : goalTargets.includes(Number(requestedGame) as GoalTarget) ? Number(requestedGame) as GoalTarget : null;
 
@@ -152,6 +153,10 @@ export default function GamesPage() {
             className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-input text-sm font-semibold text-foreground transition hover:border-[hsl(var(--brand))] hover:bg-[hsl(var(--brand))]/5">
             <Gamepad2 className="h-4 w-4" aria-hidden />{t("カラーペアパズル")}
           </button>
+          <button type="button" onClick={() => openGame("snake")}
+            className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-input text-sm font-semibold text-foreground transition hover:border-[hsl(var(--brand))] hover:bg-[hsl(var(--brand))]/5">
+            <Gamepad2 className="h-4 w-4" aria-hidden />{t("スネーク")}
+          </button>
           <button type="button" onClick={() => openGame("shogi")}
             className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-input text-sm font-semibold text-foreground transition hover:border-[hsl(var(--brand))] hover:bg-[hsl(var(--brand))]/5">
             <Crown className="h-4 w-4" aria-hidden />{t("将棋")}
@@ -163,7 +168,7 @@ export default function GamesPage() {
         )}
       </div>
       {selected !== null ? <section className="mt-5 rounded-2xl border border-border bg-card p-4 sm:p-5" aria-live="polite">
-        {selected === "memory" ? <MemoryGame onShare={(body) => void shareResult(body)} /> : selected === "othello" ? <OthelloGame /> : selected === "go" ? <GoGame /> : selected === "blocks" ? <BlockBlastGame /> : selected === "puyo" ? <PuyoPuzzleGame /> : selected === "shogi" ? (
+        {selected === "memory" ? <MemoryGame onShare={(body) => void shareResult(body)} /> : selected === "othello" ? <OthelloGame /> : selected === "go" ? <GoGame /> : selected === "blocks" ? <BlockBlastGame /> : selected === "puyo" ? <PuyoPuzzleGame /> : selected === "snake" ? <SnakeGame /> : selected === "shogi" ? (
           <ShogiGame author={user} initialRoomKey={searchParams.get("room")} onShare={(body) => void shareResult(body)} onRequestSignIn={requestShogiSignIn} />
         ) : (
           <Game2048 key={selected} target={selected} onShare={(body) => void shareResult(body)} />

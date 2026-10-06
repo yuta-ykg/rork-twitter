@@ -3,6 +3,10 @@ import { useLayoutEffect, useSyncExternalStore } from "react";
 export type Language = "ja" | "en" | "ko" | "zh-CN" | "zh-TW";
 const key = "iruka-language";
 const english: Record<string, string> = {
+  "スネーク": "Snake",
+  "エサを集めて長くなり、壁や自分の体を避けましょう。": "Collect food to grow longer while avoiding walls and your own body.",
+  "エサを集めて長くなり、壁や自分の体を避けるゲームです。": "Collect food to grow longer while avoiding walls and your own body.",
+
   "カラーペアパズル": "Color pair puzzle",
   "同じ色を4つ以上つなげて消す落ちものパズルです。": "A falling puzzle where four or more connected colors disappear.",
   "同じ色を4つ以上つなげると消えます。連鎖を狙いましょう。": "Connect four or more of the same color to clear them. Aim for chains.",
@@ -552,6 +556,10 @@ const english: Record<string, string> = {
   "Yesterday": "昨日"
 };
 const korean: Record<string, string> = {
+  "スネーク": "스네이크",
+  "エサを集めて長くなり、壁や自分の体を避けましょう。": "먹이를 모아 길어지면서 벽과 자신의 몸을 피하세요.",
+  "エサを集めて長くなり、壁や自分の体を避けるゲームです。": "먹이를 모아 길어지면서 벽과 자신의 몸을 피하는 게임입니다.",
+
   "カラーペアパズル": "컬러 페어 퍼즐",
   "同じ色を4つ以上つなげて消す落ちものパズルです。": "같은 색 네 개 이상을 연결해 지우는 낙하 퍼즐입니다.",
   "同じ色を4つ以上つなげると消えます。連鎖を狙いましょう。": "같은 색 네 개 이상을 연결하면 사라집니다. 연쇄를 노려 보세요.",
@@ -828,6 +836,10 @@ const koreanExtraMessages: Record<string, string> = {
   "設定からいつでもこのガイドを開けます。": "설정에서 언제든 이 안내를 열 수 있습니다.",
 };
 const simplifiedChinese: Record<string, string> = {
+  "スネーク": "贪吃蛇",
+  "エサを集めて長くなり、壁や自分の体を避けましょう。": "收集食物让身体变长，同时避开墙壁和自己的身体。",
+  "エサを集めて長くなり、壁や自分の体を避けるゲームです。": "收集食物让身体变长，同时避开墙壁和自己的身体。",
+
   "カラーペアパズル": "彩色双球拼图",
   "同じ色を4つ以上つなげて消す落ちものパズルです。": "连接四个以上同色球即可消除的下落拼图。",
   "同じ色を4つ以上つなげると消えます。連鎖を狙いましょう。": "连接四个以上同色球即可消除，试着形成连锁。",

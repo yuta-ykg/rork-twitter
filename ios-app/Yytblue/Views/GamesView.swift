@@ -1,7 +1,7 @@
 import SwiftUI
 
 private enum ArcadeGame: String, CaseIterable, Identifiable, Hashable {
-    case memory, game2048, othello, go, blocks, puyo, shogi
+    case memory, game2048, othello, go, blocks, puyo, snake, shogi
     var id: String { rawValue }
     var title: String {
         switch self {
@@ -11,6 +11,7 @@ private enum ArcadeGame: String, CaseIterable, Identifiable, Hashable {
         case .go: L("囲碁")
         case .blocks: L("ブロックパズル")
         case .puyo: L("カラーペアパズル")
+        case .snake: L("スネーク")
         case .shogi: L("将棋")
         }
     }
@@ -79,6 +80,7 @@ struct GamesView: View {
                 case .go: GoGameView()
                 case .blocks: BlockPuzzleGameView()
                 case .puyo: PuyoPuzzleGameView()
+                case .snake: SnakeGameView()
                 case .shogi:
                     ShogiGameView(
                         user: DevelopmentData.isActive ? nil : auth.user,
