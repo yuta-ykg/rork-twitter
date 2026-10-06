@@ -93,16 +93,15 @@ export default function GamesPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const [selected, setSelected] = useState<MiniGame>(() => {
-    const requestedGame = searchParams.get("game");
-    if (requestedGame === "shogi") return "shogi";
-    if (requestedGame === "othello") return "othello";
-    if (requestedGame === "go") return "go";
-    if (requestedGame === "blocks") return "blocks";
-    if (requestedGame === "puyo") return "puyo";
-    const requestedTarget = Number(requestedGame);
-    return goalTargets.includes(requestedTarget as GoalTarget) ? requestedTarget as GoalTarget : "memory";
-  });
+  const requestedGame = searchParams.get("game");
+  const selected: MiniGame | null = requestedGame === "memory" || requestedGame === "shogi" || requestedGame === "othello"
+    || requestedGame === "go" || requestedGame === "blocks" || requestedGame === "puyo"
+    ? requestedGame
+    : goalTargets.includes(Number(requestedGame) as GoalTarget) ? Number(requestedGame) as GoalTarget : null;
+
+  function openGame(game: MiniGame) {
+    navigate(`/games?game=${game}`);
+  }
 
   async function shareResult(body: string) {
     if (!user) {
@@ -128,44 +127,48 @@ export default function GamesPage() {
       <div className="pt-4">
         <h1 className="flex items-center gap-2 text-[28px] font-bold"><Gamepad2 className="h-7 w-7 text-[hsl(var(--brand))]" />{t("ゲームセンター")}</h1>
         <p className="mt-2 text-sm text-muted-foreground">{t("ゲームのスコアや対局結果を投稿で共有できます。")}</p>
-        <div className="mt-4 grid grid-cols-3 gap-2" role="group" aria-label={t("ゲームを選択")}>
-          <button type="button" aria-pressed={selected === "memory"} onClick={() => setSelected("memory")}
-            className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border text-sm font-semibold ${selected === "memory" ? "border-[hsl(var(--brand))] bg-[hsl(var(--brand))]/10 text-[hsl(var(--brand))]" : "border-input text-muted-foreground"}`}>
+        {selected === null ? <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2" role="list" aria-label={t("ゲームを選択")}>
+          <button type="button" onClick={() => openGame("memory")}
+            className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-input text-sm font-semibold text-foreground transition hover:border-[hsl(var(--brand))] hover:bg-[hsl(var(--brand))]/5">
             <Brain className="h-4 w-4" />{t("神経衰弱")}
           </button>
-          {goalTargets.map((target) => <button key={target} type="button" aria-pressed={selected === target} onClick={() => setSelected(target)}
-            className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border text-sm font-semibold ${selected === target ? "border-[hsl(var(--brand))] bg-[hsl(var(--brand))]/10 text-[hsl(var(--brand))]" : "border-input text-muted-foreground"}`}>
+          {goalTargets.map((target) => <button key={target} type="button" onClick={() => openGame(target)}
+            className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-input text-sm font-semibold text-foreground transition hover:border-[hsl(var(--brand))] hover:bg-[hsl(var(--brand))]/5">
             <span className="font-bold">{target}</span>
           </button>)}
-          <button type="button" aria-pressed={selected === "othello"} onClick={() => setSelected("othello")}
-            className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border text-sm font-semibold ${selected === "othello" ? "border-[hsl(var(--brand))] bg-[hsl(var(--brand))]/10 text-[hsl(var(--brand))]" : "border-input text-muted-foreground"}`}>
+          <button type="button" onClick={() => openGame("othello")}
+            className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-input text-sm font-semibold text-foreground transition hover:border-[hsl(var(--brand))] hover:bg-[hsl(var(--brand))]/5">
             <Gamepad2 className="h-4 w-4" aria-hidden />{t("オセロ")}
           </button>
-          <button type="button" aria-pressed={selected === "go"} onClick={() => setSelected("go")}
-            className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border text-sm font-semibold ${selected === "go" ? "border-[hsl(var(--brand))] bg-[hsl(var(--brand))]/10 text-[hsl(var(--brand))]" : "border-input text-muted-foreground"}`}>
+          <button type="button" onClick={() => openGame("go")}
+            className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-input text-sm font-semibold text-foreground transition hover:border-[hsl(var(--brand))] hover:bg-[hsl(var(--brand))]/5">
             <Gamepad2 className="h-4 w-4" aria-hidden />{t("囲碁")}
           </button>
-          <button type="button" aria-pressed={selected === "blocks"} onClick={() => setSelected("blocks")}
-            className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border text-sm font-semibold ${selected === "blocks" ? "border-[hsl(var(--brand))] bg-[hsl(var(--brand))]/10 text-[hsl(var(--brand))]" : "border-input text-muted-foreground"}`}>
+          <button type="button" onClick={() => openGame("blocks")}
+            className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-input text-sm font-semibold text-foreground transition hover:border-[hsl(var(--brand))] hover:bg-[hsl(var(--brand))]/5">
             <Gamepad2 className="h-4 w-4" aria-hidden />{t("ブロックパズル")}
           </button>
-          <button type="button" aria-pressed={selected === "puyo"} onClick={() => setSelected("puyo")}
-            className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border text-sm font-semibold ${selected === "puyo" ? "border-[hsl(var(--brand))] bg-[hsl(var(--brand))]/10 text-[hsl(var(--brand))]" : "border-input text-muted-foreground"}`}>
+          <button type="button" onClick={() => openGame("puyo")}
+            className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-input text-sm font-semibold text-foreground transition hover:border-[hsl(var(--brand))] hover:bg-[hsl(var(--brand))]/5">
             <Gamepad2 className="h-4 w-4" aria-hidden />{t("カラーペアパズル")}
           </button>
-          <button type="button" aria-pressed={selected === "shogi"} onClick={() => setSelected("shogi")}
-            className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border text-sm font-semibold ${selected === "shogi" ? "border-[hsl(var(--brand))] bg-[hsl(var(--brand))]/10 text-[hsl(var(--brand))]" : "border-input text-muted-foreground"}`}>
+          <button type="button" onClick={() => openGame("shogi")}
+            className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-input text-sm font-semibold text-foreground transition hover:border-[hsl(var(--brand))] hover:bg-[hsl(var(--brand))]/5">
             <Crown className="h-4 w-4" aria-hidden />{t("将棋")}
           </button>
-        </div>
+        </div> : (
+          <button type="button" onClick={() => navigate("/games")} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-full border border-input px-4 text-sm font-semibold">
+            <ArrowLeft className="h-4 w-4" aria-hidden />{t("戻る")}
+          </button>
+        )}
       </div>
-      <section className="mt-5 rounded-2xl border border-border bg-card p-4 sm:p-5" aria-live="polite">
+      {selected !== null ? <section className="mt-5 rounded-2xl border border-border bg-card p-4 sm:p-5" aria-live="polite">
         {selected === "memory" ? <MemoryGame onShare={(body) => void shareResult(body)} /> : selected === "othello" ? <OthelloGame /> : selected === "go" ? <GoGame /> : selected === "blocks" ? <BlockBlastGame /> : selected === "puyo" ? <PuyoPuzzleGame /> : selected === "shogi" ? (
           <ShogiGame author={user} initialRoomKey={searchParams.get("room")} onShare={(body) => void shareResult(body)} onRequestSignIn={requestShogiSignIn} />
         ) : (
           <Game2048 key={selected} target={selected} onShare={(body) => void shareResult(body)} />
         )}
-      </section>
+      </section> : null}
     </Shell>
   );
 }
