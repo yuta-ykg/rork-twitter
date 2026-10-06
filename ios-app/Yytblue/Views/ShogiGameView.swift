@@ -2,6 +2,8 @@ import SwiftUI
 import CoreImage
 import CoreImage.CIFilterBuiltins
 import UIKit
+import PostgREST
+import Supabase
 
 private enum ShogiSide: String, CaseIterable, Hashable, Codable, Sendable {
     case sente, gote
@@ -31,7 +33,7 @@ private enum ShogiKind: String, CaseIterable, Hashable, Codable, Sendable {
 
     func glyph(promoted: Bool) -> String {
         guard promoted else { return glyph }
-        switch self {
+        return switch self {
         case .pawn: "と"
         case .lance: "杏"
         case .knight: "圭"
@@ -484,7 +486,7 @@ struct ShogiGameView: View {
             handView(.gote)
             HStack {
                 Text(statusText).font(.system(size: 14, weight: .semibold)).foregroundStyle(winner == nil ? Color.irukaInk : Color.irukaBlue)
-                    .accessibilityLiveRegion(.assertive)
+                    .accessibilityAddTraits(.updatesFrequently)
                 Spacer()
                 if isCpuGame {
                     Button(action: restart) { Image(systemName: "arrow.clockwise").frame(width: 42, height: 42) }
@@ -643,7 +645,7 @@ struct ShogiGameView: View {
             }
             if !roomError.isEmpty {
                 Text(roomError).font(.system(size: 12)).foregroundStyle(Color.irukaBlue)
-                    .accessibilityLiveRegion(.polite)
+                    .accessibilityAddTraits(.updatesFrequently)
             }
         }
         .padding(10)

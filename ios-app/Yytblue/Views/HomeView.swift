@@ -194,7 +194,7 @@ struct HomeView: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .simultaneousGesture(TapGesture().onEnded(perform: closeSidebar))
+        .simultaneousGesture(TapGesture().onEnded { closeSidebar() })
     }
 
     private func closeSidebar() {
