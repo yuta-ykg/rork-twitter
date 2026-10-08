@@ -42,13 +42,6 @@ export type Database = {
             referencedRelation: "posts"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "posts_reply_to_fkey"
-            columns: ["reply_to"]
-            isOneToOne: false
-            referencedRelation: "posts"
-            referencedColumns: ["id"]
-          },
         ]
       }
       post_reposts: {
@@ -128,6 +121,13 @@ export type Database = {
             referencedRelation: "posts"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "posts_reply_to_fkey"
+            columns: ["reply_to"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
         ]
       }
       profiles: {
@@ -163,46 +163,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_relationships: {
+        Row: {
+          created_at: string
+          kind: string
+          target_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          kind: string
+          target_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          kind?: string
+          target_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      can_view_account: {
+        Args: { author_id: string; viewer_id: string }
+        Returns: boolean
+      }
       create_post: {
         Args: {
           expected_user_id: string
           post_body: string
           post_id: string
           post_image_url?: string
-        }
-        Returns: {
-          author_name: string
-          avatar_index: number
-          body: string
-          created_at: string
-          handle: string
-          id: string
-          image_url: string | null
-          initial: string
-          is_mine: boolean
-          quote_of: string | null
-          reply_to: string | null
-          user_id: string | null
-        }[]
-        SetofOptions: {
-          from: "*"
-          to: "posts"
-          isOneToOne: false
-          isSetofReturn: true
-        }
-      }
-      create_reply_post: {
-        Args: {
-          expected_user_id: string
-          post_body: string
-          post_id: string
-          post_image_url?: string
-          reply_to_id: string
         }
         Returns: {
           author_name: string
@@ -232,6 +228,35 @@ export type Database = {
           post_id: string
           post_image_url?: string
           quote_of_id: string
+        }
+        Returns: {
+          author_name: string
+          avatar_index: number
+          body: string
+          created_at: string
+          handle: string
+          id: string
+          image_url: string | null
+          initial: string
+          is_mine: boolean
+          quote_of: string | null
+          reply_to: string | null
+          user_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "posts"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      create_reply_post: {
+        Args: {
+          expected_user_id: string
+          post_body: string
+          post_id: string
+          post_image_url?: string
+          reply_to_id: string
         }
         Returns: {
           author_name: string
@@ -314,6 +339,15 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      list_user_relationships: {
+        Args: { expected_user_id: string }
+        Returns: {
+          kind: string
+          target_handle: string
+          target_id: string
+          target_name: string
+        }[]
+      }
       save_profile: {
         Args: {
           expected_user_id: string
@@ -366,15 +400,6 @@ export type Database = {
         Returns: {
           is_blocked: boolean
           is_muted: boolean
-        }[]
-      }
-      list_user_relationships: {
-        Args: { expected_user_id: string }
-        Returns: {
-          kind: string
-          target_handle: string | null
-          target_id: string
-          target_name: string
         }[]
       }
       user_id: { Args: never; Returns: string }
