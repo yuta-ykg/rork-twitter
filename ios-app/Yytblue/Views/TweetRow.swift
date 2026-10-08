@@ -1,10 +1,13 @@
 import SwiftUI
 
-/// Twitter風の投稿行。いいねだけ操作でき、返信・リポスト・共有は見た目だけ。
+/// Twitter風の投稿行。いいね・リポスト・引用が操作でき、返信・共有は見た目だけ。
 struct TweetRow: View {
     @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
     let post: Post
+    var quoted: Post? = nil
     var onLike: () -> Void = {}
+    var onRepost: () -> Void = {}
+    var onQuote: () -> Void = {}
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
@@ -51,6 +54,7 @@ struct TweetRow: View {
                         .padding(.top, 8)
                         .accessibilityLabel(L("投稿の画像"))
                 }
+                if post.quoteOf != nil { quoteCard }
                 actionRow
                     .padding(.top, 8)
             }
@@ -82,10 +86,69 @@ struct TweetRow: View {
     private var actionRow: some View {
         HStack(spacing: 0) {
             actionIcon("bubble.left").accessibilityHidden(true)
-            actionIcon("arrow.2.squarepath").accessibilityHidden(true)
+            repostMenu
             likeButton
             actionIcon("square.and.arrow.up").accessibilityHidden(true)
         }
+    }
+
+    private var quoteCard: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            if let quoted {
+                HStack(spacing: 6) {
+                    AvatarView(initial: quoted.initial, index: quoted.avatarIndex, url: quoted.avatarUrl, size: 18)
+                    Text(quoted.authorName).font(.system(size: 14, weight: .bold)).foregroundStyle(Color.irukaInk).lineLimit(1)
+                    Text(quoted.handle).font(.system(size: 14)).foregroundStyle(Color.irukaSecondary).lineLimit(1)
+                }
+                Text(quoted.body).font(.system(size: 14)).foregroundStyle(Color.irukaInk)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let urlString = quoted.imageUrl, let url = URL(string: urlString) {
+                    Color(.secondarySystemBackground)
+                        .frame(height: 140)
+                        .overlay {
+                            AsyncImage(url: url) { $0.resizable().aspectRatio(contentMode: .fill) } placeholder: { ProgressView() }
+                                .allowsHitTesting(false)
+                        }
+                        .clipShape(.rect(cornerRadius: 12))
+                }
+            } else {
+                Text(L("引用元の投稿は見つかりません"))
+                    .font(.system(size: 14)).foregroundStyle(Color.irukaSecondary)
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .overlay { RoundedRectangle(cornerRadius: 16).stroke(Color.irukaHairline, lineWidth: 1) }
+        .padding(.top, 8)
+    }
+
+    private var repostMenu: some View {
+        let reposted = post.isReposted ?? false
+        let count = post.repostCount ?? 0
+        return Menu {
+            Button {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                onRepost()
+            } label: {
+                Label(L(reposted ? "リポストを取り消す" : "リポスト"), systemImage: "arrow.2.squarepath")
+            }
+            Button(action: onQuote) {
+                Label(L("引用"), systemImage: "quote.opening")
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: "arrow.2.squarepath")
+                    .font(.system(size: 15, weight: reposted ? .bold : .regular))
+                if count > 0 {
+                    Text("\(count)").font(.system(size: 13)).monospacedDigit()
+                }
+            }
+            .foregroundStyle(reposted ? Color(red: 0, green: 0.729, blue: 0.486) : Color.irukaSecondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
+        }
+        .accessibilityLabel(L("リポスト"))
     }
 
     private var likeButton: some View {

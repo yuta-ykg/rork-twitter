@@ -5,6 +5,7 @@ struct HomeView: View {
     @Bindable var store: PostStore
     var posts: [Post]
     var isSearching: Bool
+    var onQuote: (Post) -> Void = { _ in }
 
     var body: some View {
         ScrollView {
@@ -13,7 +14,13 @@ struct HomeView: View {
                     emptyState
                 } else {
                     ForEach(posts) { post in
-                        TweetRow(post: post)
+                        TweetRow(
+                            post: post,
+                            quoted: post.quoteOf.flatMap { id in store.posts.first { $0.id == id } },
+                            onLike: { store.toggleLike(post) },
+                            onRepost: { store.toggleRepost(post) },
+                            onQuote: { onQuote(post) }
+                        )
                         Rectangle()
                             .fill(Color.irukaHairline)
                             .frame(height: 1)

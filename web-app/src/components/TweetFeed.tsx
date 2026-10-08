@@ -1,11 +1,12 @@
-import { avatarFills, fetchPosts, setPostLike, sortTimeline, type Post } from "@/lib/posts";
+import { avatarFills, fetchPosts, setPostLike, setPostRepost, sortTimeline, type Post } from "@/lib/posts";
 import { t, useLanguage } from "@/lib/language";
 import { useAuth } from "@/hooks/authContext";
 import { useOwnProfile } from "@/hooks/useOwnProfile";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, ChevronDown, Heart, House, Mail, MessageCircle, Repeat2, Search, Share, SquarePen } from "lucide-react";
+import { Bell, ChevronDown, Heart, House, Mail, MessageCircle, Quote, Repeat2, Search, Share, SquarePen } from "lucide-react";
 import type { ReactNode } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { useState } from "react";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 
 export function useTimeline() {
   const { user } = useAuth();
@@ -124,6 +125,32 @@ export function TweetRow({ post }: { post: Post }) {
   });
   const liked = post.liked ?? false;
   const likeCount = post.likeCount ?? 0;
+  const navigate = useNavigate();
+  const timeline = useTimeline();
+  const quoted = post.quoteOf ? timeline.data?.find((item) => item.id === post.quoteOf) : undefined;
+  const [menuOpen, setMenuOpen] = useState<boolean>(false);
+  const reposted = post.reposted ?? false;
+  const repostCount = post.repostCount ?? 0;
+  const repost = useMutation({
+    mutationFn: (next: boolean) => setPostRepost(post.id, next, user?.id ?? ""),
+    onMutate: async (next: boolean) => {
+      const key = ["timeline", user?.id];
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<Post[]>(key);
+      queryClient.setQueryData<Post[]>(key, (current) =>
+        current?.map((item) => item.id === post.id
+          ? { ...item, reposted: next, repostCount: Math.max(0, (item.repostCount ?? 0) + (next ? 1 : -1)) }
+          : item));
+      return { previous };
+    },
+    onError: (_error, _next, context) => {
+      if (context?.previous) queryClient.setQueryData(["timeline", user?.id], context.previous);
+    },
+    onSuccess: (result) => {
+      queryClient.setQueryData<Post[]>(["timeline", user?.id], (current) =>
+        current?.map((item) => item.id === post.id ? { ...item, reposted: result.reposted, repostCount: result.count } : item));
+    },
+  });
   return (
     <article className="flex gap-2.5 px-4 py-3" aria-label={`${post.authorName} ${post.handle}. ${post.body}`}>
       <Avatar initial={post.initial} index={post.avatarIndex} url={post.avatarUrl} size={40} />
@@ -144,9 +171,47 @@ export function TweetRow({ post }: { post: Post }) {
             className="mt-2 max-h-[420px] w-full rounded-2xl border border-[#ECF0F2] object-cover"
           />
         ) : null}
+        {post.quoteOf ? <QuoteCard post={quoted} /> : null}
         <div className="mt-1 grid grid-cols-4 items-center text-[#536471]">
           <MessageCircle className="h-[15px] w-[15px]" aria-hidden />
-          <Repeat2 className="h-[15px] w-[15px]" aria-hidden />
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setMenuOpen((open) => !open)}
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+              aria-label={t("リポスト")}
+              className={`-ml-2 flex h-9 w-fit items-center gap-1 rounded-full px-2 text-[13px] transition active:scale-90 ${reposted ? "text-[#00BA7C]" : "hover:text-[#00BA7C]"}`}
+            >
+              <Repeat2 className="h-[17px] w-[17px]" strokeWidth={reposted ? 2.6 : 2} />
+              {repostCount > 0 ? <span className="tabular-nums">{repostCount}</span> : null}
+            </button>
+            {menuOpen ? (
+              <>
+                <button type="button" aria-label={t("閉じる")} className="fixed inset-0 z-20 cursor-default" onClick={() => setMenuOpen(false)} />
+                <div role="menu" className="absolute bottom-9 left-[-8px] z-30 w-52 overflow-hidden rounded-2xl border border-[#ECF0F2] bg-white py-1 text-[15px] font-bold text-[#0F1419] shadow-[0_4px_20px_rgba(0,0,0,0.15)]">
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => { setMenuOpen(false); repost.mutate(!reposted); }}
+                    className="flex h-11 w-full items-center gap-3 px-4 text-left active:bg-[#F7F9F9]"
+                  >
+                    <Repeat2 className="h-[18px] w-[18px]" aria-hidden />
+                    {reposted ? t("リポストを取り消す") : t("リポスト")}
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => { setMenuOpen(false); navigate(`/compose?quote=${post.id}`); }}
+                    className="flex h-11 w-full items-center gap-3 px-4 text-left active:bg-[#F7F9F9]"
+                  >
+                    <Quote className="h-[18px] w-[18px]" aria-hidden />
+                    {t("引用")}
+                  </button>
+                </div>
+              </>
+            ) : null}
+          </div>
           <button
             type="button"
             onClick={() => like.mutate(!liked)}
@@ -161,6 +226,30 @@ export function TweetRow({ post }: { post: Post }) {
         </div>
       </div>
     </article>
+  );
+}
+
+/** 引用された投稿を小さなカードで見せる。 */
+export function QuoteCard({ post }: { post?: Post }) {
+  if (!post) {
+    return (
+      <div className="mt-2 rounded-2xl border border-[#ECF0F2] px-3 py-3 text-[14px] text-[#536471]">
+        {t("引用元の投稿は見つかりません")}
+      </div>
+    );
+  }
+  return (
+    <div className="mt-2 overflow-hidden rounded-2xl border border-[#ECF0F2] px-3 py-2.5">
+      <div className="flex items-center gap-1.5 text-[14px]">
+        <Avatar initial={post.initial} index={post.avatarIndex} url={post.avatarUrl} size={18} />
+        <span className="truncate font-bold">{post.authorName}</span>
+        <span className="truncate text-[#536471]">{post.handle}</span>
+      </div>
+      <p className="mt-1 whitespace-pre-wrap break-words text-[14px] leading-5">{post.body}</p>
+      {safeImage(post.imageUrl) ? (
+        <img src={safeImage(post.imageUrl) ?? undefined} alt="" loading="lazy" className="mt-2 max-h-48 w-full rounded-xl object-cover" />
+      ) : null}
+    </div>
   );
 }
 

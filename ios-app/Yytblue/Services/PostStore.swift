@@ -19,10 +19,10 @@ final class PostStore {
         timeline.filter(\.isMine)
     }
 
-    func add(body: String, image: Data?, user: AuthManager.User) {
+    func add(body: String, image: Data?, user: AuthManager.User, quoteOf: UUID? = nil) {
         let trimmed = body.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, trimmed.count <= PostLimits.maxCharacters else { return }
-        Task { await insert(trimmed, image: image, user: user) }
+        Task { await insert(trimmed, image: image, user: user, quoteOf: quoteOf) }
     }
 
     /// 選んだ画像を長辺1600px以内のJPEGに縮める。
@@ -58,6 +58,11 @@ final class PostStore {
                 .execute()
                 .value) ?? []
             let likeById = Dictionary(likeRows.map { ($0.postId, $0) }, uniquingKeysWith: { first, _ in first })
+            let repostRows: [RepostRow] = (try? await IrukaDatabase.client
+                .rpc("get_post_reposts", params: PostLikesParams(post_ids: rows.map(\.id)))
+                .execute()
+                .value) ?? []
+            let repostById = Dictionary(repostRows.map { ($0.postId, $0) }, uniquingKeysWith: { first, _ in first })
             guard currentUserId == userId else { return }
             let profileById = Dictionary(uniqueKeysWithValues: profiles.map { ($0.id, $0) })
             posts = rows.map { row in
@@ -76,7 +81,10 @@ final class PostStore {
                     avatarUrl: profile?.avatarUrl,
                     imageUrl: row.imageUrl,
                     likeCount: likeById[row.id]?.likeCount ?? 0,
-                    isLiked: likeById[row.id]?.isLiked ?? false
+                    isLiked: likeById[row.id]?.isLiked ?? false,
+                    quoteOf: row.quoteOf,
+                    repostCount: repostById[row.id]?.repostCount ?? 0,
+                    isReposted: repostById[row.id]?.isReposted ?? false
                 )
             }
         } catch {
@@ -114,11 +122,38 @@ final class PostStore {
         }
     }
 
+    /// リポストを付け外しする。先に画面を更新し、失敗したら元に戻す。
+    func toggleRepost(_ post: Post) {
+        guard let index = posts.firstIndex(where: { $0.id == post.id }) else { return }
+        let original = posts[index]
+        let next = !(original.isReposted ?? false)
+        posts[index].isReposted = next
+        posts[index].repostCount = max(0, (original.repostCount ?? 0) + (next ? 1 : -1))
+        if DevelopmentData.isActive {
+            DevelopmentData.save(posts: posts)
+            return
+        }
+        guard let userId = currentUserId else { return }
+        Task {
+            do {
+                let result: [RepostRow] = try await IrukaDatabase.client
+                    .rpc("set_post_repost", params: SetRepostParams(target_post_id: post.id, reposted: next, expected_user_id: userId))
+                    .execute()
+                    .value
+                guard let row = result.first, let i = posts.firstIndex(where: { $0.id == post.id }) else { return }
+                posts[i].repostCount = row.repostCount
+                posts[i].isReposted = row.isReposted
+            } catch {
+                if let i = posts.firstIndex(where: { $0.id == post.id }) { posts[i] = original }
+            }
+        }
+    }
+
     func syncProfile(_ user: AuthManager.User) async {
         try? await ProfileService.ensure(user)
     }
 
-    private func insert(_ body: String, image: Data?, user: AuthManager.User) async {
+    private func insert(_ body: String, image: Data?, user: AuthManager.User, quoteOf: UUID?) async {
         if user.id == DevelopmentData.userId && !DevelopmentData.isActive { return }
         if DevelopmentData.isActive {
             let profile = DevelopmentData.profile()
@@ -126,7 +161,8 @@ final class PostStore {
                 id: UUID(), authorName: profile.name, handle: "@" + (profile.handle ?? "developer"),
                 initial: String(profile.name.prefix(1)), body: body, createdAt: Date(),
                 isMine: true, avatarIndex: 0, userId: DevelopmentData.userId, avatarUrl: profile.avatarUrl,
-                imageUrl: image.map { "data:image/jpeg;base64," + $0.base64EncodedString() }
+                imageUrl: image.map { "data:image/jpeg;base64," + $0.base64EncodedString() },
+                quoteOf: quoteOf
             )
             posts.insert(post, at: 0)
             DevelopmentData.save(posts: posts)
@@ -141,10 +177,17 @@ final class PostStore {
                 try await bucket.upload(path, data: image, options: FileOptions(contentType: "image/jpeg"))
                 imageUrl = try bucket.getPublicURL(path: path).absoluteString
             }
-            let _: [PostRow] = try await IrukaDatabase.client
-                .rpc("create_post", params: CreatePostParams(
-                    post_id: UUID(), post_body: body, expected_user_id: user.id, post_image_url: imageUrl
-                )).execute().value
+            if let quoteOf {
+                let _: [PostRow] = try await IrukaDatabase.client
+                    .rpc("create_quote_post", params: CreateQuoteParams(
+                        post_id: UUID(), post_body: body, quote_of_id: quoteOf, expected_user_id: user.id, post_image_url: imageUrl
+                    )).execute().value
+            } else {
+                let _: [PostRow] = try await IrukaDatabase.client
+                    .rpc("create_post", params: CreatePostParams(
+                        post_id: UUID(), post_body: body, expected_user_id: user.id, post_image_url: imageUrl
+                    )).execute().value
+            }
             await refresh(userId: user.id)
         } catch {
             guard currentUserId == user.id else { return }

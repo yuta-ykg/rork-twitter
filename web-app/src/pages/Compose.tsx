@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ImagePlus, X } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Avatar } from "@/components/TweetFeed";
+import { Avatar, QuoteCard, useTimeline } from "@/components/TweetFeed";
 import { useAuth } from "@/hooks/authContext";
 import { useOwnProfile } from "@/hooks/useOwnProfile";
 import { t, useLanguage } from "@/lib/language";
@@ -15,6 +15,10 @@ export default function ComposePage() {
   const own = useOwnProfile();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [params] = useSearchParams();
+  const quoteId = params.get("quote");
+  const timeline = useTimeline();
+  const quoted = quoteId ? timeline.data?.find((item) => item.id === quoteId) : undefined;
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [image, setImage] = useState<File | null>(null);
@@ -34,7 +38,7 @@ export default function ComposePage() {
     if (!canPost || !user) return;
     setSending(true);
     try {
-      await insertPost(trimmed, user, image);
+      await insertPost(trimmed, user, image, quoteId);
       await queryClient.invalidateQueries({ queryKey: ["timeline", user.id] });
       navigate("/");
     } catch {
@@ -80,6 +84,7 @@ export default function ComposePage() {
             </button>
           </div>
         ) : null}
+        {quoteId ? <div className="mx-4 ml-[68px]"><QuoteCard post={quoted} /></div> : null}
         <div className="mt-auto flex items-center justify-between border-t border-[#ECF0F2] px-4 py-2 pb-5">
           <input
             ref={fileInput}

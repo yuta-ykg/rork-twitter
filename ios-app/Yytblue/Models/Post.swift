@@ -15,6 +15,9 @@ nonisolated struct Post: Identifiable, Codable, Hashable, Sendable {
     var imageUrl: String? = nil
     var likeCount: Int? = nil
     var isLiked: Bool? = nil
+    var quoteOf: UUID? = nil
+    var repostCount: Int? = nil
+    var isReposted: Bool? = nil
 
     var characterCount: Int { body.count }
 }

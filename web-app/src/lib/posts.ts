@@ -21,6 +21,9 @@ export type Post = {
   imageUrl?: string | null;
   likeCount?: number;
   liked?: boolean;
+  quoteOf?: string | null;
+  repostCount?: number;
+  reposted?: boolean;
 };
 
 type Row = {
@@ -33,6 +36,7 @@ type Row = {
   avatar_index: number;
   user_id: string | null;
   image_url?: string | null;
+  quote_of?: string | null;
 };
 
 export type Author = {
@@ -54,6 +58,7 @@ function toPost(row: Row, userId?: string | null): Post {
     avatarIndex: row.avatar_index,
     userId: row.user_id,
     imageUrl: row.image_url ?? null,
+    quoteOf: row.quote_of ?? null,
   };
 }
 
@@ -110,6 +115,10 @@ export async function fetchPosts(userId?: string | null): Promise<Post[]> {
   const likeById = new Map<string, { count: number; liked: boolean }>(
     (likes.data ?? []).map((row) => [row.post_id, { count: Number(row.like_count), liked: row.is_liked }]),
   );
+  const reposts = await supabase.rpc("get_post_reposts", { post_ids: posts.map((post) => post.id) });
+  const repostById = new Map<string, { count: number; reposted: boolean }>(
+    (reposts.data ?? []).map((row) => [row.post_id, { count: Number(row.repost_count), reposted: row.is_reposted }]),
+  );
   return posts.map((post) => {
     const profile = post.userId ? profileById.get(post.userId) : undefined;
     const name = profile?.name ?? post.authorName;
@@ -117,6 +126,8 @@ export async function fetchPosts(userId?: string | null): Promise<Post[]> {
       ...post,
       likeCount: likeById.get(post.id)?.count ?? 0,
       liked: likeById.get(post.id)?.liked ?? false,
+      repostCount: repostById.get(post.id)?.count ?? 0,
+      reposted: repostById.get(post.id)?.reposted ?? false,
       authorName: name,
       handle: profile?.handle ? `@${profile.handle}` : post.handle,
       initial: Array.from(name)[0] ?? post.initial,
@@ -146,8 +157,29 @@ export async function setPostLike(postId: string, liked: boolean, userId: string
   return { count: Number(data[0].like_count), liked: data[0].is_liked };
 }
 
-/** 本文（70字まで）と任意の画像1枚で投稿を作る。 */
-export async function insertPost(body: string, author: Author, image?: File | null): Promise<Post> {
+/** リポストを付け外しする。冪等で、サーバー側の件数（引用を含む）を返す。 */
+export async function setPostRepost(postId: string, reposted: boolean, userId: string): Promise<{ count: number; reposted: boolean }> {
+  if (isDevelopmentSession()) {
+    let result = { count: 0, reposted };
+    writeDevelopmentPosts(readDevelopmentPosts().map((post) => {
+      if (post.id !== postId) return post;
+      const base = (post.repostCount ?? 0) - (post.reposted ? 1 : 0);
+      result = { count: base + (reposted ? 1 : 0), reposted };
+      return { ...post, repostCount: result.count, reposted };
+    }));
+    return result;
+  }
+  const { data, error } = await supabase.rpc("set_post_repost", {
+    target_post_id: postId,
+    reposted,
+    expected_user_id: userId,
+  });
+  if (error || !data?.[0]) throw error ?? new Error("リポストできませんでした");
+  return { count: Number(data[0].repost_count), reposted: data[0].is_reposted };
+}
+
+/** 本文（70字まで）と任意の画像1枚で投稿を作る。quoteOf を渡すと引用投稿になる。 */
+export async function insertPost(body: string, author: Author, image?: File | null, quoteOf?: string | null): Promise<Post> {
   const trimmed = body.trim();
   if (!trimmed || Array.from(trimmed).length > MAX_CHARACTERS) throw new Error("投稿は1〜70文字で入力してください。");
   const blob = image ? await shrinkImage(image) : null;
@@ -165,6 +197,7 @@ export async function insertPost(body: string, author: Author, image?: File | nu
       isMine: true,
       avatarIndex: 0,
       avatarUrl: profile.avatar_url,
+      quoteOf: quoteOf ?? null,
     };
     writeDevelopmentPosts([post, ...readDevelopmentPosts()]);
     return post;
@@ -177,12 +210,20 @@ export async function insertPost(body: string, author: Author, image?: File | nu
     if (uploadError) throw uploadError;
     imageUrl = supabase.storage.from("post-images").getPublicUrl(path).data.publicUrl;
   }
-  const { data, error } = await supabase.rpc("create_post", {
-    post_id: crypto.randomUUID(),
-    post_body: trimmed,
-    expected_user_id: author.id,
-    post_image_url: imageUrl,
-  });
+  const { data, error } = quoteOf
+    ? await supabase.rpc("create_quote_post", {
+        post_id: crypto.randomUUID(),
+        post_body: trimmed,
+        quote_of_id: quoteOf,
+        expected_user_id: author.id,
+        post_image_url: imageUrl,
+      })
+    : await supabase.rpc("create_post", {
+        post_id: crypto.randomUUID(),
+        post_body: trimmed,
+        expected_user_id: author.id,
+        post_image_url: imageUrl,
+      });
   if (error || !data?.[0]) throw error ?? new Error("投稿できませんでした");
   return toPost(data[0], author.id);
 }

@@ -8,6 +8,8 @@ struct ComposeView: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
 
+    var quoting: Post? = nil
+
     @State private var draft = ""
     @State private var pickerItem: PhotosPickerItem?
     @State private var imageData: Data?
@@ -65,6 +67,20 @@ struct ComposeView: View {
                     }
                     .padding(.leading, 52)
             }
+            if let quoting {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 6) {
+                        AvatarView(initial: quoting.initial, index: quoting.avatarIndex, url: quoting.avatarUrl, size: 18)
+                        Text(quoting.authorName).font(.system(size: 14, weight: .bold)).foregroundStyle(Color.irukaInk).lineLimit(1)
+                        Text(quoting.handle).font(.system(size: 14)).foregroundStyle(Color.irukaSecondary).lineLimit(1)
+                    }
+                    Text(quoting.body).font(.system(size: 14)).foregroundStyle(Color.irukaInk)
+                }
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .overlay { RoundedRectangle(cornerRadius: 16).stroke(Color.irukaHairline, lineWidth: 1) }
+                .padding(.leading, 52)
+            }
             Spacer(minLength: 0)
             HStack {
                 PhotosPicker(selection: $pickerItem, matching: .images) {
@@ -115,7 +131,7 @@ struct ComposeView: View {
 
     private func submit() {
         guard canPost, let user = auth.user else { return }
-        store.add(body: draft, image: imageData, user: user)
+        store.add(body: draft, image: imageData, user: user, quoteOf: quoting?.id)
         dismiss()
     }
 }

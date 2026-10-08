@@ -7,6 +7,7 @@ struct ContentView: View {
     @State private var selectedTab: FeedTab = .home
     @State private var showsComposer = false
     @State private var showsMine = false
+    @State private var quoteTarget: Post?
     @State private var query = ""
     @State private var didLoad = false
 
@@ -56,16 +57,21 @@ struct ContentView: View {
             .background(Color.white)
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(isPresented: $showsMine) {
-                HomeView(store: store, posts: store.mine, isSearching: false)
+                HomeView(store: store, posts: store.mine, isSearching: false, onQuote: startQuote)
                     .navigationTitle(L("自分の投稿"))
                     .navigationBarTitleDisplayMode(.inline)
                     .background(Color.white)
             }
         }
-        .fullScreenCover(isPresented: $showsComposer) {
-            NavigationStack { ComposeView() }
+        .fullScreenCover(isPresented: $showsComposer, onDismiss: { quoteTarget = nil }) {
+            NavigationStack { ComposeView(quoting: quoteTarget) }
                 .environment(store)
         }
+    }
+
+    private func startQuote(_ post: Post) {
+        quoteTarget = post
+        showsComposer = true
     }
 
     private var header: some View {
@@ -153,7 +159,7 @@ struct ContentView: View {
                     .tint(Color.irukaBlue)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                HomeView(store: store, posts: posts, isSearching: searching && !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                HomeView(store: store, posts: posts, isSearching: searching && !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, onQuote: startQuote)
                     .refreshable { await store.refresh(userId: auth.user?.id) }
             }
         }

@@ -25,8 +25,10 @@ nonisolated struct PostRow: Codable, Sendable {
     let userId: String?
     let parentId: UUID?
     let imageUrl: String?
+    var quoteOf: UUID? = nil
 
     enum CodingKeys: String, CodingKey {
+        case quoteOf = "quote_of"
         case id
         case authorName = "author_name"
         case handle
@@ -60,6 +62,32 @@ nonisolated struct SetLikeParams: Encodable, Sendable {
     let target_post_id: UUID
     let liked: Bool
     let expected_user_id: String
+}
+
+nonisolated struct RepostRow: Codable, Sendable {
+    let postId: UUID
+    let repostCount: Int
+    let isReposted: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case postId = "post_id"
+        case repostCount = "repost_count"
+        case isReposted = "is_reposted"
+    }
+}
+
+nonisolated struct SetRepostParams: Encodable, Sendable {
+    let target_post_id: UUID
+    let reposted: Bool
+    let expected_user_id: String
+}
+
+nonisolated struct CreateQuoteParams: Encodable, Sendable {
+    let post_id: UUID
+    let post_body: String
+    let quote_of_id: UUID
+    let expected_user_id: String
+    var post_image_url: String? = nil
 }
 
 nonisolated struct VisiblePostsParams: Encodable, Sendable {

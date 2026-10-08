@@ -44,6 +44,32 @@ export type Database = {
           },
         ]
       }
+      post_reposts: {
+        Row: {
+          created_at: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_reposts_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       posts: {
         Row: {
           author_name: string
@@ -55,6 +81,7 @@ export type Database = {
           image_url: string | null
           initial: string
           is_mine: boolean
+          quote_of: string | null
           user_id: string | null
         }
         Insert: {
@@ -67,6 +94,7 @@ export type Database = {
           image_url?: string | null
           initial: string
           is_mine?: boolean
+          quote_of?: string | null
           user_id?: string | null
         }
         Update: {
@@ -79,9 +107,18 @@ export type Database = {
           image_url?: string | null
           initial?: string
           is_mine?: boolean
+          quote_of?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "posts_quote_of_fkey"
+            columns: ["quote_of"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -138,6 +175,35 @@ export type Database = {
           image_url: string | null
           initial: string
           is_mine: boolean
+          quote_of: string | null
+          user_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "posts"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      create_quote_post: {
+        Args: {
+          expected_user_id: string
+          post_body: string
+          post_id: string
+          post_image_url?: string
+          quote_of_id: string
+        }
+        Returns: {
+          author_name: string
+          avatar_index: number
+          body: string
+          created_at: string
+          handle: string
+          id: string
+          image_url: string | null
+          initial: string
+          is_mine: boolean
+          quote_of: string | null
           user_id: string | null
         }[]
         SetofOptions: {
@@ -164,6 +230,14 @@ export type Database = {
           post_id: string
         }[]
       }
+      get_post_reposts: {
+        Args: { post_ids: string[] }
+        Returns: {
+          is_reposted: boolean
+          post_id: string
+          repost_count: number
+        }[]
+      }
       get_public_profiles: {
         Args: { profile_ids: string[] }
         Returns: {
@@ -188,6 +262,7 @@ export type Database = {
           image_url: string | null
           initial: string
           is_mine: boolean
+          quote_of: string | null
           user_id: string | null
         }[]
         SetofOptions: {
@@ -207,6 +282,18 @@ export type Database = {
           is_liked: boolean
           like_count: number
           post_id: string
+        }[]
+      }
+      set_post_repost: {
+        Args: {
+          expected_user_id: string
+          reposted: boolean
+          target_post_id: string
+        }
+        Returns: {
+          is_reposted: boolean
+          post_id: string
+          repost_count: number
         }[]
       }
       user_id: { Args: never; Returns: string }
