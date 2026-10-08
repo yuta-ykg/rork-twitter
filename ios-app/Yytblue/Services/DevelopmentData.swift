@@ -119,14 +119,9 @@ enum DevelopmentData {
     static func timeline() -> [Post] {
         let profile = profile()
         return posts().map { old in
-            var post = Post(id: old.id, authorName: profile.name, handle: "@" + (profile.handle ?? "developer"),
-                            initial: String(profile.name.prefix(1)), body: old.body, createdAt: old.createdAt,
-                            isMine: true, avatarIndex: old.avatarIndex, userId: userId, parentId: old.parentId, avatarUrl: profile.avatarUrl)
-            post.likedByMe = old.isLiked
-            post.storedLikeCount = old.likeCount
-            post.poll = old.poll
-            post.diagnosis = old.diagnosis
-            return post
+            return Post(id: old.id, authorName: profile.name, handle: "@" + (profile.handle ?? "developer"),
+                        initial: String(profile.name.prefix(1)), body: old.body, createdAt: old.createdAt,
+                        isMine: true, avatarIndex: old.avatarIndex, userId: userId, parentId: old.parentId, avatarUrl: profile.avatarUrl)
         }
     }
 }

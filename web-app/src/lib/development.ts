@@ -83,7 +83,7 @@ export function readDevelopmentPosts(): Post[] {
   const posts: Post[] = [{
     id: crypto.randomUUID(), userId: developerUser.id, authorName: "開発ユーザー",
     handle: "@developer", initial: "開", body: "開発用の投稿です。投稿・いいね・プロフィールを試せます。",
-    createdAt: new Date().toISOString(), isMine: true, avatarIndex: 0, isLiked: false, likeCount: 0,
+    createdAt: new Date().toISOString(), isMine: true, avatarIndex: 0,
   }];
   writeDevelopmentPosts(posts);
   return posts;

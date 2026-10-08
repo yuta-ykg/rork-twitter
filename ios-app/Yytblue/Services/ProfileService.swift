@@ -38,32 +38,4 @@ enum ProfileService {
             "profile_name": user.name ?? "ユーザー", "profile_avatar": user.picture ?? ""
         ]).execute()
     }
-
-    static func save(id: String, name: String, handle: String, bio: String, avatar: String) async throws -> IrukaProfile {
-        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        let validHandle = handle.range(of: "^[a-z0-9_]{3,25}$", options: .regularExpression) != nil
-        guard (1...40).contains(trimmed.unicodeScalars.count), validHandle,
-              bio.unicodeScalars.count <= 160,
-              avatar.isEmpty || (URL(string: avatar)?.scheme == "https" && avatar.count <= 2048) else {
-            throw NSError(domain: "Profile", code: 1, userInfo: [NSLocalizedDescriptionKey: "表示名・ユーザー名・自己紹介・画像URLを確認してください。"])
-        }
-        if DevelopmentData.isActive {
-            guard id == DevelopmentData.userId else {
-                throw NSError(domain: "Profile", code: 3, userInfo: [NSLocalizedDescriptionKey: "開発ユーザーが一致しません。"])
-            }
-            let profile = IrukaProfile(id: id, name: trimmed, handle: handle, bio: bio,
-                                       avatarUrl: avatar.isEmpty ? nil : avatar, createdAt: DevelopmentData.profile().createdAt,
-                                       postCount: DevelopmentData.posts().count)
-            DevelopmentData.save(profile: profile)
-            return profile
-        }
-        let profiles: [IrukaProfile] = try await IrukaDatabase.client.rpc("save_profile", params: [
-            "expected_user_id": id, "profile_name": trimmed, "profile_handle": handle,
-            "profile_bio": bio, "profile_avatar": avatar
-        ]).execute().value
-        guard let profile = profiles.first else {
-            throw NSError(domain: "Profile", code: 2, userInfo: [NSLocalizedDescriptionKey: "プロフィールを保存できませんでした。"])
-        }
-        return profile
-    }
 }
