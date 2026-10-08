@@ -40,6 +40,28 @@ nonisolated struct PostRow: Codable, Sendable {
     }
 }
 
+nonisolated struct LikeRow: Codable, Sendable {
+    let postId: UUID
+    let likeCount: Int
+    let isLiked: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case postId = "post_id"
+        case likeCount = "like_count"
+        case isLiked = "is_liked"
+    }
+}
+
+nonisolated struct PostLikesParams: Encodable, Sendable {
+    let post_ids: [UUID]
+}
+
+nonisolated struct SetLikeParams: Encodable, Sendable {
+    let target_post_id: UUID
+    let liked: Bool
+    let expected_user_id: String
+}
+
 nonisolated struct VisiblePostsParams: Encodable, Sendable {
     let expected_user_id: String?
 }

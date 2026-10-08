@@ -13,6 +13,8 @@ nonisolated struct Post: Identifiable, Codable, Hashable, Sendable {
     var parentId: UUID? = nil
     var avatarUrl: String? = nil
     var imageUrl: String? = nil
+    var likeCount: Int? = nil
+    var isLiked: Bool? = nil
 
     var characterCount: Int { body.count }
 }

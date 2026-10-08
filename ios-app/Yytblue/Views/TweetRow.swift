@@ -1,9 +1,10 @@
 import SwiftUI
 
-/// Twitter風の投稿行。返信・リポスト・いいね・共有は見た目だけで、操作はしない。
+/// Twitter風の投稿行。いいねだけ操作でき、返信・リポスト・共有は見た目だけ。
 struct TweetRow: View {
     @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
     let post: Post
+    var onLike: () -> Void = {}
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
@@ -56,8 +57,7 @@ struct TweetRow: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(post.authorName) \(post.handle). \(post.body)")
+
     }
 
     private var tweetBody: Text {
@@ -81,12 +81,37 @@ struct TweetRow: View {
 
     private var actionRow: some View {
         HStack(spacing: 0) {
-            actionIcon("bubble.left")
-            actionIcon("arrow.2.squarepath")
-            actionIcon("heart")
-            actionIcon("square.and.arrow.up")
+            actionIcon("bubble.left").accessibilityHidden(true)
+            actionIcon("arrow.2.squarepath").accessibilityHidden(true)
+            likeButton
+            actionIcon("square.and.arrow.up").accessibilityHidden(true)
         }
-        .accessibilityHidden(true)
+    }
+
+    private var likeButton: some View {
+        let liked = post.isLiked ?? false
+        let count = post.likeCount ?? 0
+        return Button {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            withAnimation(.spring(duration: 0.25, bounce: 0.5)) { onLike() }
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: liked ? "heart.fill" : "heart")
+                    .font(.system(size: 15))
+                    .symbolEffect(.bounce, value: liked)
+                if count > 0 {
+                    Text("\(count)")
+                        .font(.system(size: 13))
+                        .monospacedDigit()
+                }
+            }
+            .foregroundStyle(liked ? Color(red: 0.976, green: 0.094, blue: 0.502) : Color.irukaSecondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(L(liked ? "いいねを取り消す" : "いいね"))
     }
 
     private func actionIcon(_ symbol: String) -> some View {

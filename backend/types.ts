@@ -18,6 +18,32 @@ export type Database = {
   }
   public: {
     Tables: {
+      post_likes: {
+        Row: {
+          created_at: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       posts: {
         Row: {
           author_name: string
@@ -130,6 +156,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      get_post_likes: {
+        Args: { post_ids: string[] }
+        Returns: {
+          is_liked: boolean
+          like_count: number
+          post_id: string
+        }[]
+      }
       get_public_profiles: {
         Args: { profile_ids: string[] }
         Returns: {
@@ -162,6 +196,18 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      set_post_like: {
+        Args: {
+          expected_user_id: string
+          liked: boolean
+          target_post_id: string
+        }
+        Returns: {
+          is_liked: boolean
+          like_count: number
+          post_id: string
+        }[]
       }
       user_id: { Args: never; Returns: string }
     }

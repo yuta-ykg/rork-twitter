@@ -19,6 +19,8 @@ export type Post = {
   parentId?: string | null;
   avatarUrl?: string | null;
   imageUrl?: string | null;
+  likeCount?: number;
+  liked?: boolean;
 };
 
 type Row = {
@@ -104,17 +106,44 @@ export async function fetchPosts(userId?: string | null): Promise<Post[]> {
   if (posts.length === 0) return posts;
   const profiles = await fetchProfiles(posts.flatMap((post) => post.userId ? [post.userId] : [])).catch((): Profile[] => []);
   const profileById = new Map<string, Profile>(profiles.map((profile) => [profile.id, profile]));
+  const likes = await supabase.rpc("get_post_likes", { post_ids: posts.map((post) => post.id) });
+  const likeById = new Map<string, { count: number; liked: boolean }>(
+    (likes.data ?? []).map((row) => [row.post_id, { count: Number(row.like_count), liked: row.is_liked }]),
+  );
   return posts.map((post) => {
     const profile = post.userId ? profileById.get(post.userId) : undefined;
     const name = profile?.name ?? post.authorName;
     return {
       ...post,
+      likeCount: likeById.get(post.id)?.count ?? 0,
+      liked: likeById.get(post.id)?.liked ?? false,
       authorName: name,
       handle: profile?.handle ? `@${profile.handle}` : post.handle,
       initial: Array.from(name)[0] ?? post.initial,
       avatarUrl: profile?.avatar_url ?? null,
     };
   });
+}
+
+/** いいねを付け外しする。冪等で、サーバー側の件数を返す。 */
+export async function setPostLike(postId: string, liked: boolean, userId: string): Promise<{ count: number; liked: boolean }> {
+  if (isDevelopmentSession()) {
+    let result = { count: 0, liked };
+    writeDevelopmentPosts(readDevelopmentPosts().map((post) => {
+      if (post.id !== postId) return post;
+      const base = (post.likeCount ?? 0) - (post.liked ? 1 : 0);
+      result = { count: base + (liked ? 1 : 0), liked };
+      return { ...post, likeCount: result.count, liked };
+    }));
+    return result;
+  }
+  const { data, error } = await supabase.rpc("set_post_like", {
+    target_post_id: postId,
+    liked,
+    expected_user_id: userId,
+  });
+  if (error || !data?.[0]) throw error ?? new Error("いいねできませんでした");
+  return { count: Number(data[0].like_count), liked: data[0].is_liked };
 }
 
 /** 本文（70字まで）と任意の画像1枚で投稿を作る。 */

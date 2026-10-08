@@ -53,6 +53,11 @@ final class PostStore {
                 .execute()
                 .value
             let profiles = (try? await ProfileService.fetch(ids: rows.compactMap(\.userId))) ?? []
+            let likeRows: [LikeRow] = (try? await IrukaDatabase.client
+                .rpc("get_post_likes", params: PostLikesParams(post_ids: rows.map(\.id)))
+                .execute()
+                .value) ?? []
+            let likeById = Dictionary(likeRows.map { ($0.postId, $0) }, uniquingKeysWith: { first, _ in first })
             guard currentUserId == userId else { return }
             let profileById = Dictionary(uniqueKeysWithValues: profiles.map { ($0.id, $0) })
             posts = rows.map { row in
@@ -69,12 +74,43 @@ final class PostStore {
                     userId: row.userId,
                     parentId: row.parentId,
                     avatarUrl: profile?.avatarUrl,
-                    imageUrl: row.imageUrl
+                    imageUrl: row.imageUrl,
+                    likeCount: likeById[row.id]?.likeCount ?? 0,
+                    isLiked: likeById[row.id]?.isLiked ?? false
                 )
             }
         } catch {
             guard currentUserId == userId else { return }
             composeError = "投稿を読み込めませんでした。"
+        }
+    }
+
+    /// いいねを付け外しする。先に画面を更新し、失敗したら元に戻す。
+    func toggleLike(_ post: Post) {
+        guard let index = posts.firstIndex(where: { $0.id == post.id }) else { return }
+        let original = posts[index]
+        let next = !(original.isLiked ?? false)
+        var updated = original
+        updated.isLiked = next
+        updated.likeCount = max(0, (original.likeCount ?? 0) + (next ? 1 : -1))
+        posts[index] = updated
+        if DevelopmentData.isActive {
+            DevelopmentData.save(posts: posts)
+            return
+        }
+        guard let userId = currentUserId else { return }
+        Task {
+            do {
+                let result: [LikeRow] = try await IrukaDatabase.client
+                    .rpc("set_post_like", params: SetLikeParams(target_post_id: post.id, liked: next, expected_user_id: userId))
+                    .execute()
+                    .value
+                guard let row = result.first, let i = posts.firstIndex(where: { $0.id == post.id }) else { return }
+                posts[i].likeCount = row.likeCount
+                posts[i].isLiked = row.isLiked
+            } catch {
+                if let i = posts.firstIndex(where: { $0.id == post.id }) { posts[i] = original }
+            }
         }
     }
 

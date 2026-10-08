@@ -1,8 +1,8 @@
-import { avatarFills, fetchPosts, sortTimeline, type Post } from "@/lib/posts";
+import { avatarFills, fetchPosts, setPostLike, sortTimeline, type Post } from "@/lib/posts";
 import { t, useLanguage } from "@/lib/language";
 import { useAuth } from "@/hooks/authContext";
 import { useOwnProfile } from "@/hooks/useOwnProfile";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, ChevronDown, Heart, House, Mail, MessageCircle, Repeat2, Search, Share, SquarePen } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link, NavLink } from "react-router-dom";
@@ -100,6 +100,30 @@ export function TweetList({ posts, empty, searching = false }: { posts: Post[]; 
 
 export function TweetRow({ post }: { post: Post }) {
   const { language } = useLanguage();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const like = useMutation({
+    mutationFn: (next: boolean) => setPostLike(post.id, next, user?.id ?? ""),
+    onMutate: async (next: boolean) => {
+      const key = ["timeline", user?.id];
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<Post[]>(key);
+      queryClient.setQueryData<Post[]>(key, (current) =>
+        current?.map((item) => item.id === post.id
+          ? { ...item, liked: next, likeCount: Math.max(0, (item.likeCount ?? 0) + (next ? 1 : -1)) }
+          : item));
+      return { previous };
+    },
+    onError: (_error, _next, context) => {
+      if (context?.previous) queryClient.setQueryData(["timeline", user?.id], context.previous);
+    },
+    onSuccess: (result) => {
+      queryClient.setQueryData<Post[]>(["timeline", user?.id], (current) =>
+        current?.map((item) => item.id === post.id ? { ...item, liked: result.liked, likeCount: result.count } : item));
+    },
+  });
+  const liked = post.liked ?? false;
+  const likeCount = post.likeCount ?? 0;
   return (
     <article className="flex gap-2.5 px-4 py-3" aria-label={`${post.authorName} ${post.handle}. ${post.body}`}>
       <Avatar initial={post.initial} index={post.avatarIndex} url={post.avatarUrl} size={40} />
@@ -120,11 +144,20 @@ export function TweetRow({ post }: { post: Post }) {
             className="mt-2 max-h-[420px] w-full rounded-2xl border border-[#ECF0F2] object-cover"
           />
         ) : null}
-        <div className="mt-2 grid grid-cols-4 text-[#536471]" aria-hidden>
-          <MessageCircle className="h-[15px] w-[15px]" />
-          <Repeat2 className="h-[15px] w-[15px]" />
-          <Heart className="h-[15px] w-[15px]" />
-          <Share className="h-[15px] w-[15px]" />
+        <div className="mt-1 grid grid-cols-4 items-center text-[#536471]">
+          <MessageCircle className="h-[15px] w-[15px]" aria-hidden />
+          <Repeat2 className="h-[15px] w-[15px]" aria-hidden />
+          <button
+            type="button"
+            onClick={() => like.mutate(!liked)}
+            aria-pressed={liked}
+            aria-label={liked ? t("いいねを取り消す") : t("いいね")}
+            className={`-ml-2 flex h-9 w-fit items-center gap-1 rounded-full px-2 text-[13px] transition active:scale-90 ${liked ? "text-[#F91880]" : "hover:text-[#F91880]"}`}
+          >
+            <Heart className="h-[16px] w-[16px]" fill={liked ? "#F91880" : "none"} />
+            {likeCount > 0 ? <span className="tabular-nums">{likeCount}</span> : null}
+          </button>
+          <Share className="h-[15px] w-[15px]" aria-hidden />
         </div>
       </div>
     </article>
