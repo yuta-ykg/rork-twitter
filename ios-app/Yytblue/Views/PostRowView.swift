@@ -211,23 +211,38 @@ struct AvatarView: View {
     let initial: String
     let index: Int
     var url: String? = nil
+    var size: CGFloat = 46
 
     var body: some View {
-        Group {
-            if let url, let imageURL = URL(string: url), imageURL.scheme == "https" {
-                AsyncImage(url: imageURL) { phase in
-                    if let image = phase.image {
-                        image.resizable().scaledToFill()
-                    } else { Text(initial) }
-                }
-            } else { Text(initial) }
-        }
-            .font(.system(size: 16, weight: .semibold))
-            .foregroundStyle(Color.irukaInk.opacity(0.72))
-            .frame(width: 46, height: 46)
-            .background(Color(hex: AvatarPalette.fills[index % AvatarPalette.fills.count]), in: Circle())
+        Color(hex: AvatarPalette.fills[abs(index) % AvatarPalette.fills.count])
+            .frame(width: size, height: size)
+            .overlay {
+                avatarImage
+                    .allowsHitTesting(false)
+            }
             .clipShape(Circle())
             .accessibilityHidden(true)
+    }
+
+    @ViewBuilder
+    private var avatarImage: some View {
+        if let url, let imageURL = URL(string: url), imageURL.scheme == "https" {
+            AsyncImage(url: imageURL) { phase in
+                if let image = phase.image {
+                    image.resizable().scaledToFill()
+                } else {
+                    initialLabel
+                }
+            }
+        } else {
+            initialLabel
+        }
+    }
+
+    private var initialLabel: some View {
+        Text(initial)
+            .font(.system(size: size * 0.36, weight: .semibold))
+            .foregroundStyle(Color.irukaInk.opacity(0.72))
     }
 }
 
