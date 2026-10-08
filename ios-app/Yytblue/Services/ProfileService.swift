@@ -21,8 +21,36 @@ nonisolated struct ProfileIDs: Encodable, Sendable {
     let profile_ids: [String]
 }
 
+nonisolated struct SaveProfileParams: Encodable, Sendable {
+    let expected_user_id: String
+    let profile_name: String
+    let profile_handle: String
+    let profile_bio: String
+    let profile_avatar: String
+}
+
 @MainActor
 enum ProfileService {
+    static let handlePattern = /^[a-z0-9_]{3,25}$/
+
+    /// 名前・ハンドル・自己紹介を保存する。
+    static func save(userId: String, name: String, handle: String, bio: String) async throws -> IrukaProfile {
+        if DevelopmentData.isActive {
+            let current = DevelopmentData.profile()
+            let next = IrukaProfile(id: current.id, name: name, handle: handle, bio: bio, avatarUrl: current.avatarUrl,
+                                    createdAt: current.createdAt, postCount: current.postCount)
+            DevelopmentData.save(profile: next)
+            return next
+        }
+        let rows: [IrukaProfile] = try await IrukaDatabase.client
+            .rpc("save_profile", params: SaveProfileParams(
+                expected_user_id: userId, profile_name: name, profile_handle: handle,
+                profile_bio: bio, profile_avatar: ""))
+            .execute().value
+        guard let row = rows.first else { throw URLError(.badServerResponse) }
+        return row
+    }
+
     static func fetch(ids: [String]) async throws -> [IrukaProfile] {
         if DevelopmentData.isActive { return ids.contains(DevelopmentData.userId) ? [DevelopmentData.profile()] : [] }
         guard !ids.isEmpty else { return [] }

@@ -57,10 +57,7 @@ struct ContentView: View {
             .background(Color.white)
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(isPresented: $showsMine) {
-                HomeView(store: store, posts: store.mine, isSearching: false, onQuote: startQuote)
-                    .navigationTitle(L("自分の投稿"))
-                    .navigationBarTitleDisplayMode(.inline)
-                    .background(Color.white)
+                ProfileView(store: store, onQuote: startQuote)
             }
         }
         .fullScreenCover(isPresented: $showsComposer, onDismiss: { quoteTarget = nil }) {
@@ -92,7 +89,7 @@ struct ContentView: View {
                     .frame(width: 44, height: 44)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(L("自分の投稿"))
+                .accessibilityLabel(L("プロフィール"))
                 Spacer()
             }
         }

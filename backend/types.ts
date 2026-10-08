@@ -272,6 +272,24 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      save_profile: {
+        Args: {
+          expected_user_id: string
+          profile_avatar?: string
+          profile_bio: string
+          profile_handle: string
+          profile_name: string
+        }
+        Returns: {
+          avatar_url: string
+          bio: string
+          created_at: string
+          handle: string
+          id: string
+          name: string
+          post_count: number
+        }[]
+      }
       set_post_like: {
         Args: {
           expected_user_id: string

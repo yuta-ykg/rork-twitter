@@ -38,7 +38,7 @@ export function TweetShell({ title, tab, showCompose = false, children }: {
     <div className="min-h-dvh bg-[#F7F9F9] text-[#0F1419]">
       <div className="relative mx-auto flex min-h-dvh w-full max-w-[480px] flex-col bg-white">
         <header className="sticky top-0 z-10 grid h-12 grid-cols-[44px_1fr_44px] items-center border-b border-[#ECF0F2] bg-white px-3">
-          <Link to="/mine" className="grid h-11 w-11 place-items-center" aria-label={t("自分の投稿")}>
+          <Link to="/mine" className="grid h-11 w-11 place-items-center" aria-label={t("プロフィール")}>
             <Avatar initial={own?.initial ?? "あ"} index={0} url={own?.avatar} size={32} />
           </Link>
           <h1 className="text-center text-[17px] font-bold">{t(title)}</h1>
