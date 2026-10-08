@@ -1,3 +1,4 @@
+import PhotosUI
 import SwiftUI
 
 /// 70字までの本文だけを書く投稿画面。
@@ -8,6 +9,8 @@ struct ComposeView: View {
     @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
 
     @State private var draft = ""
+    @State private var pickerItem: PhotosPickerItem?
+    @State private var imageData: Data?
     @FocusState private var isFocused: Bool
 
     private var count: Int { draft.count }
@@ -41,8 +44,36 @@ struct ComposeView: View {
                         }
                 }
             }
+            if let imageData, let preview = UIImage(data: imageData) {
+                Color.clear
+                    .frame(height: 220)
+                    .overlay { Image(uiImage: preview).resizable().aspectRatio(contentMode: .fill).allowsHitTesting(false) }
+                    .clipShape(.rect(cornerRadius: 16))
+                    .overlay(alignment: .topTrailing) {
+                        Button {
+                            self.imageData = nil
+                            pickerItem = nil
+                        } label: {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundStyle(.white)
+                                .frame(width: 30, height: 30)
+                                .background(.black.opacity(0.65), in: Circle())
+                                .frame(width: 44, height: 44)
+                        }
+                        .accessibilityLabel(L("画像を外す"))
+                    }
+                    .padding(.leading, 52)
+            }
             Spacer(minLength: 0)
             HStack {
+                PhotosPicker(selection: $pickerItem, matching: .images) {
+                    Image(systemName: "photo.badge.plus")
+                        .font(.system(size: 22))
+                        .foregroundStyle(Color.irukaBlue)
+                        .frame(width: 44, height: 44)
+                }
+                .accessibilityLabel(L("画像を追加"))
                 Spacer()
                 Text("\(count) / \(PostLimits.maxCharacters)")
                     .font(.system(size: 15, weight: .medium, design: .monospaced))
@@ -73,11 +104,18 @@ struct ComposeView: View {
             }
         }
         .onAppear { isFocused = true }
+        .onChange(of: pickerItem) { _, item in
+            guard let item else { return }
+            Task {
+                guard let raw = try? await item.loadTransferable(type: Data.self) else { return }
+                imageData = await Task.detached { PostStore.compressedJPEG(from: raw) }.value
+            }
+        }
     }
 
     private func submit() {
         guard canPost, let user = auth.user else { return }
-        store.add(body: draft, user: user)
+        store.add(body: draft, image: imageData, user: user)
         dismiss()
     }
 }

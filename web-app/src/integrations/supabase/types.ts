@@ -26,6 +26,7 @@ export type Database = {
           created_at: string
           handle: string
           id: string
+          image_url: string | null
           initial: string
           is_mine: boolean
           user_id: string | null
@@ -37,6 +38,7 @@ export type Database = {
           created_at?: string
           handle: string
           id?: string
+          image_url?: string | null
           initial: string
           is_mine?: boolean
           user_id?: string | null
@@ -48,6 +50,7 @@ export type Database = {
           created_at?: string
           handle?: string
           id?: string
+          image_url?: string | null
           initial?: string
           is_mine?: boolean
           user_id?: string | null
@@ -93,7 +96,12 @@ export type Database = {
     }
     Functions: {
       create_post: {
-        Args: { expected_user_id: string; post_body: string; post_id: string }
+        Args: {
+          expected_user_id: string
+          post_body: string
+          post_id: string
+          post_image_url?: string
+        }
         Returns: {
           author_name: string
           avatar_index: number
@@ -101,6 +109,7 @@ export type Database = {
           created_at: string
           handle: string
           id: string
+          image_url: string | null
           initial: string
           is_mine: boolean
           user_id: string | null
@@ -142,6 +151,7 @@ export type Database = {
           created_at: string
           handle: string
           id: string
+          image_url: string | null
           initial: string
           is_mine: boolean
           user_id: string | null

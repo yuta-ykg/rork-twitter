@@ -34,6 +34,22 @@ struct TweetRow: View {
                 tweetBody
                     .font(.system(size: 15))
                     .fixedSize(horizontal: false, vertical: true)
+                if let urlString = post.imageUrl, let url = URL(string: urlString) {
+                    Color(.secondarySystemBackground)
+                        .frame(height: 220)
+                        .overlay {
+                            AsyncImage(url: url) { image in
+                                image.resizable().aspectRatio(contentMode: .fill)
+                            } placeholder: {
+                                ProgressView()
+                            }
+                            .allowsHitTesting(false)
+                        }
+                        .clipShape(.rect(cornerRadius: 16))
+                        .overlay { RoundedRectangle(cornerRadius: 16).stroke(Color.irukaHairline, lineWidth: 1) }
+                        .padding(.top, 8)
+                        .accessibilityLabel(L("投稿の画像"))
+                }
                 actionRow
                     .padding(.top, 8)
             }

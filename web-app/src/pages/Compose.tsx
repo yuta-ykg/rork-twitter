@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ImagePlus, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -16,6 +17,10 @@ export default function ComposePage() {
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
+  const [image, setImage] = useState<File | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const preview = useMemo(() => (image ? URL.createObjectURL(image) : null), [image]);
+  useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
   const count = Array.from(draft).length;
   const trimmed = draft.trim();
   const canPost = trimmed.length > 0 && Array.from(trimmed).length <= MAX_CHARACTERS && !sending;
@@ -29,7 +34,7 @@ export default function ComposePage() {
     if (!canPost || !user) return;
     setSending(true);
     try {
-      await insertPost(trimmed, user);
+      await insertPost(trimmed, user, image);
       await queryClient.invalidateQueries({ queryKey: ["timeline", user.id] });
       navigate("/");
     } catch {
@@ -62,7 +67,37 @@ export default function ComposePage() {
             autoFocus
           />
         </div>
-        <p className="mt-auto px-4 pb-6 text-right font-mono text-[15px] text-[#536471]">{count} / {MAX_CHARACTERS}</p>
+        {preview ? (
+          <div className="relative mx-4 ml-[68px] mt-2 overflow-hidden rounded-2xl border border-[#ECF0F2]">
+            <img src={preview} alt={t("選んだ画像")} className="max-h-80 w-full object-cover" />
+            <button
+              type="button"
+              onClick={() => setImage(null)}
+              aria-label={t("画像を外す")}
+              className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-full bg-black/65 text-white"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        ) : null}
+        <div className="mt-auto flex items-center justify-between border-t border-[#ECF0F2] px-4 py-2 pb-5">
+          <input
+            ref={fileInput}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={(event) => { setImage(event.target.files?.[0] ?? null); event.target.value = ""; }}
+          />
+          <button
+            type="button"
+            onClick={() => fileInput.current?.click()}
+            aria-label={t("画像を追加")}
+            className="grid h-11 w-11 place-items-center rounded-full text-[#1D9BF0] active:bg-[#1D9BF0]/10"
+          >
+            <ImagePlus className="h-[22px] w-[22px]" />
+          </button>
+          <p className="font-mono text-[15px] text-[#536471]">{count} / {MAX_CHARACTERS}</p>
+        </div>
       </div>
     </div>
   );

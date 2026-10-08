@@ -24,6 +24,7 @@ nonisolated struct PostRow: Codable, Sendable {
     let avatarIndex: Int
     let userId: String?
     let parentId: UUID?
+    let imageUrl: String?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -35,6 +36,7 @@ nonisolated struct PostRow: Codable, Sendable {
         case avatarIndex = "avatar_index"
         case userId = "user_id"
         case parentId = "parent_id"
+        case imageUrl = "image_url"
     }
 }
 
@@ -46,4 +48,5 @@ nonisolated struct CreatePostParams: Encodable, Sendable {
     let post_id: UUID
     let post_body: String
     let expected_user_id: String
+    var post_image_url: String? = nil
 }

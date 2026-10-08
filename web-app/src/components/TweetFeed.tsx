@@ -112,6 +112,14 @@ export function TweetRow({ post }: { post: Post }) {
           <ChevronDown className="ml-auto h-3.5 w-3.5 shrink-0 text-[#536471]" aria-hidden />
         </div>
         <TweetBody body={post.body} />
+        {safeImage(post.imageUrl) ? (
+          <img
+            src={safeImage(post.imageUrl) ?? undefined}
+            alt=""
+            loading="lazy"
+            className="mt-2 max-h-[420px] w-full rounded-2xl border border-[#ECF0F2] object-cover"
+          />
+        ) : null}
         <div className="mt-2 grid grid-cols-4 text-[#536471]" aria-hidden>
           <MessageCircle className="h-[15px] w-[15px]" />
           <Repeat2 className="h-[15px] w-[15px]" />
@@ -148,6 +156,10 @@ export function Avatar({ initial, index, url, size }: { initial: string; index: 
       {safe ? <img src={safe} alt="" className="h-full w-full object-cover" /> : initial}
     </span>
   );
+}
+
+function safeImage(url?: string | null): string | null {
+  return safeAvatar(url);
 }
 
 function safeAvatar(url?: string | null): string | null {

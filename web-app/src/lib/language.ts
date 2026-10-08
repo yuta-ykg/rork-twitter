@@ -3,6 +3,9 @@ import { useLayoutEffect, useSyncExternalStore } from "react";
 export type Language = "ja" | "en" | "ko" | "zh-CN" | "zh-TW";
 const key = "iruka-language";
 const english: Record<string, string> = {
+  "画像を追加": "Add image",
+  "画像を外す": "Remove image",
+  "選んだ画像": "Selected image",
   "スネーク": "Snake",
   "エサを集めて長くなり、壁や自分の体を避けましょう。": "Collect food to grow longer while avoiding walls and your own body.",
   "エサを集めて長くなり、壁や自分の体を避けるゲームです。": "Collect food to grow longer while avoiding walls and your own body.",

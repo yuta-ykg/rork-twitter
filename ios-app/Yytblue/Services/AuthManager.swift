@@ -313,7 +313,8 @@ class AuthManager {
                 .rpc("create_post", params: CreatePostParams(
                     post_id: UUID(),
                     post_body: post.body.trimmingCharacters(in: .whitespacesAndNewlines),
-                    expected_user_id: user.id
+                    expected_user_id: user.id,
+                    post_image_url: nil
                 ))
                 .execute()
         }
