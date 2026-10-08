@@ -5,7 +5,7 @@ import { setRelationship, type RelationKind } from "@/lib/relationships";
 import { toast } from "sonner";
 import { useOwnProfile } from "@/hooks/useOwnProfile";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Ban, Bell, ChevronDown, VolumeX, Heart, House, Mail, MessageCircle, Quote, Repeat2, Search, Settings, Share, SquarePen } from "lucide-react";
+import { Ban, Bell, Ellipsis, VolumeX, Heart, House, Mail, MessageCircle, Quote, Repeat2, Search, Settings, Share, SquarePen } from "lucide-react";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
@@ -186,7 +186,7 @@ export function TweetRow({ post }: { post: Post }) {
                 aria-label={t("ミュート・ブロック中のアカウント")}
                 className="-mr-2 grid h-9 w-9 place-items-center rounded-full"
               >
-                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+                <Ellipsis className="h-[18px] w-[18px] text-muted-foreground" aria-hidden />
               </button>
               {moreOpen ? (
                 <>
@@ -208,9 +208,7 @@ export function TweetRow({ post }: { post: Post }) {
                 </>
               ) : null}
             </div>
-          ) : (
-            <ChevronDown className="ml-auto h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
-          )}
+          ) : null}
         </div>
         {post.replyTo ? (
           <p className="text-[13px] text-muted-foreground">{t("返信先")} {parent ? parent.handle : t("投稿")}</p>

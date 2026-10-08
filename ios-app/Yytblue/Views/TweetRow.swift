@@ -94,18 +94,13 @@ struct TweetRow: View {
                     Label("\(L("ブロック")) \(post.handle)", systemImage: "nosign")
                 }
             } label: {
-                Image(systemName: "chevron.down")
-                    .font(.system(size: 12, weight: .semibold))
+                Image(systemName: "ellipsis")
+                    .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(Color.irukaSecondary)
                     .frame(width: 44, height: 28, alignment: .trailing)
                     .contentShape(Rectangle())
             }
             .accessibilityLabel(L("ミュート・ブロック中のアカウント"))
-        } else {
-            Image(systemName: "chevron.down")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(Color.irukaSecondary)
-                .accessibilityHidden(true)
         }
     }
 
