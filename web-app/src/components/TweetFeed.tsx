@@ -128,6 +128,8 @@ export function TweetRow({ post }: { post: Post }) {
   const navigate = useNavigate();
   const timeline = useTimeline();
   const quoted = post.quoteOf ? timeline.data?.find((item) => item.id === post.quoteOf) : undefined;
+  const parent = post.replyTo ? timeline.data?.find((item) => item.id === post.replyTo) : undefined;
+  const replyCount = (timeline.data ?? []).filter((item) => item.replyTo === post.id).length;
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const reposted = post.reposted ?? false;
   const repostCount = post.repostCount ?? 0;
@@ -162,7 +164,10 @@ export function TweetRow({ post }: { post: Post }) {
           <span className="shrink-0 text-[#536471]">{tweetAge(post.createdAt, language)}</span>
           <ChevronDown className="ml-auto h-3.5 w-3.5 shrink-0 text-[#536471]" aria-hidden />
         </div>
-        <TweetBody body={post.body} />
+        {post.replyTo ? (
+          <p className="text-[13px] text-[#536471]">{t("返信先")} {parent ? parent.handle : t("投稿")}</p>
+        ) : null}
+        <Link to={`/post/${post.id}`} className="block"><TweetBody body={post.body} /></Link>
         {safeImage(post.imageUrl) ? (
           <img
             src={safeImage(post.imageUrl) ?? undefined}
@@ -173,7 +178,15 @@ export function TweetRow({ post }: { post: Post }) {
         ) : null}
         {post.quoteOf ? <QuoteCard post={quoted} /> : null}
         <div className="mt-1 grid grid-cols-4 items-center text-[#536471]">
-          <MessageCircle className="h-[15px] w-[15px]" aria-hidden />
+          <button
+            type="button"
+            onClick={() => navigate(`/compose?reply=${post.id}`)}
+            aria-label={t("返信")}
+            className="-ml-2 flex h-9 w-fit items-center gap-1 rounded-full px-2 text-[13px] transition active:scale-90 hover:text-[#1D9BF0]"
+          >
+            <MessageCircle className="h-[16px] w-[16px]" />
+            {replyCount > 0 ? <span className="tabular-nums">{replyCount}</span> : null}
+          </button>
           <div className="relative">
             <button
               type="button"

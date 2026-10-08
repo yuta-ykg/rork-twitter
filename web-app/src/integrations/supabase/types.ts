@@ -42,6 +42,13 @@ export type Database = {
             referencedRelation: "posts"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "posts_reply_to_fkey"
+            columns: ["reply_to"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
         ]
       }
       post_reposts: {
@@ -82,6 +89,7 @@ export type Database = {
           initial: string
           is_mine: boolean
           quote_of: string | null
+          reply_to: string | null
           user_id: string | null
         }
         Insert: {
@@ -95,6 +103,7 @@ export type Database = {
           initial: string
           is_mine?: boolean
           quote_of?: string | null
+          reply_to?: string | null
           user_id?: string | null
         }
         Update: {
@@ -108,6 +117,7 @@ export type Database = {
           initial?: string
           is_mine?: boolean
           quote_of?: string | null
+          reply_to?: string | null
           user_id?: string | null
         }
         Relationships: [
@@ -176,6 +186,36 @@ export type Database = {
           initial: string
           is_mine: boolean
           quote_of: string | null
+          reply_to: string | null
+          user_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "posts"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      create_reply_post: {
+        Args: {
+          expected_user_id: string
+          post_body: string
+          post_id: string
+          post_image_url?: string
+          reply_to_id: string
+        }
+        Returns: {
+          author_name: string
+          avatar_index: number
+          body: string
+          created_at: string
+          handle: string
+          id: string
+          image_url: string | null
+          initial: string
+          is_mine: boolean
+          quote_of: string | null
+          reply_to: string | null
           user_id: string | null
         }[]
         SetofOptions: {
@@ -204,6 +244,7 @@ export type Database = {
           initial: string
           is_mine: boolean
           quote_of: string | null
+          reply_to: string | null
           user_id: string | null
         }[]
         SetofOptions: {
@@ -263,6 +304,7 @@ export type Database = {
           initial: string
           is_mine: boolean
           quote_of: string | null
+          reply_to: string | null
           user_id: string | null
         }[]
         SetofOptions: {

@@ -22,6 +22,7 @@ export type Post = {
   likeCount?: number;
   liked?: boolean;
   quoteOf?: string | null;
+  replyTo?: string | null;
   repostCount?: number;
   reposted?: boolean;
 };
@@ -37,6 +38,7 @@ type Row = {
   user_id: string | null;
   image_url?: string | null;
   quote_of?: string | null;
+  reply_to?: string | null;
 };
 
 export type Author = {
@@ -59,6 +61,7 @@ function toPost(row: Row, userId?: string | null): Post {
     userId: row.user_id,
     imageUrl: row.image_url ?? null,
     quoteOf: row.quote_of ?? null,
+    replyTo: row.reply_to ?? null,
   };
 }
 
@@ -179,7 +182,7 @@ export async function setPostRepost(postId: string, reposted: boolean, userId: s
 }
 
 /** 本文（70字まで）と任意の画像1枚で投稿を作る。quoteOf を渡すと引用投稿になる。 */
-export async function insertPost(body: string, author: Author, image?: File | null, quoteOf?: string | null): Promise<Post> {
+export async function insertPost(body: string, author: Author, image?: File | null, quoteOf?: string | null, replyTo?: string | null): Promise<Post> {
   const trimmed = body.trim();
   if (!trimmed || Array.from(trimmed).length > MAX_CHARACTERS) throw new Error("投稿は1〜70文字で入力してください。");
   const blob = image ? await shrinkImage(image) : null;
@@ -198,6 +201,7 @@ export async function insertPost(body: string, author: Author, image?: File | nu
       avatarIndex: 0,
       avatarUrl: profile.avatar_url,
       quoteOf: quoteOf ?? null,
+      replyTo: replyTo ?? null,
     };
     writeDevelopmentPosts([post, ...readDevelopmentPosts()]);
     return post;
@@ -210,7 +214,15 @@ export async function insertPost(body: string, author: Author, image?: File | nu
     if (uploadError) throw uploadError;
     imageUrl = supabase.storage.from("post-images").getPublicUrl(path).data.publicUrl;
   }
-  const { data, error } = quoteOf
+  const { data, error } = replyTo
+    ? await supabase.rpc("create_reply_post", {
+        post_id: crypto.randomUUID(),
+        post_body: trimmed,
+        reply_to_id: replyTo,
+        expected_user_id: author.id,
+        post_image_url: imageUrl,
+      })
+    : quoteOf
     ? await supabase.rpc("create_quote_post", {
         post_id: crypto.randomUUID(),
         post_body: trimmed,

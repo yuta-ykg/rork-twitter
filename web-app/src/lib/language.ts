@@ -446,6 +446,8 @@ const english: Record<string, string> = {
   "ログインすると、この端末を超えて自分の投稿が見られます。": "Sign in to access your posts across devices.",
   "まだ投稿がありません": "No posts yet",
   "まだリポストがありません": "No reposts yet",
+  "返信を投稿": "Post your reply",
+  "まだ返信がありません": "No replies yet",
   "まだ投稿がありません。": "No posts yet.",
   "70字以内で、いまの気持ちを残しましょう。": "Share how you feel in up to 70 characters.",
   "ログアウト": "Sign out",
