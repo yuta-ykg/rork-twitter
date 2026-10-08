@@ -8,24 +8,29 @@ struct ProfileView: View {
 
     @State private var profile: IrukaProfile?
     @State private var showsEdit = false
+    @State private var showsReposts = false
+
+    private var shown: [Post] {
+        showsReposts ? store.timeline.filter { $0.isReposted ?? false } : store.mine
+    }
 
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 0) {
                 header
-                Text(L("投稿"))
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(Color.irukaInk)
-                    .frame(maxWidth: .infinity, minHeight: 44)
-                    .overlay(alignment: .top) { Rectangle().fill(Color.irukaHairline).frame(height: 1) }
-                    .overlay(alignment: .bottom) { Rectangle().fill(Color.irukaHairline).frame(height: 1) }
-                if store.mine.isEmpty {
-                    Text(L("まだ投稿がありません"))
+                HStack(spacing: 0) {
+                    tabButton(L("投稿"), selected: !showsReposts) { showsReposts = false }
+                    tabButton(L("リポスト"), selected: showsReposts) { showsReposts = true }
+                }
+                .overlay(alignment: .top) { Rectangle().fill(Color.irukaHairline).frame(height: 1) }
+                .overlay(alignment: .bottom) { Rectangle().fill(Color.irukaHairline).frame(height: 1) }
+                if shown.isEmpty {
+                    Text(L(showsReposts ? "まだリポストがありません" : "まだ投稿がありません"))
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(Color.irukaInk)
                         .padding(.top, 48)
                 } else {
-                    ForEach(store.mine) { post in
+                    ForEach(shown) { post in
                         TweetRow(
                             post: post,
                             quoted: post.quoteOf.flatMap { id in store.posts.first { $0.id == id } },
@@ -48,6 +53,19 @@ struct ProfileView: View {
             }
         }
         .task(id: auth.user?.id) { await load() }
+    }
+
+    private func tabButton(_ title: String, selected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 15, weight: selected ? .bold : .regular))
+                .foregroundStyle(selected ? Color.irukaInk : Color.irukaSecondary)
+                .frame(maxWidth: .infinity, minHeight: 48)
+                .overlay(alignment: .bottom) {
+                    if selected { Capsule().fill(Color.irukaBlue).frame(width: 48, height: 4) }
+                }
+        }
+        .buttonStyle(.plain)
     }
 
     private var header: some View {

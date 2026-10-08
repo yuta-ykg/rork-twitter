@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarDays, ChevronLeft } from "lucide-react";
@@ -22,7 +23,9 @@ export default function MinePage() {
     queryFn: async () => (user?.id ? await fetchProfile(user.id) : null),
     enabled: Boolean(user?.id),
   });
+  const [tab, setTab] = useState<"posts" | "reposts">("posts");
   const mine = (timeline.data ?? []).filter((post) => post.isMine);
+  const reposted = (timeline.data ?? []).filter((post) => post.reposted);
   const profile = profileQuery.data;
   const name = profile?.name ?? own?.name ?? "";
   const handle = profile?.handle ? `@${profile.handle}` : own?.handle ?? "";
@@ -55,9 +58,22 @@ export default function MinePage() {
             <span><b className="text-[#0F1419]">{mine.length}</b> {t("投稿")}</span>
           </div>
         </section>
-        <div className="border-b border-t border-[#ECF0F2] py-3 text-center text-[15px] font-bold">{t("投稿")}</div>
+        <div className="grid grid-cols-2 border-b border-t border-[#ECF0F2]" role="tablist">
+          {([["posts", "投稿"], ["reposts", "リポスト"]] as const).map(([key, label]) => (
+            <button
+              key={key}
+              role="tab"
+              aria-selected={tab === key}
+              onClick={() => setTab(key)}
+              className={`relative h-12 text-[15px] active:bg-[#F7F9F9] ${tab === key ? "font-bold text-[#0F1419]" : "text-[#536471]"}`}
+            >
+              {t(label)}
+              {tab === key ? <span className="absolute inset-x-1/4 bottom-0 h-1 rounded-full bg-[#1D9BF0]" /> : null}
+            </button>
+          ))}
+        </div>
         {timeline.isLoading ? <p className="grid min-h-[40vh] place-items-center text-[#536471]">{t("読み込み中…")}</p> : null}
-        {timeline.data ? <TweetList posts={mine} empty="まだ投稿がありません" /> : null}
+        {timeline.data ? <TweetList posts={tab === "posts" ? mine : reposted} empty={tab === "posts" ? "まだ投稿がありません" : "まだリポストがありません"} /> : null}
       </div>
     </div>
   );

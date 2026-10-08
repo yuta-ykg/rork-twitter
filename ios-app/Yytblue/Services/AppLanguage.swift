@@ -416,6 +416,7 @@ private let englishMessages: [String: String] = [
     "自分の投稿": "My posts",
     "ログインすると、この端末を超えて自分の投稿が見られます。": "Sign in to access your posts across devices.",
     "まだ投稿がありません": "No posts yet",
+    "まだリポストがありません": "No reposts yet",
     "まだ投稿がありません。": "No posts yet.",
     "70字以内で、いまの気持ちを残しましょう。": "Share how you feel in up to 70 characters.",
     "ログアウト": "Sign out",
