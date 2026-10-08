@@ -26,10 +26,10 @@ final class PostStore {
     }
 
     /// 選んだ画像を長辺1600px以内のJPEGに縮める。
-    nonisolated static func compressedJPEG(from data: Data) -> Data? {
+    nonisolated static func compressedJPEG(from data: Data, maxSide: CGFloat = 1600) -> Data? {
         guard let image = UIImage(data: data) else { return nil }
         let longest = max(image.size.width, image.size.height)
-        let scale = min(1, 1600 / max(longest, 1))
+        let scale = min(1, maxSide / max(longest, 1))
         let size = CGSize(width: image.size.width * scale, height: image.size.height * scale)
         let format = UIGraphicsImageRendererFormat()
         format.scale = 1

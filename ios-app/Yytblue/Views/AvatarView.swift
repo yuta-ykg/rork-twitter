@@ -27,6 +27,10 @@ struct AvatarView: View {
                     initialLabel
                 }
             }
+        } else if let url, url.hasPrefix("data:image/"), let comma = url.firstIndex(of: ","),
+                  let data = Data(base64Encoded: String(url[url.index(after: comma)...])),
+                  let image = UIImage(data: data) {
+            Image(uiImage: image).resizable().scaledToFill()
         } else {
             initialLabel
         }

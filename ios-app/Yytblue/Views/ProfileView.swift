@@ -7,23 +7,12 @@ struct ProfileView: View {
     var onQuote: (Post) -> Void = { _ in }
 
     @State private var profile: IrukaProfile?
-    @State private var isEditing = false
-    @State private var name = ""
-    @State private var handle = ""
-    @State private var bio = ""
-    @State private var isSaving = false
-    @State private var errorMessage: String?
-
-    private var handleIsValid: Bool { handle.wholeMatch(of: ProfileService.handlePattern) != nil }
-    private var canSave: Bool {
-        !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && handleIsValid && !isSaving
-    }
+    @State private var showsEdit = false
 
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 0) {
                 header
-                if isEditing { editForm }
                 Text(L("投稿"))
                     .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(Color.irukaInk)
@@ -53,6 +42,11 @@ struct ProfileView: View {
         .background(Color.white)
         .navigationTitle(profile?.name ?? auth.user?.displayName ?? L("プロフィール"))
         .navigationBarTitleDisplayMode(.inline)
+        .navigationDestination(isPresented: $showsEdit) {
+            if let profile {
+                EditProfileView(store: store, profile: profile) { self.profile = $0 }
+            }
+        }
         .task(id: auth.user?.id) { await load() }
     }
 
@@ -66,8 +60,8 @@ struct ProfileView: View {
                     size: 72
                 )
                 Spacer()
-                if profile != nil, !isEditing {
-                    Button(L("プロフィールを編集")) { beginEditing() }
+                if profile != nil {
+                    Button(L("プロフィールを編集")) { showsEdit = true }
                         .font(.system(size: 14, weight: .bold))
                         .foregroundStyle(Color.irukaInk)
                         .padding(.horizontal, 16)
@@ -102,96 +96,8 @@ struct ProfileView: View {
         .padding(16)
     }
 
-    private var editForm: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            field(L("名前"), text: $name)
-            VStack(alignment: .leading, spacing: 4) {
-                field(L("ハンドル"), text: $handle, prefix: "@")
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .onChange(of: handle) { _, new in handle = new.lowercased() }
-                if !handle.isEmpty, !handleIsValid {
-                    Text(L("英小文字・数字・_ の3〜25文字"))
-                        .font(.system(size: 12)).foregroundStyle(.red)
-                }
-            }
-            VStack(alignment: .leading, spacing: 4) {
-                Text(L("自己紹介")).font(.system(size: 13)).foregroundStyle(Color.irukaSecondary)
-                TextField("", text: $bio, axis: .vertical)
-                    .lineLimit(3...6)
-                    .padding(10)
-                    .overlay { RoundedRectangle(cornerRadius: 8).stroke(Color.irukaHairline, lineWidth: 1.5) }
-                    .onChange(of: bio) { _, new in if new.count > 160 { bio = String(new.prefix(160)) } }
-                Text("\(bio.count)/160").font(.system(size: 12)).foregroundStyle(Color.irukaSecondary)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
-            }
-            if let errorMessage {
-                Text(L(errorMessage)).font(.system(size: 13)).foregroundStyle(.red)
-            }
-            HStack(spacing: 8) {
-                Button { Task { await save() } } label: {
-                    Text(L("保存"))
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 20)
-                        .frame(minHeight: 44)
-                        .background(Color.irukaInk, in: Capsule())
-                }
-                .disabled(!canSave)
-                .opacity(canSave ? 1 : 0.4)
-                Button { isEditing = false } label: {
-                    Text(L("キャンセル"))
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(Color.irukaInk)
-                        .padding(.horizontal, 20)
-                        .frame(minHeight: 44)
-                        .overlay { Capsule().stroke(Color.irukaHairline, lineWidth: 1.5) }
-                }
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.bottom, 16)
-    }
-
-    private func field(_ title: String, text: Binding<String>, prefix: String? = nil) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title).font(.system(size: 13)).foregroundStyle(Color.irukaSecondary)
-            HStack(spacing: 4) {
-                if let prefix { Text(prefix).foregroundStyle(Color.irukaSecondary) }
-                TextField("", text: text)
-            }
-            .padding(10)
-            .frame(minHeight: 44)
-            .overlay { RoundedRectangle(cornerRadius: 8).stroke(Color.irukaHairline, lineWidth: 1.5) }
-        }
-    }
-
-    private func beginEditing() {
-        name = profile?.name ?? ""
-        handle = profile?.handle ?? ""
-        bio = profile?.bio ?? ""
-        errorMessage = nil
-        isEditing = true
-    }
-
     private func load() async {
         guard let id = auth.user?.id else { return }
         profile = try? await ProfileService.fetch(ids: [id]).first
-    }
-
-    private func save() async {
-        guard let id = auth.user?.id, canSave else { return }
-        isSaving = true
-        defer { isSaving = false }
-        do {
-            profile = try await ProfileService.save(
-                userId: id, name: name.trimmingCharacters(in: .whitespacesAndNewlines), handle: handle, bio: bio)
-            await store.refresh(userId: id)
-            isEditing = false
-        } catch {
-            let text = String(describing: error)
-            errorMessage = text.contains("23505") || text.contains("Handle taken")
-                ? "このハンドルは使われています" : "保存できませんでした。もう一度試してください。"
-        }
     }
 }

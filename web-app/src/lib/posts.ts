@@ -66,10 +66,10 @@ const MAX_IMAGE_SIDE = 1600;
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 /** 画像を長辺1600px以内のJPEGに縮める。 */
-async function shrinkImage(file: File): Promise<Blob> {
+export async function shrinkImage(file: File, maxSide: number = MAX_IMAGE_SIDE): Promise<Blob> {
   if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) throw new Error("JPEG、PNG、WebPの画像を選んでください。");
   const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, MAX_IMAGE_SIDE / Math.max(bitmap.width, bitmap.height));
+  const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
   const canvas = document.createElement("canvas");
   canvas.width = Math.max(1, Math.round(bitmap.width * scale));
   canvas.height = Math.max(1, Math.round(bitmap.height * scale));

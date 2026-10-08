@@ -1,4 +1,5 @@
 import { isDevelopmentSession, localUser, readDevelopmentProfile, writeDevelopmentProfile } from "@/lib/development";
+import { shrinkImage } from "@/lib/posts";
 import { supabase } from "@/lib/supabase";
 
 export type Profile = {
@@ -26,19 +27,45 @@ export async function fetchProfile(id: string): Promise<Profile | null> {
 
 export const HANDLE_PATTERN = /^[a-z0-9_]{3,25}$/;
 
-/** 名前・ハンドル・自己紹介を保存する。 */
-export async function saveProfile(userId: string, input: { name: string; handle: string; bio: string }): Promise<Profile> {
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+}
+
+/** 名前・ハンドル・自己紹介・アイコン画像を保存する。 */
+export async function saveProfile(
+  userId: string,
+  input: { name: string; handle: string; bio: string; avatar?: File | null },
+): Promise<Profile> {
+  const blob = input.avatar ? await shrinkImage(input.avatar, 480) : null;
   if (isDevelopmentSession()) {
-    const next: Profile = { ...readDevelopmentProfile(), ...input };
+    const next: Profile = {
+      ...readDevelopmentProfile(),
+      name: input.name,
+      handle: input.handle,
+      bio: input.bio,
+      ...(blob ? { avatar_url: await blobToDataUrl(blob) } : {}),
+    };
     writeDevelopmentProfile(next);
     return next;
+  }
+  let avatarUrl = "";
+  if (blob) {
+    const path = `${userId}/${crypto.randomUUID()}.jpg`;
+    const { error: uploadError } = await supabase.storage.from("avatars").upload(path, blob, { contentType: "image/jpeg" });
+    if (uploadError) throw uploadError;
+    avatarUrl = supabase.storage.from("avatars").getPublicUrl(path).data.publicUrl;
   }
   const { data, error } = await supabase.rpc("save_profile", {
     expected_user_id: userId,
     profile_name: input.name.trim(),
     profile_handle: input.handle,
     profile_bio: input.bio,
-    profile_avatar: "",
+    profile_avatar: avatarUrl,
   });
   if (error) throw error;
   const row = (data as Profile[] | null)?.[0];
