@@ -84,6 +84,32 @@ nonisolated struct SetRepostParams: Encodable, Sendable {
     let expected_user_id: String
 }
 
+nonisolated struct SetRelationshipParams: Encodable, Sendable {
+    let target_user_id: String
+    let relation_kind: String
+    let active: Bool
+    let expected_user_id: String
+}
+
+nonisolated struct ListRelationshipsParams: Encodable, Sendable {
+    let expected_user_id: String
+}
+
+nonisolated struct RelationshipRow: Decodable, Sendable, Identifiable {
+    let targetId: String
+    let kind: String
+    let targetName: String
+    let targetHandle: String?
+    var id: String { kind + targetId }
+
+    enum CodingKeys: String, CodingKey {
+        case targetId = "target_id"
+        case kind
+        case targetName = "target_name"
+        case targetHandle = "target_handle"
+    }
+}
+
 nonisolated struct CreateQuoteParams: Encodable, Sendable {
     let post_id: UUID
     let post_body: String
@@ -109,4 +135,14 @@ nonisolated struct CreatePostParams: Encodable, Sendable {
     let post_body: String
     let expected_user_id: String
     var post_image_url: String? = nil
+}
+
+nonisolated struct RelationshipStateRow: Decodable, Sendable {
+    let isMuted: Bool
+    let isBlocked: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case isMuted = "is_muted"
+        case isBlocked = "is_blocked"
+    }
 }

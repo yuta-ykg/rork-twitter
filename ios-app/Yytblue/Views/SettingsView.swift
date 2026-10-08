@@ -4,6 +4,8 @@ import SwiftUI
 struct SettingsView: View {
     @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
     @AppStorage("iruka-theme") private var theme = "system"
+    @Environment(PostStore.self) private var store
+    @State private var relations: [RelationshipRow] = []
 
     var body: some View {
         ScrollView {
@@ -26,9 +28,43 @@ struct SettingsView: View {
                     }
                     .pickerStyle(.segmented)
                 }
+                if !DevelopmentData.isActive {
+                    section(L("ミュート・ブロック中のアカウント")) {
+                        if relations.isEmpty {
+                            Text(L("まだありません"))
+                                .font(.system(size: 14))
+                                .foregroundStyle(Color.irukaSecondary)
+                        } else {
+                            VStack(spacing: 0) {
+                                ForEach(relations) { r in
+                                    HStack {
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(r.targetName).font(.system(size: 15, weight: .bold)).foregroundStyle(Color.irukaInk).lineLimit(1)
+                                            Text((r.targetHandle.map { "@\($0) · " } ?? "") + L(r.kind == "block" ? "ブロック" : "ミュート"))
+                                                .font(.system(size: 13)).foregroundStyle(Color.irukaSecondary).lineLimit(1)
+                                        }
+                                        Spacer()
+                                        Button(L("解除")) {
+                                            Task {
+                                                await store.setRelationship(targetId: r.targetId, kind: r.kind, active: false)
+                                                relations = await store.relationships()
+                                            }
+                                        }
+                                        .font(.system(size: 14, weight: .bold))
+                                        .buttonStyle(.bordered)
+                                        .frame(minHeight: 44)
+                                    }
+                                    .padding(.vertical, 4)
+                                    Rectangle().fill(Color.irukaHairline).frame(height: 1)
+                                }
+                            }
+                        }
+                    }
+                }
             }
             .padding(16)
         }
+        .task { relations = await store.relationships() }
         .background(Color.irukaBackground)
         .navigationTitle(L("設定"))
         .navigationBarTitleDisplayMode(.inline)

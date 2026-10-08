@@ -1,9 +1,12 @@
 import { avatarFills, fetchPosts, setPostLike, setPostRepost, sortTimeline, type Post } from "@/lib/posts";
 import { t, useLanguage } from "@/lib/language";
 import { useAuth } from "@/hooks/authContext";
+import { isDevelopmentSession } from "@/lib/development";
+import { setRelationship, type RelationKind } from "@/lib/relationships";
+import { toast } from "sonner";
 import { useOwnProfile } from "@/hooks/useOwnProfile";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, ChevronDown, Heart, House, Mail, MessageCircle, Quote, Repeat2, Search, Settings, Share, SquarePen } from "lucide-react";
+import { Ban, Bell, ChevronDown, VolumeX, Heart, House, Mail, MessageCircle, Quote, Repeat2, Search, Settings, Share, SquarePen } from "lucide-react";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
@@ -133,6 +136,16 @@ export function TweetRow({ post }: { post: Post }) {
   const parent = post.replyTo ? timeline.data?.find((item) => item.id === post.replyTo) : undefined;
   const replyCount = (timeline.data ?? []).filter((item) => item.replyTo === post.id).length;
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
+  const [moreOpen, setMoreOpen] = useState<boolean>(false);
+  const canModerate = Boolean(post.userId) && !post.isMine && !isDevelopmentSession();
+  const relate = useMutation({
+    mutationFn: (kind: RelationKind) => setRelationship(post.userId ?? "", kind, true, user?.id ?? ""),
+    onSuccess: async (_data, kind) => {
+      toast.success(t(kind === "block" ? "ブロックしました" : "ミュートしました"));
+      await queryClient.invalidateQueries({ queryKey: ["timeline", user?.id] });
+    },
+    onError: () => toast.error(t("操作できませんでした。もう一度試してください。")),
+  });
   const reposted = post.reposted ?? false;
   const repostCount = post.repostCount ?? 0;
   const repost = useMutation({
@@ -164,7 +177,41 @@ export function TweetRow({ post }: { post: Post }) {
           <span className="truncate text-muted-foreground">{post.handle}</span>
           <span className="text-muted-foreground">·</span>
           <span className="shrink-0 text-muted-foreground">{tweetAge(post.createdAt, language)}</span>
-          <ChevronDown className="ml-auto h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+          {canModerate ? (
+            <div className="relative ml-auto">
+              <button
+                type="button"
+                onClick={() => setMoreOpen((open) => !open)}
+                aria-haspopup="menu"
+                aria-expanded={moreOpen}
+                aria-label={t("ミュート・ブロック中のアカウント")}
+                className="-mr-2 grid h-9 w-9 place-items-center rounded-full"
+              >
+                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+              </button>
+              {moreOpen ? (
+                <>
+                  <button type="button" aria-label={t("閉じる")} className="fixed inset-0 z-20 cursor-default" onClick={() => setMoreOpen(false)} />
+                  <div role="menu" className="absolute right-0 top-9 z-30 w-56 overflow-hidden rounded-2xl border border-border bg-background py-1 text-[15px] font-bold text-foreground shadow-[0_4px_20px_rgba(0,0,0,0.15)]">
+                    {(["mute", "block"] as const).map((kind) => (
+                      <button
+                        key={kind}
+                        type="button"
+                        role="menuitem"
+                        onClick={() => { setMoreOpen(false); relate.mutate(kind); }}
+                        className="flex h-11 w-full items-center gap-3 px-4 text-left active:bg-muted"
+                      >
+                        {kind === "mute" ? <VolumeX className="h-[18px] w-[18px]" aria-hidden /> : <Ban className="h-[18px] w-[18px]" aria-hidden />}
+                        <span className="truncate">{t(kind === "mute" ? "ミュート" : "ブロック")} {post.handle}</span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : null}
+            </div>
+          ) : (
+            <ChevronDown className="ml-auto h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+          )}
         </div>
         {post.replyTo ? (
           <p className="text-[13px] text-muted-foreground">{t("返信先")} {parent ? parent.handle : t("投稿")}</p>

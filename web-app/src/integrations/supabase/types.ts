@@ -356,6 +356,27 @@ export type Database = {
           repost_count: number
         }[]
       }
+      set_user_relationship: {
+        Args: {
+          active: boolean
+          expected_user_id: string
+          relation_kind: string
+          target_user_id: string
+        }
+        Returns: {
+          is_blocked: boolean
+          is_muted: boolean
+        }[]
+      }
+      list_user_relationships: {
+        Args: { expected_user_id: string }
+        Returns: {
+          kind: string
+          target_handle: string | null
+          target_id: string
+          target_name: string
+        }[]
+      }
       user_id: { Args: never; Returns: string }
     }
     Enums: {

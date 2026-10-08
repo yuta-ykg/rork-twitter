@@ -1,4 +1,8 @@
 import { Link } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/authContext";
+import { isDevelopmentSession } from "@/lib/development";
+import { listRelationships, setRelationship } from "@/lib/relationships";
 import { ChevronLeft } from "lucide-react";
 import { t, useLanguage, type Language } from "@/lib/language";
 import { useTheme, type ThemeMode } from "@/lib/theme";
@@ -29,6 +33,21 @@ function Segment<T extends string>({ value, options, onChange }: {
 export default function SettingsPage() {
   const { language, setLanguage } = useLanguage();
   const { theme, setTheme } = useTheme();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const enabled = Boolean(user?.id) && !isDevelopmentSession();
+  const relations = useQuery({
+    queryKey: ["relationships", user?.id],
+    queryFn: () => listRelationships(user?.id ?? ""),
+    enabled,
+  });
+  const remove = useMutation({
+    mutationFn: (r: { targetId: string; kind: "mute" | "block" }) => setRelationship(r.targetId, r.kind, false, user?.id ?? ""),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["relationships", user?.id] });
+      await queryClient.invalidateQueries({ queryKey: ["timeline", user?.id] });
+    },
+  });
   return (
     <div className="min-h-dvh bg-muted text-foreground">
       <div className="mx-auto min-h-dvh w-full max-w-[480px] bg-background">
@@ -61,6 +80,34 @@ export default function SettingsPage() {
             ]}
           />
         </section>
+        {enabled ? (
+          <section className="space-y-2 px-4 pb-10 pt-8">
+            <h2 className="text-[13px] font-bold text-muted-foreground">{t("ミュート・ブロック中のアカウント")}</h2>
+            {(relations.data ?? []).length === 0 ? (
+              <p className="text-[14px] text-muted-foreground">{t("まだありません")}</p>
+            ) : (
+              <ul className="divide-y divide-border rounded-2xl border border-border">
+                {(relations.data ?? []).map((r) => (
+                  <li key={`${r.targetId}-${r.kind}`} className="flex items-center gap-3 px-4 py-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[15px] font-bold">{r.name}</p>
+                      <p className="truncate text-[13px] text-muted-foreground">
+                        {r.handle ? `@${r.handle} · ` : ""}{t(r.kind === "block" ? "ブロック" : "ミュート")}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => remove.mutate({ targetId: r.targetId, kind: r.kind })}
+                      className="h-9 rounded-full border border-input px-4 text-[14px] font-bold active:bg-muted"
+                    >
+                      {t("解除")}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        ) : null}
       </div>
     </div>
   );

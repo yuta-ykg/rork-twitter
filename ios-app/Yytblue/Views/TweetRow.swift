@@ -3,6 +3,8 @@ import SwiftUI
 /// Twitter風の投稿行。いいね・リポスト・引用が操作でき、返信・共有は見た目だけ。
 struct TweetRow: View {
     @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
+    @Environment(PostStore.self) private var store
+    @State private var notice: String?
     let post: Post
     var quoted: Post? = nil
     var onLike: () -> Void = {}
@@ -34,10 +36,7 @@ struct TweetRow: View {
                         .foregroundStyle(Color.irukaSecondary)
                         .lineLimit(1)
                     Spacer(minLength: 4)
-                    Image(systemName: "chevron.down")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(Color.irukaSecondary)
-                        .accessibilityHidden(true)
+                    moreMenu
                 }
                 if post.replyTo != nil {
                     Text("\(L("返信先")) \(replyParent?.handle ?? L("投稿"))")
@@ -78,6 +77,36 @@ struct TweetRow: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
 
+    }
+
+    @ViewBuilder
+    private var moreMenu: some View {
+        if let target = post.userId, !post.isMine, !DevelopmentData.isActive {
+            Menu {
+                Button {
+                    Task { if await store.setRelationship(targetId: target, kind: "mute", active: true) { notice = L("ミュートしました") } }
+                } label: {
+                    Label("\(L("ミュート")) \(post.handle)", systemImage: "speaker.slash")
+                }
+                Button(role: .destructive) {
+                    Task { if await store.setRelationship(targetId: target, kind: "block", active: true) { notice = L("ブロックしました") } }
+                } label: {
+                    Label("\(L("ブロック")) \(post.handle)", systemImage: "nosign")
+                }
+            } label: {
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Color.irukaSecondary)
+                    .frame(width: 44, height: 28, alignment: .trailing)
+                    .contentShape(Rectangle())
+            }
+            .accessibilityLabel(L("ミュート・ブロック中のアカウント"))
+        } else {
+            Image(systemName: "chevron.down")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(Color.irukaSecondary)
+                .accessibilityHidden(true)
+        }
     }
 
     private var tweetBody: Text {

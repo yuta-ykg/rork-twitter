@@ -158,6 +158,33 @@ final class PostStore {
         }
     }
 
+    /// ミュート／ブロックを付け外しし、タイムラインを読み込み直す。成功したら true。
+    @discardableResult
+    func setRelationship(targetId: String, kind: String, active: Bool) async -> Bool {
+        guard !DevelopmentData.isActive, let userId = currentUserId else { return false }
+        do {
+            let _: [RelationshipStateRow] = try await IrukaDatabase.client
+                .rpc("set_user_relationship", params: SetRelationshipParams(
+                    target_user_id: targetId, relation_kind: kind, active: active, expected_user_id: userId
+                ))
+                .execute()
+                .value
+            await refresh(userId: userId)
+            return true
+        } catch {
+            composeError = "操作できませんでした。もう一度試してください。"
+            return false
+        }
+    }
+
+    func relationships() async -> [RelationshipRow] {
+        guard !DevelopmentData.isActive, let userId = currentUserId else { return [] }
+        return (try? await IrukaDatabase.client
+            .rpc("list_user_relationships", params: ListRelationshipsParams(expected_user_id: userId))
+            .execute()
+            .value) ?? []
+    }
+
     func syncProfile(_ user: AuthManager.User) async {
         try? await ProfileService.ensure(user)
     }

@@ -326,6 +326,10 @@ const english: Record<string, string> = {
   "リスト名は1〜40文字、説明は160文字以内で入力してください。": "List names must contain 1–40 characters and descriptions at most 160 characters.",
 
   "ミュート": "Mute",
+  "ミュートしました": "Muted",
+  "ブロックしました": "Blocked",
+  "操作できませんでした。もう一度試してください。": "Something went wrong. Please try again.",
+  "まだありません": "None yet",
   "ミュートを解除": "Unmute",
   "ブロック": "Block",
   "ブロックを解除": "Unblock",
