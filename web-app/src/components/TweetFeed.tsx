@@ -3,7 +3,7 @@ import { t, useLanguage } from "@/lib/language";
 import { useAuth } from "@/hooks/authContext";
 import { useOwnProfile } from "@/hooks/useOwnProfile";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, ChevronDown, Heart, House, Mail, MessageCircle, Quote, Repeat2, Search, Share, SquarePen } from "lucide-react";
+import { Bell, ChevronDown, Heart, House, Mail, MessageCircle, Quote, Repeat2, Search, Settings, Share, SquarePen } from "lucide-react";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
@@ -35,14 +35,16 @@ export function TweetShell({ title, tab, showCompose = false, children }: {
   useLanguage();
   const own = useOwnProfile();
   return (
-    <div className="min-h-dvh bg-[#F7F9F9] text-[#0F1419]">
-      <div className="relative mx-auto flex min-h-dvh w-full max-w-[480px] flex-col bg-white">
-        <header className="sticky top-0 z-10 grid h-12 grid-cols-[44px_1fr_44px] items-center border-b border-[#ECF0F2] bg-white px-3">
+    <div className="min-h-dvh bg-muted text-foreground">
+      <div className="relative mx-auto flex min-h-dvh w-full max-w-[480px] flex-col bg-background">
+        <header className="sticky top-0 z-10 grid h-12 grid-cols-[44px_1fr_44px] items-center border-b border-border bg-background px-3">
           <Link to="/mine" className="grid h-11 w-11 place-items-center" aria-label={t("プロフィール")}>
             <Avatar initial={own?.initial ?? "あ"} index={0} url={own?.avatar} size={32} />
           </Link>
           <h1 className="text-center text-[17px] font-bold">{t(title)}</h1>
-          <span />
+          <Link to="/settings" className="grid h-11 w-11 place-items-center text-muted-foreground" aria-label={t("設定")}>
+            <Settings className="h-5 w-5" />
+          </Link>
         </header>
         <main className="flex-1">{children}</main>
         {showCompose ? (
@@ -54,7 +56,7 @@ export function TweetShell({ title, tab, showCompose = false, children }: {
             <SquarePen className="h-[22px] w-[22px]" />
           </Link>
         ) : null}
-        <nav className="sticky bottom-0 z-10 border-t border-[#ECF0F2] bg-white pb-[env(safe-area-inset-bottom)]" aria-label={t("メインナビゲーション")}>
+        <nav className="sticky bottom-0 z-10 border-t border-border bg-background pb-[env(safe-area-inset-bottom)]" aria-label={t("メインナビゲーション")}>
           <div className="grid grid-cols-4">
             {tabs.map((item) => {
               const Icon = item.icon;
@@ -84,14 +86,14 @@ export function TweetList({ posts, empty, searching = false }: { posts: Post[]; 
     return (
       <div className="px-7 pt-16 text-center">
         <p className="text-base font-semibold">{t(empty)}</p>
-        {searching ? null : <p className="mt-2 text-sm text-[#536471]">{t("70字以内で、いまの気持ちを残しましょう。")}</p>}
+        {searching ? null : <p className="mt-2 text-sm text-muted-foreground">{t("70字以内で、いまの気持ちを残しましょう。")}</p>}
       </div>
     );
   }
   return (
     <ul>
       {posts.map((post) => (
-        <li key={post.id} className="border-b border-[#ECF0F2]">
+        <li key={post.id} className="border-b border-border">
           <TweetRow post={post} />
         </li>
       ))}
@@ -159,13 +161,13 @@ export function TweetRow({ post }: { post: Post }) {
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-1 text-[15px]">
           <span className="truncate font-bold">{post.authorName}</span>
-          <span className="truncate text-[#536471]">{post.handle}</span>
-          <span className="text-[#536471]">·</span>
-          <span className="shrink-0 text-[#536471]">{tweetAge(post.createdAt, language)}</span>
-          <ChevronDown className="ml-auto h-3.5 w-3.5 shrink-0 text-[#536471]" aria-hidden />
+          <span className="truncate text-muted-foreground">{post.handle}</span>
+          <span className="text-muted-foreground">·</span>
+          <span className="shrink-0 text-muted-foreground">{tweetAge(post.createdAt, language)}</span>
+          <ChevronDown className="ml-auto h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
         </div>
         {post.replyTo ? (
-          <p className="text-[13px] text-[#536471]">{t("返信先")} {parent ? parent.handle : t("投稿")}</p>
+          <p className="text-[13px] text-muted-foreground">{t("返信先")} {parent ? parent.handle : t("投稿")}</p>
         ) : null}
         <Link to={`/post/${post.id}`} className="block"><TweetBody body={post.body} /></Link>
         {safeImage(post.imageUrl) ? (
@@ -173,11 +175,11 @@ export function TweetRow({ post }: { post: Post }) {
             src={safeImage(post.imageUrl) ?? undefined}
             alt=""
             loading="lazy"
-            className="mt-2 max-h-[420px] w-full rounded-2xl border border-[#ECF0F2] object-cover"
+            className="mt-2 max-h-[420px] w-full rounded-2xl border border-border object-cover"
           />
         ) : null}
         {post.quoteOf ? <QuoteCard post={quoted} /> : null}
-        <div className="mt-1 grid grid-cols-4 items-center text-[#536471]">
+        <div className="mt-1 grid grid-cols-4 items-center text-muted-foreground">
           <button
             type="button"
             onClick={() => navigate(`/compose?reply=${post.id}`)}
@@ -202,12 +204,12 @@ export function TweetRow({ post }: { post: Post }) {
             {menuOpen ? (
               <>
                 <button type="button" aria-label={t("閉じる")} className="fixed inset-0 z-20 cursor-default" onClick={() => setMenuOpen(false)} />
-                <div role="menu" className="absolute bottom-9 left-[-8px] z-30 w-52 overflow-hidden rounded-2xl border border-[#ECF0F2] bg-white py-1 text-[15px] font-bold text-[#0F1419] shadow-[0_4px_20px_rgba(0,0,0,0.15)]">
+                <div role="menu" className="absolute bottom-9 left-[-8px] z-30 w-52 overflow-hidden rounded-2xl border border-border bg-background py-1 text-[15px] font-bold text-foreground shadow-[0_4px_20px_rgba(0,0,0,0.15)]">
                   <button
                     type="button"
                     role="menuitem"
                     onClick={() => { setMenuOpen(false); repost.mutate(!reposted); }}
-                    className="flex h-11 w-full items-center gap-3 px-4 text-left active:bg-[#F7F9F9]"
+                    className="flex h-11 w-full items-center gap-3 px-4 text-left active:bg-muted"
                   >
                     <Repeat2 className="h-[18px] w-[18px]" aria-hidden />
                     {reposted ? t("リポストを取り消す") : t("リポスト")}
@@ -216,7 +218,7 @@ export function TweetRow({ post }: { post: Post }) {
                     type="button"
                     role="menuitem"
                     onClick={() => { setMenuOpen(false); navigate(`/compose?quote=${post.id}`); }}
-                    className="flex h-11 w-full items-center gap-3 px-4 text-left active:bg-[#F7F9F9]"
+                    className="flex h-11 w-full items-center gap-3 px-4 text-left active:bg-muted"
                   >
                     <Quote className="h-[18px] w-[18px]" aria-hidden />
                     {t("引用")}
@@ -246,17 +248,17 @@ export function TweetRow({ post }: { post: Post }) {
 export function QuoteCard({ post }: { post?: Post }) {
   if (!post) {
     return (
-      <div className="mt-2 rounded-2xl border border-[#ECF0F2] px-3 py-3 text-[14px] text-[#536471]">
+      <div className="mt-2 rounded-2xl border border-border px-3 py-3 text-[14px] text-muted-foreground">
         {t("引用元の投稿は見つかりません")}
       </div>
     );
   }
   return (
-    <div className="mt-2 overflow-hidden rounded-2xl border border-[#ECF0F2] px-3 py-2.5">
+    <div className="mt-2 overflow-hidden rounded-2xl border border-border px-3 py-2.5">
       <div className="flex items-center gap-1.5 text-[14px]">
         <Avatar initial={post.initial} index={post.avatarIndex} url={post.avatarUrl} size={18} />
         <span className="truncate font-bold">{post.authorName}</span>
-        <span className="truncate text-[#536471]">{post.handle}</span>
+        <span className="truncate text-muted-foreground">{post.handle}</span>
       </div>
       <p className="mt-1 whitespace-pre-wrap break-words text-[14px] leading-5">{post.body}</p>
       {safeImage(post.imageUrl) ? (
@@ -284,7 +286,7 @@ export function Avatar({ initial, index, url, size }: { initial: string; index: 
   const safe = safeAvatar(url);
   return (
     <span
-      className="grid shrink-0 place-items-center overflow-hidden rounded-full text-[13px] font-semibold text-[#0F1419]/70"
+      className="grid shrink-0 place-items-center overflow-hidden rounded-full text-[13px] font-semibold text-foreground/70"
       style={{ width: size, height: size, backgroundColor: avatarFills[Math.abs(index) % avatarFills.length] }}
       aria-hidden
     >
@@ -331,5 +333,5 @@ export function tweetAge(iso: string, language: string): string {
 }
 
 export function QuietNote({ message }: { message: string }) {
-  return <p className="grid min-h-[50vh] place-items-center px-6 text-center text-[15px] text-[#536471]">{t(message)}</p>;
+  return <p className="grid min-h-[50vh] place-items-center px-6 text-center text-[15px] text-muted-foreground">{t(message)}</p>;
 }

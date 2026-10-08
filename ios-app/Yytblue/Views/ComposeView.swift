@@ -127,7 +127,7 @@ struct ComposeView: View {
         }
         .padding(.horizontal, 16)
         .padding(.top, 12)
-        .background(Color.white)
+        .background(Color.irukaBackground)
         .navigationTitle(L(replying == nil ? "新しい投稿" : "返信する"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

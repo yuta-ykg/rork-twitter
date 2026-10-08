@@ -27,5 +27,5 @@ export default function AuthCallback() {
     void exchangeCode(code).finally(() => navigate(takeReturnPath(), { replace: true }));
   }, [exchangeCode, navigate]);
 
-  return <div className="grid min-h-dvh place-items-center text-[#536471]">{t("ログインしています…")}</div>;
+  return <div className="grid min-h-dvh place-items-center text-muted-foreground">{t("ログインしています…")}</div>;
 }

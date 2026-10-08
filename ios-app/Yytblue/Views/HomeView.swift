@@ -35,7 +35,7 @@ struct HomeView: View {
             }
         }
         .scrollIndicators(.hidden)
-        .background(Color.white)
+        .background(Color.irukaBackground)
     }
 
     private var emptyState: some View {

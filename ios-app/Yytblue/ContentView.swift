@@ -7,6 +7,7 @@ struct ContentView: View {
     @State private var selectedTab: FeedTab = .home
     @State private var showsComposer = false
     @State private var showsMine = false
+    @State private var showsSettings = false
     @State private var quoteTarget: Post?
     @State private var replyTarget: Post?
     @State private var detailId: UUID?
@@ -23,7 +24,7 @@ struct ContentView: View {
                 ProgressView()
                     .tint(Color.irukaBlue)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color.white)
+                    .background(Color.irukaBackground)
             } else if auth.user == nil {
                 NavigationStack { SignInView() }
             } else {
@@ -56,11 +57,12 @@ struct ContentView: View {
                 feed
                 tabBar
             }
-            .background(Color.white)
+            .background(Color.irukaBackground)
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(isPresented: $showsMine) {
                 ProfileView(store: store, onQuote: startQuote, onReply: startReply, onOpen: { detailId = $0.id })
             }
+            .navigationDestination(isPresented: $showsSettings) { SettingsView() }
             .navigationDestination(item: $detailId) { id in
                 PostDetailView(store: store, postId: id, onQuote: startQuote, onReply: startReply, onOpen: { detailId = $0.id })
             }
@@ -101,11 +103,21 @@ struct ContentView: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel(L("プロフィール"))
                 Spacer()
+                Button {
+                    showsSettings = true
+                } label: {
+                    Image(systemName: "gearshape")
+                        .font(.system(size: 18))
+                        .foregroundStyle(Color.irukaSecondary)
+                        .frame(width: 44, height: 44)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(L("設定"))
             }
         }
         .padding(.horizontal, 12)
         .frame(height: 48)
-        .background(Color.white)
+        .background(Color.irukaBackground)
     }
 
     private var headerTitle: String {
@@ -184,7 +196,7 @@ struct ContentView: View {
             .font(.system(size: 15))
             .foregroundStyle(Color.irukaSecondary)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.white)
+            .background(Color.irukaBackground)
     }
 
     private var composeButton: some View {
@@ -213,7 +225,7 @@ struct ContentView: View {
             }
             .padding(.top, 6)
             .padding(.bottom, 4)
-            .background(Color.white)
+            .background(Color.irukaBackground)
         }
     }
 

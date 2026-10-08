@@ -50,7 +50,7 @@ struct ProfileView: View {
             }
         }
         .scrollIndicators(.hidden)
-        .background(Color.white)
+        .background(Color.irukaBackground)
         .navigationTitle(profile?.name ?? auth.user?.displayName ?? L("プロフィール"))
         .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(isPresented: $showsEdit) {

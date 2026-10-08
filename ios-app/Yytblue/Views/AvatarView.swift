@@ -45,10 +45,18 @@ struct AvatarView: View {
 
 extension Color {
     static let irukaBlue = Color(red: 0.114, green: 0.608, blue: 0.941)
-    static let irukaInk = Color(red: 0.059, green: 0.078, blue: 0.098)
-    static let irukaSecondary = Color(red: 0.325, green: 0.392, blue: 0.443)
-    static let irukaHairline = Color(red: 0.925, green: 0.941, blue: 0.949)
-    static let irukaField = Color(red: 0.969, green: 0.976, blue: 0.976)
+    static let irukaBackground = dynamic(light: (1, 1, 1), dark: (0, 0, 0))
+    static let irukaInk = dynamic(light: (0.059, 0.078, 0.098), dark: (0.906, 0.914, 0.918))
+    static let irukaSecondary = dynamic(light: (0.325, 0.392, 0.443), dark: (0.443, 0.463, 0.486))
+    static let irukaHairline = dynamic(light: (0.925, 0.941, 0.949), dark: (0.184, 0.200, 0.212))
+    static let irukaField = dynamic(light: (0.969, 0.976, 0.976), dark: (0.086, 0.094, 0.102))
+
+    private static func dynamic(light: (Double, Double, Double), dark: (Double, Double, Double)) -> Color {
+        Color(UIColor { traits in
+            let c = traits.userInterfaceStyle == .dark ? dark : light
+            return UIColor(red: c.0, green: c.1, blue: c.2, alpha: 1)
+        })
+    }
 
     init(hex: String) {
         let cleaned = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)

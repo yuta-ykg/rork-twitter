@@ -49,7 +49,7 @@ struct PostDetailView: View {
                 .buttonStyle(.plain)
             }
         }
-        .background(Color.white)
+        .background(Color.irukaBackground)
         .navigationTitle(L("投稿"))
         .navigationBarTitleDisplayMode(.inline)
     }

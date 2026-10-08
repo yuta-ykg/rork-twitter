@@ -19,16 +19,16 @@ export default function SearchPage() {
 
   return (
     <TweetShell title="検索" tab="search" showCompose>
-      <label className="mx-4 my-2 flex h-10 items-center gap-2 rounded-full bg-[#F7F9F9] px-3">
-        <Search className="h-4 w-4 text-[#536471]" aria-hidden />
+      <label className="mx-4 my-2 flex h-10 items-center gap-2 rounded-full bg-muted px-3">
+        <Search className="h-4 w-4 text-muted-foreground" aria-hidden />
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder={t("キーワードで投稿を検索")}
-          className="w-full bg-transparent text-[15px] outline-none placeholder:text-[#536471]"
+          className="w-full bg-transparent text-[15px] outline-none placeholder:text-muted-foreground"
         />
       </label>
-      {timeline.isLoading ? <p className="grid min-h-[30vh] place-items-center text-[#536471]">{t("読み込み中…")}</p> : null}
+      {timeline.isLoading ? <p className="grid min-h-[30vh] place-items-center text-muted-foreground">{t("読み込み中…")}</p> : null}
       {timeline.data ? <TweetList posts={posts} empty="該当する投稿がありません。" searching={needle.length > 0} /> : null}
     </TweetShell>
   );

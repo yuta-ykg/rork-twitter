@@ -77,7 +77,7 @@ struct EditProfileView: View {
             }
             .padding(16)
         }
-        .background(Color.white)
+        .background(Color.irukaBackground)
         .navigationTitle(L("プロフィールを編集"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

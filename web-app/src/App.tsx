@@ -15,6 +15,7 @@ const MessagesPage = lazy(() => import("./pages/Messages"));
 const MinePage = lazy(() => import("./pages/Mine"));
 const EditProfilePage = lazy(() => import("./pages/EditProfile"));
 const PostDetailPage = lazy(() => import("./pages/PostDetail"));
+const SettingsPage = lazy(() => import("./pages/Settings"));
 const SearchPage = lazy(() => import("./pages/Search"));
 
 const queryClient = new QueryClient();
@@ -45,6 +46,7 @@ const App = () => (
           <Route path="/mine" element={<RequireAuth><MinePage /></RequireAuth>} />
           <Route path="/mine/edit" element={<RequireAuth><EditProfilePage /></RequireAuth>} />
           <Route path="/post/:id" element={<RequireAuth><PostDetailPage /></RequireAuth>} />
+          <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />
           <Route path="/compose" element={<RequireAuth><ComposePage /></RequireAuth>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

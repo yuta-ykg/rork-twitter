@@ -50,10 +50,10 @@ export default function ComposePage() {
   }
 
   return (
-    <div className="min-h-dvh bg-white text-[#0F1419]">
+    <div className="min-h-dvh bg-background text-foreground">
       <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
         <header className="flex h-12 items-center justify-between px-3">
-          <button type="button" onClick={() => navigate(-1)} className="h-11 px-2 text-[15px] text-[#0F1419]">{t("キャンセル")}</button>
+          <button type="button" onClick={() => navigate(-1)} className="h-11 px-2 text-[15px] text-foreground">{t("キャンセル")}</button>
           <button
             type="button"
             onClick={() => { void submit(); }}
@@ -66,7 +66,7 @@ export default function ComposePage() {
         {replyId ? (
           <div className="px-4 pt-1">
             <QuoteCard post={replyTarget} />
-            <p className="pt-2 text-[14px] text-[#536471]">
+            <p className="pt-2 text-[14px] text-muted-foreground">
               {t("返信先")} <span className="text-[#1D9BF0]">{replyTarget?.handle ?? ""}</span>
             </p>
           </div>
@@ -77,12 +77,12 @@ export default function ComposePage() {
             value={draft}
             onChange={(event) => change(event.target.value)}
             placeholder={replyId ? t("返信を投稿") : t("今の気持ちを、70字まで。")}
-            className="min-h-40 w-full resize-none bg-transparent text-lg outline-none placeholder:text-[#536471]"
+            className="min-h-40 w-full resize-none bg-transparent text-lg outline-none placeholder:text-muted-foreground"
             autoFocus
           />
         </div>
         {preview ? (
-          <div className="relative mx-4 ml-[68px] mt-2 overflow-hidden rounded-2xl border border-[#ECF0F2]">
+          <div className="relative mx-4 ml-[68px] mt-2 overflow-hidden rounded-2xl border border-border">
             <img src={preview} alt={t("選んだ画像")} className="max-h-80 w-full object-cover" />
             <button
               type="button"
@@ -95,7 +95,7 @@ export default function ComposePage() {
           </div>
         ) : null}
         {quoteId ? <div className="mx-4 ml-[68px]"><QuoteCard post={quoted} /></div> : null}
-        <div className="mt-auto flex items-center justify-between border-t border-[#ECF0F2] px-4 py-2 pb-5">
+        <div className="mt-auto flex items-center justify-between border-t border-border px-4 py-2 pb-5">
           <input
             ref={fileInput}
             type="file"
@@ -111,7 +111,7 @@ export default function ComposePage() {
           >
             <ImagePlus className="h-[22px] w-[22px]" />
           </button>
-          <p className="font-mono text-[15px] text-[#536471]">{count} / {MAX_CHARACTERS}</p>
+          <p className="font-mono text-[15px] text-muted-foreground">{count} / {MAX_CHARACTERS}</p>
         </div>
       </div>
     </div>

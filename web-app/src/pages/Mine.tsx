@@ -30,9 +30,9 @@ export default function MinePage() {
   const name = profile?.name ?? own?.name ?? "";
   const handle = profile?.handle ? `@${profile.handle}` : own?.handle ?? "";
   return (
-    <div className="min-h-dvh bg-[#F7F9F9] text-[#0F1419]">
-      <div className="mx-auto min-h-dvh w-full max-w-[480px] bg-white">
-        <header className="sticky top-0 z-10 grid h-12 grid-cols-[44px_1fr_44px] items-center border-b border-[#ECF0F2] bg-white px-2">
+    <div className="min-h-dvh bg-muted text-foreground">
+      <div className="mx-auto min-h-dvh w-full max-w-[480px] bg-background">
+        <header className="sticky top-0 z-10 grid h-12 grid-cols-[44px_1fr_44px] items-center border-b border-border bg-background px-2">
           <Link to="/" className="grid h-11 w-11 place-items-center" aria-label={t("ホーム")}>
             <ChevronLeft className="h-6 w-6" />
           </Link>
@@ -43,36 +43,36 @@ export default function MinePage() {
           <div className="flex items-start justify-between">
             <Avatar initial={own?.initial ?? "あ"} index={0} url={own?.avatar} size={72} />
             {profile ? (
-              <Link to="/mine/edit" className="grid h-9 place-items-center rounded-full border border-[#CFD9DE] px-4 text-[14px] font-bold active:bg-[#F7F9F9]">
+              <Link to="/mine/edit" className="grid h-9 place-items-center rounded-full border border-input px-4 text-[14px] font-bold active:bg-muted">
                 {t("プロフィールを編集")}
               </Link>
             ) : null}
           </div>
           <h2 className="mt-3 text-[20px] font-extrabold leading-6">{name}</h2>
-          <p className="text-[15px] text-[#536471]">{handle}</p>
+          <p className="text-[15px] text-muted-foreground">{handle}</p>
           {profile?.bio ? <p className="mt-3 whitespace-pre-wrap break-words text-[15px] leading-5">{profile.bio}</p> : null}
-          <div className="mt-3 flex items-center gap-4 text-[14px] text-[#536471]">
+          <div className="mt-3 flex items-center gap-4 text-[14px] text-muted-foreground">
             {profile?.created_at ? (
               <span className="flex items-center gap-1"><CalendarDays className="h-4 w-4" aria-hidden />{joined(profile.created_at, language)}{t("から利用")}</span>
             ) : null}
-            <span><b className="text-[#0F1419]">{mine.length}</b> {t("投稿")}</span>
+            <span><b className="text-foreground">{mine.length}</b> {t("投稿")}</span>
           </div>
         </section>
-        <div className="grid grid-cols-2 border-b border-t border-[#ECF0F2]" role="tablist">
+        <div className="grid grid-cols-2 border-b border-t border-border" role="tablist">
           {([["posts", "投稿"], ["reposts", "リポスト"]] as const).map(([key, label]) => (
             <button
               key={key}
               role="tab"
               aria-selected={tab === key}
               onClick={() => setTab(key)}
-              className={`relative h-12 text-[15px] active:bg-[#F7F9F9] ${tab === key ? "font-bold text-[#0F1419]" : "text-[#536471]"}`}
+              className={`relative h-12 text-[15px] active:bg-muted ${tab === key ? "font-bold text-foreground" : "text-muted-foreground"}`}
             >
               {t(label)}
               {tab === key ? <span className="absolute inset-x-1/4 bottom-0 h-1 rounded-full bg-[#1D9BF0]" /> : null}
             </button>
           ))}
         </div>
-        {timeline.isLoading ? <p className="grid min-h-[40vh] place-items-center text-[#536471]">{t("読み込み中…")}</p> : null}
+        {timeline.isLoading ? <p className="grid min-h-[40vh] place-items-center text-muted-foreground">{t("読み込み中…")}</p> : null}
         {timeline.data ? <TweetList posts={tab === "posts" ? mine : reposted} empty={tab === "posts" ? "まだ投稿がありません" : "まだリポストがありません"} /> : null}
       </div>
     </div>

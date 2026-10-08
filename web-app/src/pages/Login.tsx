@@ -50,7 +50,7 @@ export default function LoginPage() {
           className="h-[52px] w-full rounded-full bg-[hsl(var(--brand))] text-[17px] font-semibold text-white transition active:scale-[0.98] disabled:opacity-40"
         >
           <span className="flex items-center justify-center gap-3">
-            <span className="grid h-7 w-7 place-items-center rounded-full bg-white">
+            <span className="grid h-7 w-7 place-items-center rounded-full bg-background">
               <GoogleMark className="h-[18px] w-[18px]" />
             </span>
             {isSigningIn ? t("ログイン中…") : t("Googleで続ける")}
