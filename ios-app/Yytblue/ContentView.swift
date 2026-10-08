@@ -8,6 +8,8 @@ struct ContentView: View {
     @State private var showsComposer = false
     @State private var showsMine = false
     @State private var quoteTarget: Post?
+    @State private var replyTarget: Post?
+    @State private var detailId: UUID?
     @State private var query = ""
     @State private var didLoad = false
 
@@ -57,13 +59,21 @@ struct ContentView: View {
             .background(Color.white)
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(isPresented: $showsMine) {
-                ProfileView(store: store, onQuote: startQuote)
+                ProfileView(store: store, onQuote: startQuote, onReply: startReply, onOpen: { detailId = $0.id })
+            }
+            .navigationDestination(item: $detailId) { id in
+                PostDetailView(store: store, postId: id, onQuote: startQuote, onReply: startReply, onOpen: { detailId = $0.id })
             }
         }
-        .fullScreenCover(isPresented: $showsComposer, onDismiss: { quoteTarget = nil }) {
-            NavigationStack { ComposeView(quoting: quoteTarget) }
+        .fullScreenCover(isPresented: $showsComposer, onDismiss: { quoteTarget = nil; replyTarget = nil }) {
+            NavigationStack { ComposeView(quoting: quoteTarget, replying: replyTarget) }
                 .environment(store)
         }
+    }
+
+    private func startReply(_ post: Post) {
+        replyTarget = post
+        showsComposer = true
     }
 
     private func startQuote(_ post: Post) {
@@ -111,7 +121,7 @@ struct ContentView: View {
     private var feed: some View {
         switch selectedTab {
         case .home:
-            timeline(store.timeline, searching: false)
+            timeline(store.timeline.filter { $0.replyTo == nil }, searching: false)
         case .search:
             VStack(spacing: 0) {
                 searchField
@@ -156,7 +166,7 @@ struct ContentView: View {
                     .tint(Color.irukaBlue)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                HomeView(store: store, posts: posts, isSearching: searching && !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, onQuote: startQuote)
+                HomeView(store: store, posts: posts, isSearching: searching && !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, onQuote: startQuote, onReply: startReply, onOpen: { detailId = $0.id })
                     .refreshable { await store.refresh(userId: auth.user?.id) }
             }
         }

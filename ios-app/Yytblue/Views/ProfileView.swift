@@ -5,6 +5,8 @@ struct ProfileView: View {
     @Environment(AuthManager.self) private var auth
     @Bindable var store: PostStore
     var onQuote: (Post) -> Void = { _ in }
+    var onReply: (Post) -> Void = { _ in }
+    var onOpen: (Post) -> Void = { _ in }
 
     @State private var profile: IrukaProfile?
     @State private var showsEdit = false
@@ -36,7 +38,11 @@ struct ProfileView: View {
                             quoted: post.quoteOf.flatMap { id in store.posts.first { $0.id == id } },
                             onLike: { store.toggleLike(post) },
                             onRepost: { store.toggleRepost(post) },
-                            onQuote: { onQuote(post) }
+                            onQuote: { onQuote(post) },
+                            onReply: { onReply(post) },
+                            onOpen: { onOpen(post) },
+                            replyCount: store.replyCount(of: post),
+                            replyParent: post.replyTo.flatMap { id in store.posts.first { $0.id == id } }
                         )
                         Rectangle().fill(Color.irukaHairline).frame(height: 1)
                     }

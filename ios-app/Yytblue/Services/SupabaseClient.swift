@@ -26,9 +26,11 @@ nonisolated struct PostRow: Codable, Sendable {
     let parentId: UUID?
     let imageUrl: String?
     var quoteOf: UUID? = nil
+    var replyTo: UUID? = nil
 
     enum CodingKeys: String, CodingKey {
         case quoteOf = "quote_of"
+        case replyTo = "reply_to"
         case id
         case authorName = "author_name"
         case handle
@@ -86,6 +88,14 @@ nonisolated struct CreateQuoteParams: Encodable, Sendable {
     let post_id: UUID
     let post_body: String
     let quote_of_id: UUID
+    let expected_user_id: String
+    var post_image_url: String? = nil
+}
+
+nonisolated struct CreateReplyParams: Encodable, Sendable {
+    let post_id: UUID
+    let post_body: String
+    let reply_to_id: UUID
     let expected_user_id: String
     var post_image_url: String? = nil
 }

@@ -344,6 +344,8 @@ private let englishMessages: [String: String] = [
     "返信を保存できませんでした。": "Couldn't save your reply.",
     "返信は1〜70文字で入力してください。": "Replies must contain 1–70 characters.",
     "まだ返信がありません。": "No replies yet.",
+    "まだ返信がありません": "No replies yet",
+    "返信を投稿": "Post your reply",
     "送信中…": "Sending…",
     "PDFとして出力": "Export as PDF",
     "PDFを作成できませんでした。": "Could not create the PDF.",

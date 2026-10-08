@@ -17,8 +17,10 @@ export default function ComposePage() {
   const queryClient = useQueryClient();
   const [params] = useSearchParams();
   const quoteId = params.get("quote");
+  const replyId = params.get("reply");
   const timeline = useTimeline();
   const quoted = quoteId ? timeline.data?.find((item) => item.id === quoteId) : undefined;
+  const replyTarget = replyId ? timeline.data?.find((item) => item.id === replyId) : undefined;
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [image, setImage] = useState<File | null>(null);
@@ -38,9 +40,9 @@ export default function ComposePage() {
     if (!canPost || !user) return;
     setSending(true);
     try {
-      await insertPost(trimmed, user, image, quoteId);
+      await insertPost(trimmed, user, image, quoteId, replyId);
       await queryClient.invalidateQueries({ queryKey: ["timeline", user.id] });
-      navigate("/");
+      navigate(replyId ? `/post/${replyId}` : "/", { replace: true });
     } catch {
       toast.error(t("投稿できませんでした。もう一度試してください。"));
       setSending(false);
@@ -58,15 +60,23 @@ export default function ComposePage() {
             disabled={!canPost}
             className="h-8 rounded-full bg-[#1D9BF0] px-4 text-[15px] font-bold text-white disabled:opacity-40"
           >
-            {t("投稿する")}
+            {replyId ? t("返信する") : t("投稿する")}
           </button>
         </header>
+        {replyId ? (
+          <div className="px-4 pt-1">
+            <QuoteCard post={replyTarget} />
+            <p className="pt-2 text-[14px] text-[#536471]">
+              {t("返信先")} <span className="text-[#1D9BF0]">{replyTarget?.handle ?? ""}</span>
+            </p>
+          </div>
+        ) : null}
         <div className="flex gap-3 px-4 pt-2">
           <Avatar initial={own?.initial ?? "あ"} index={0} url={own?.avatar} size={40} />
           <textarea
             value={draft}
             onChange={(event) => change(event.target.value)}
-            placeholder={t("今の気持ちを、70字まで。")}
+            placeholder={replyId ? t("返信を投稿") : t("今の気持ちを、70字まで。")}
             className="min-h-40 w-full resize-none bg-transparent text-lg outline-none placeholder:text-[#536471]"
             autoFocus
           />

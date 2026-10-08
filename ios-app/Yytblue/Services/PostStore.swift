@@ -15,14 +15,22 @@ final class PostStore {
         posts.sorted { $0.createdAt > $1.createdAt }
     }
 
+    func replyCount(of post: Post) -> Int {
+        posts.reduce(0) { $0 + ($1.replyTo == post.id ? 1 : 0) }
+    }
+
+    func replies(to id: UUID) -> [Post] {
+        posts.filter { $0.replyTo == id }.sorted { $0.createdAt < $1.createdAt }
+    }
+
     var mine: [Post] {
         timeline.filter(\.isMine)
     }
 
-    func add(body: String, image: Data?, user: AuthManager.User, quoteOf: UUID? = nil) {
+    func add(body: String, image: Data?, user: AuthManager.User, quoteOf: UUID? = nil, replyTo: UUID? = nil) {
         let trimmed = body.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, trimmed.count <= PostLimits.maxCharacters else { return }
-        Task { await insert(trimmed, image: image, user: user, quoteOf: quoteOf) }
+        Task { await insert(trimmed, image: image, user: user, quoteOf: quoteOf, replyTo: replyTo) }
     }
 
     /// 選んだ画像を長辺1600px以内のJPEGに縮める。
@@ -83,6 +91,7 @@ final class PostStore {
                     likeCount: likeById[row.id]?.likeCount ?? 0,
                     isLiked: likeById[row.id]?.isLiked ?? false,
                     quoteOf: row.quoteOf,
+                    replyTo: row.replyTo,
                     repostCount: repostById[row.id]?.repostCount ?? 0,
                     isReposted: repostById[row.id]?.isReposted ?? false
                 )
@@ -153,7 +162,7 @@ final class PostStore {
         try? await ProfileService.ensure(user)
     }
 
-    private func insert(_ body: String, image: Data?, user: AuthManager.User, quoteOf: UUID?) async {
+    private func insert(_ body: String, image: Data?, user: AuthManager.User, quoteOf: UUID?, replyTo: UUID?) async {
         if user.id == DevelopmentData.userId && !DevelopmentData.isActive { return }
         if DevelopmentData.isActive {
             let profile = DevelopmentData.profile()
@@ -162,7 +171,7 @@ final class PostStore {
                 initial: String(profile.name.prefix(1)), body: body, createdAt: Date(),
                 isMine: true, avatarIndex: 0, userId: DevelopmentData.userId, avatarUrl: profile.avatarUrl,
                 imageUrl: image.map { "data:image/jpeg;base64," + $0.base64EncodedString() },
-                quoteOf: quoteOf
+                quoteOf: quoteOf, replyTo: replyTo
             )
             posts.insert(post, at: 0)
             DevelopmentData.save(posts: posts)
@@ -177,7 +186,12 @@ final class PostStore {
                 try await bucket.upload(path, data: image, options: FileOptions(contentType: "image/jpeg"))
                 imageUrl = try bucket.getPublicURL(path: path).absoluteString
             }
-            if let quoteOf {
+            if let replyTo {
+                let _: [PostRow] = try await IrukaDatabase.client
+                    .rpc("create_reply_post", params: CreateReplyParams(
+                        post_id: UUID(), post_body: body, reply_to_id: replyTo, expected_user_id: user.id, post_image_url: imageUrl
+                    )).execute().value
+            } else if let quoteOf {
                 let _: [PostRow] = try await IrukaDatabase.client
                     .rpc("create_quote_post", params: CreateQuoteParams(
                         post_id: UUID(), post_body: body, quote_of_id: quoteOf, expected_user_id: user.id, post_image_url: imageUrl

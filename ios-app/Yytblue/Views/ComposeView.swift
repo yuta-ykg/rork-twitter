@@ -9,6 +9,7 @@ struct ComposeView: View {
     @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
 
     var quoting: Post? = nil
+    var replying: Post? = nil
 
     @State private var draft = ""
     @State private var pickerItem: PhotosPickerItem?
@@ -23,11 +24,38 @@ struct ComposeView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
+            if let replying {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 6) {
+                        AvatarView(initial: replying.initial, index: replying.avatarIndex, url: replying.avatarUrl, size: 22)
+                        Text(replying.authorName).font(.system(size: 14, weight: .bold)).foregroundStyle(Color.irukaInk).lineLimit(1)
+                        Text(replying.handle).font(.system(size: 14)).foregroundStyle(Color.irukaSecondary).lineLimit(1)
+                    }
+                    Text(replying.body).font(.system(size: 15)).foregroundStyle(Color.irukaInk)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if let urlString = replying.imageUrl, let url = URL(string: urlString) {
+                        Color(.secondarySystemBackground)
+                            .frame(height: 120)
+                            .overlay {
+                                AsyncImage(url: url) { $0.resizable().aspectRatio(contentMode: .fill) } placeholder: { ProgressView() }
+                                    .allowsHitTesting(false)
+                            }
+                            .clipShape(.rect(cornerRadius: 12))
+                    }
+                    Text("\(L("返信先")) \(replying.handle)")
+                        .font(.system(size: 14)).foregroundStyle(Color.irukaSecondary)
+                        .padding(.top, 2)
+                }
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.irukaField.opacity(0.6), in: RoundedRectangle(cornerRadius: 16))
+                .overlay { RoundedRectangle(cornerRadius: 16).stroke(Color.irukaHairline, lineWidth: 1) }
+            }
             HStack(alignment: .top, spacing: 12) {
                 AvatarView(initial: auth.user?.initial ?? "あ", index: 0, url: auth.user?.picture, size: 40)
                 ZStack(alignment: .topLeading) {
                     if draft.isEmpty {
-                        Text(L("今の気持ちを、70字まで。"))
+                        Text(L(replying == nil ? "今の気持ちを、70字まで。" : "返信を投稿"))
                             .font(.system(size: 18))
                             .foregroundStyle(Color.irukaSecondary)
                             .padding(.top, 8)
@@ -100,7 +128,7 @@ struct ComposeView: View {
         .padding(.horizontal, 16)
         .padding(.top, 12)
         .background(Color.white)
-        .navigationTitle(L("新しい投稿"))
+        .navigationTitle(L(replying == nil ? "新しい投稿" : "返信する"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
@@ -108,7 +136,7 @@ struct ComposeView: View {
             }
             ToolbarItem(placement: .confirmationAction) {
                 Button(action: submit) {
-                    Text(L("投稿する"))
+                    Text(L(replying == nil ? "投稿する" : "返信する"))
                         .font(.system(size: 15, weight: .bold))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 14)
@@ -131,7 +159,7 @@ struct ComposeView: View {
 
     private func submit() {
         guard canPost, let user = auth.user else { return }
-        store.add(body: draft, image: imageData, user: user, quoteOf: quoting?.id)
+        store.add(body: draft, image: imageData, user: user, quoteOf: quoting?.id, replyTo: replying?.id)
         dismiss()
     }
 }

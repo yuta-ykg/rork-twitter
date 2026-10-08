@@ -8,6 +8,10 @@ struct TweetRow: View {
     var onLike: () -> Void = {}
     var onRepost: () -> Void = {}
     var onQuote: () -> Void = {}
+    var onReply: () -> Void = {}
+    var onOpen: (() -> Void)? = nil
+    var replyCount: Int = 0
+    var replyParent: Post? = nil
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
@@ -35,9 +39,21 @@ struct TweetRow: View {
                         .foregroundStyle(Color.irukaSecondary)
                         .accessibilityHidden(true)
                 }
-                tweetBody
-                    .font(.system(size: 15))
-                    .fixedSize(horizontal: false, vertical: true)
+                if post.replyTo != nil {
+                    Text("\(L("返信先")) \(replyParent?.handle ?? L("投稿"))")
+                        .font(.system(size: 13))
+                        .foregroundStyle(Color.irukaSecondary)
+                }
+                Button { onOpen?() } label: {
+                    tweetBody
+                        .font(.system(size: 15))
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .disabled(onOpen == nil)
                 if let urlString = post.imageUrl, let url = URL(string: urlString) {
                     Color(.secondarySystemBackground)
                         .frame(height: 220)
@@ -85,7 +101,18 @@ struct TweetRow: View {
 
     private var actionRow: some View {
         HStack(spacing: 0) {
-            actionIcon("bubble.left").accessibilityHidden(true)
+            Button(action: onReply) {
+                HStack(spacing: 4) {
+                    Image(systemName: "bubble.left").font(.system(size: 15))
+                    if replyCount > 0 { Text("\(replyCount)").font(.system(size: 13)).monospacedDigit() }
+                }
+                .foregroundStyle(Color.irukaSecondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(L("返信"))
             repostMenu
             likeButton
             actionIcon("square.and.arrow.up").accessibilityHidden(true)

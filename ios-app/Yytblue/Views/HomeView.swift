@@ -6,6 +6,8 @@ struct HomeView: View {
     var posts: [Post]
     var isSearching: Bool
     var onQuote: (Post) -> Void = { _ in }
+    var onReply: (Post) -> Void = { _ in }
+    var onOpen: (Post) -> Void = { _ in }
 
     var body: some View {
         ScrollView {
@@ -19,7 +21,11 @@ struct HomeView: View {
                             quoted: post.quoteOf.flatMap { id in store.posts.first { $0.id == id } },
                             onLike: { store.toggleLike(post) },
                             onRepost: { store.toggleRepost(post) },
-                            onQuote: { onQuote(post) }
+                            onQuote: { onQuote(post) },
+                            onReply: { onReply(post) },
+                            onOpen: { onOpen(post) },
+                            replyCount: store.replyCount(of: post),
+                            replyParent: post.replyTo.flatMap { id in store.posts.first { $0.id == id } }
                         )
                         Rectangle()
                             .fill(Color.irukaHairline)
