@@ -18,112 +18,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      user_lists: {
-        Row: { id: string; owner_id: string; name: string; description: string; is_public: boolean; created_at: string; updated_at: string }
-        Insert: { id: string; owner_id: string; name: string; description?: string; is_public?: boolean; created_at?: string; updated_at?: string }
-        Update: { id?: string; owner_id?: string; name?: string; description?: string; is_public?: boolean; created_at?: string; updated_at?: string }
-        Relationships: []
-      }
-      user_list_members: {
-        Row: { list_id: string; target_id: string; added_at: string }
-        Insert: { list_id: string; target_id: string; added_at?: string }
-        Update: { list_id?: string; target_id?: string; added_at?: string }
-        Relationships: [{ foreignKeyName: "user_list_members_list_id_fkey"; columns: ["list_id"]; isOneToOne: false; referencedRelation: "user_lists"; referencedColumns: ["id"] }]
-      }
-      notifications: {
-        Row: {
-          actor_id: string
-          created_at: string
-          id: string
-          post_id: string
-          read_at: string | null
-          recipient_id: string
-        }
-        Insert: {
-          actor_id: string
-          created_at?: string
-          id?: string
-          post_id: string
-          read_at?: string | null
-          recipient_id: string
-        }
-        Update: {
-          actor_id?: string
-          created_at?: string
-          id?: string
-          post_id?: string
-          read_at?: string | null
-          recipient_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "notifications_post_id_actor_id_fkey"
-            columns: ["post_id", "actor_id"]
-            isOneToOne: false
-            referencedRelation: "post_likes"
-            referencedColumns: ["post_id", "user_id"]
-          },
-          {
-            foreignKeyName: "notifications_post_id_fkey"
-            columns: ["post_id"]
-            isOneToOne: false
-            referencedRelation: "posts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      post_bookmarks: {
-        Row: {
-          created_at: string
-          post_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          post_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          post_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "post_bookmarks_post_id_fkey"
-            columns: ["post_id"]
-            isOneToOne: false
-            referencedRelation: "posts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      post_likes: {
-        Row: {
-          created_at: string
-          post_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          post_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          post_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "post_likes_post_id_fkey"
-            columns: ["post_id"]
-            isOneToOne: false
-            referencedRelation: "posts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       posts: {
         Row: {
           author_name: string
@@ -134,7 +28,6 @@ export type Database = {
           id: string
           initial: string
           is_mine: boolean
-          parent_id: string | null
           user_id: string | null
         }
         Insert: {
@@ -146,7 +39,6 @@ export type Database = {
           id?: string
           initial: string
           is_mine?: boolean
-          parent_id?: string | null
           user_id?: string | null
         }
         Update: {
@@ -158,18 +50,9 @@ export type Database = {
           id?: string
           initial?: string
           is_mine?: boolean
-          parent_id?: string | null
           user_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "posts_parent_id_fkey"
-            columns: ["parent_id"]
-            isOneToOne: false
-            referencedRelation: "posts"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -204,69 +87,11 @@ export type Database = {
         }
         Relationships: []
       }
-      user_relationships: {
-        Row: {
-          created_at: string
-          kind: string
-          target_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          kind: string
-          target_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          kind?: string
-          target_id?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      get_user_lists: {
-        Args: { expected_user_id: string }
-        Returns: { id: string; name: string; member_count: number; created_at: string }[]
-      }
-      create_user_list: {
-        Args: { target_list_id: string; list_name: string; expected_user_id: string }
-        Returns: undefined
-      }
-      rename_user_list: {
-        Args: { target_list_id: string; list_name: string; expected_user_id: string }
-        Returns: undefined
-      }
-      delete_user_list: {
-        Args: { target_list_id: string; expected_user_id: string }
-        Returns: undefined
-      }
-      set_user_list_member: {
-        Args: { target_list_id: string; target_user_id: string; included: boolean; expected_user_id: string }
-        Returns: undefined
-      }
-      get_user_list_members: {
-        Args: { target_list_id: string; expected_user_id: string }
-        Returns: { target_id: string; target_name: string | null; target_handle: string | null; is_blocked: boolean }[]
-      }
-      get_user_list_posts: {
-        Args: { target_list_id: string; expected_user_id: string }
-        Returns: Database["public"]["Tables"]["posts"]["Row"][]
-        SetofOptions: { from: "*"; to: "posts"; isOneToOne: false; isSetofReturn: true }
-      }
-      search_list_accounts: {
-        Args: { search_query: string; expected_user_id: string }
-        Returns: { id: string; name: string; handle: string | null }[]
-      }
-      can_view_account: {
-        Args: { author_id: string; viewer_id: string }
-        Returns: boolean
-      }
       create_post: {
         Args: { expected_user_id: string; post_body: string; post_id: string }
         Returns: {
@@ -278,7 +103,6 @@ export type Database = {
           id: string
           initial: string
           is_mine: boolean
-          parent_id: string | null
           user_id: string | null
         }[]
         SetofOptions: {
@@ -288,33 +112,6 @@ export type Database = {
           isSetofReturn: true
         }
       }
-      create_reply: {
-        Args: {
-          expected_user_id: string
-          reply_body: string
-          reply_id: string
-          target_post_id: string
-        }
-        Returns: {
-          author_name: string
-          avatar_index: number
-          body: string
-          created_at: string
-          handle: string
-          id: string
-          initial: string
-          is_mine: boolean
-          parent_id: string | null
-          user_id: string | null
-        }[]
-        SetofOptions: {
-          from: "*"
-          to: "posts"
-          isOneToOne: false
-          isSetofReturn: true
-        }
-      }
-      delete_account: { Args: { expected_user_id: string }; Returns: undefined }
       ensure_profile: {
         Args: {
           expected_user_id: string
@@ -323,39 +120,6 @@ export type Database = {
           profile_name: string
         }
         Returns: undefined
-      }
-      get_notifications: {
-        Args: {
-          before_created_at?: string
-          before_id?: string
-          expected_user_id: string
-        }
-        Returns: {
-          actor_name: string
-          created_at: string
-          id: string
-          is_grouped: boolean
-          like_count: number
-          post_body: string
-          post_id: string
-          read_at: string
-          unread_count: number
-        }[]
-      }
-      get_post_bookmarks: {
-        Args: { expected_user_id: string }
-        Returns: {
-          created_at: string
-          post_id: string
-        }[]
-      }
-      get_post_likes: {
-        Args: { post_ids: string[] }
-        Returns: {
-          is_liked: boolean
-          like_count: number
-          post_id: string
-        }[]
       }
       get_public_profiles: {
         Args: { profile_ids: string[] }
@@ -369,13 +133,6 @@ export type Database = {
           post_count: number
         }[]
       }
-      get_user_relationship: {
-        Args: { expected_user_id: string; target_user_id: string }
-        Returns: {
-          is_blocked: boolean
-          is_muted: boolean
-        }[]
-      }
       get_visible_posts: {
         Args: { expected_user_id?: string }
         Returns: {
@@ -387,7 +144,6 @@ export type Database = {
           id: string
           initial: string
           is_mine: boolean
-          parent_id: string | null
           user_id: string | null
         }[]
         SetofOptions: {
@@ -396,99 +152,6 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
-      }
-      handle_available: {
-        Args: { candidate_handle: string; expected_user_id: string }
-        Returns: boolean
-      }
-      import_post_bookmarks: {
-        Args: { expected_user_id: string; post_ids: string[] }
-        Returns: {
-          created_at: string
-          post_id: string
-        }[]
-      }
-      is_blocked_pair: {
-        Args: { first_id: string; second_id: string }
-        Returns: boolean
-      }
-      list_user_relationships: {
-        Args: { expected_user_id: string }
-        Returns: {
-          kind: string
-          target_handle: string
-          target_id: string
-          target_name: string
-        }[]
-      }
-      mark_all_notifications_read: {
-        Args: { before_time: string; expected_user_id: string }
-        Returns: undefined
-      }
-      mark_notifications_read: {
-        Args: { expected_user_id: string; notification_ids: string[] }
-        Returns: undefined
-      }
-      mark_post_notifications_read: {
-        Args: {
-          before_time: string
-          expected_user_id: string
-          target_post_id: string
-        }
-        Returns: undefined
-      }
-      save_profile: {
-        Args: {
-          expected_user_id: string
-          profile_avatar: string
-          profile_bio: string
-          profile_handle: string
-          profile_name: string
-        }
-        Returns: {
-          avatar_url: string
-          bio: string
-          created_at: string
-          handle: string
-          id: string
-          name: string
-          post_count: number
-        }[]
-      }
-      set_post_bookmark: {
-        Args: {
-          expected_user_id: string
-          saved: boolean
-          target_post_id: string
-        }
-        Returns: {
-          created_at: string
-          post_id: string
-        }[]
-      }
-      set_post_like: {
-        Args: {
-          expected_user_id: string
-          liked: boolean
-          target_post_id: string
-        }
-        Returns: {
-          is_liked: boolean
-          like_count: number
-          post_id: string
-        }[]
-      }
-      set_user_relationship: {
-        Args: {
-          active: boolean
-          expected_user_id: string
-          relation_kind: string
-          target_user_id: string
-        }
-        Returns: {
-          is_blocked: boolean
-          is_muted: boolean
-        }[]
       }
       user_id: { Args: never; Returns: string }
     }
