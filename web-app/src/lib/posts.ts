@@ -25,6 +25,7 @@ export type Post = {
   likeCount?: number;
   poll?: PostPoll | null;
   diagnosis?: PostDiagnosis | null;
+  avatarUrl?: string | null;
 };
 
 type Row = {
@@ -74,6 +75,7 @@ export async function fetchPosts(userId?: string | null): Promise<Post[]> {
     const profile = readDevelopmentProfile();
     return sortTimeline(readDevelopmentPosts()).filter((post) => !hiddenDevelopmentUsers(userId).has(post.userId ?? "")).map((post) => ({
       ...post, authorName: profile.name, handle: `@${profile.handle}`, initial: Array.from(profile.name)[0] ?? "開",
+      avatarUrl: profile.avatar_url,
     }));
   }
   const { data, error } = await supabase.rpc("get_visible_posts", { expected_user_id: userId ?? null });
@@ -100,7 +102,8 @@ export async function fetchPosts(userId?: string | null): Promise<Post[]> {
       initial: (profile?.name ?? post.authorName).slice(0, 1),
       likeCount: Number(stat?.like_count ?? 0), isLiked: Boolean(userId && stat?.is_liked),
       poll: polls.get(post.id) ?? null,
-      diagnosis: diagnoses.get(post.id) ?? null };
+      diagnosis: diagnoses.get(post.id) ?? null,
+      avatarUrl: profile?.avatar_url ?? null };
   });
 }
 

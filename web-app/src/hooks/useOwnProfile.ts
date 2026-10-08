@@ -18,6 +18,7 @@ export function useOwnProfile() {
     name,
     handle: query.data?.handle ? `@${query.data.handle}` : userHandle(user),
     initial: Array.from(name)[0] ?? "い",
+    avatar: query.data?.avatar_url || user.picture || null,
   };
 }
 
