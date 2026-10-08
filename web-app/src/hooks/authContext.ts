@@ -7,11 +7,8 @@ export interface AuthContextType {
   isSigningIn: boolean;
   error: string | null;
   signIn: (provider: "google" | "apple") => Promise<void>;
-  signInAsGuest: () => void;
   signOut: () => void;
   clearError: () => void;
-  canSkipLogin: boolean;
-  skipLogin: () => void;
   exchangeCode: (code: string) => Promise<void>;
 }
 

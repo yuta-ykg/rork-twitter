@@ -1,4 +1,3 @@
-import { isDevelopmentSession, localUser, readDevelopmentProfile, writeDevelopmentProfile } from "@/lib/development";
 import { shrinkImage } from "@/lib/posts";
 import { supabase } from "@/lib/supabase";
 
@@ -14,7 +13,6 @@ export type Profile = {
 
 /** 投稿者の表示名とアイコンをまとめて取る。 */
 export async function fetchProfiles(ids: string[]): Promise<Profile[]> {
-  if (isDevelopmentSession()) return ids.includes(localUser().id) ? [readDevelopmentProfile()] : [];
   if (!ids.length) return [];
   const { data, error } = await supabase.rpc("get_public_profiles", { profile_ids: [...new Set(ids)] });
   if (error) throw error;
@@ -42,17 +40,6 @@ export async function saveProfile(
   input: { name: string; handle: string; bio: string; avatar?: File | null },
 ): Promise<Profile> {
   const blob = input.avatar ? await shrinkImage(input.avatar, 480) : null;
-  if (isDevelopmentSession()) {
-    const next: Profile = {
-      ...readDevelopmentProfile(),
-      name: input.name,
-      handle: input.handle,
-      bio: input.bio,
-      ...(blob ? { avatar_url: await blobToDataUrl(blob) } : {}),
-    };
-    writeDevelopmentProfile(next);
-    return next;
-  }
   let avatarUrl = "";
   if (blob) {
     const path = `${userId}/${crypto.randomUUID()}.jpg`;
@@ -75,7 +62,6 @@ export async function saveProfile(
 
 /** 投稿前に、ログイン中ユーザーのプロフィール行を用意する。 */
 export async function ensureProfile(author: { id: string; email: string; name?: string; picture?: string }) {
-  if (isDevelopmentSession()) return;
   const { error } = await supabase.rpc("ensure_profile", {
     expected_user_id: author.id,
     profile_email: author.email,

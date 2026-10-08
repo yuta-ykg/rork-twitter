@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchProfile } from "@/lib/profiles";
-import { isGuestSession } from "@/lib/development";
 import { useAuth } from "@/hooks/authContext";
 import { displayName, userHandle } from "@/hooks/authUser";
 
@@ -10,7 +9,7 @@ export function useOwnProfile() {
   const query = useQuery({
     queryKey: ["ownProfile", user?.id],
     queryFn: async () => (user?.id ? await fetchProfile(user.id) : null),
-    enabled: Boolean(user?.id) && !isGuestSession(),
+    enabled: Boolean(user?.id),
   });
   if (!user) return null;
   const name = query.data?.name || displayName(user);

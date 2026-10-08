@@ -1,4 +1,3 @@
-import { isDevelopmentSession, localUser, readDevelopmentPosts, writeDevelopmentPosts, readDevelopmentProfile } from "@/lib/development";
 import { ensureProfile, fetchProfiles, type Profile } from "@/lib/profiles";
 import { supabase } from "@/lib/supabase";
 
@@ -98,16 +97,6 @@ function blobToDataUrl(blob: Blob): Promise<string> {
 
 /** ログイン中のユーザーに見える70字投稿を新しい順で返す。 */
 export async function fetchPosts(userId?: string | null): Promise<Post[]> {
-  if (isDevelopmentSession()) {
-    const profile = readDevelopmentProfile();
-    return sortTimeline(readDevelopmentPosts()).map((post) => ({
-      ...post,
-      authorName: profile.name,
-      handle: `@${profile.handle}`,
-      initial: Array.from(profile.name)[0] ?? "開",
-      avatarUrl: profile.avatar_url,
-    }));
-  }
   const { data, error } = await supabase.rpc("get_visible_posts", { expected_user_id: userId ?? undefined });
   if (error) throw error;
   const posts = (data ?? []).map((row) => toPost(row, userId));
@@ -141,16 +130,6 @@ export async function fetchPosts(userId?: string | null): Promise<Post[]> {
 
 /** いいねを付け外しする。冪等で、サーバー側の件数を返す。 */
 export async function setPostLike(postId: string, liked: boolean, userId: string): Promise<{ count: number; liked: boolean }> {
-  if (isDevelopmentSession()) {
-    let result = { count: 0, liked };
-    writeDevelopmentPosts(readDevelopmentPosts().map((post) => {
-      if (post.id !== postId) return post;
-      const base = (post.likeCount ?? 0) - (post.liked ? 1 : 0);
-      result = { count: base + (liked ? 1 : 0), liked };
-      return { ...post, likeCount: result.count, liked };
-    }));
-    return result;
-  }
   const { data, error } = await supabase.rpc("set_post_like", {
     target_post_id: postId,
     liked,
@@ -162,16 +141,6 @@ export async function setPostLike(postId: string, liked: boolean, userId: string
 
 /** リポストを付け外しする。冪等で、サーバー側の件数（引用を含む）を返す。 */
 export async function setPostRepost(postId: string, reposted: boolean, userId: string): Promise<{ count: number; reposted: boolean }> {
-  if (isDevelopmentSession()) {
-    let result = { count: 0, reposted };
-    writeDevelopmentPosts(readDevelopmentPosts().map((post) => {
-      if (post.id !== postId) return post;
-      const base = (post.repostCount ?? 0) - (post.reposted ? 1 : 0);
-      result = { count: base + (reposted ? 1 : 0), reposted };
-      return { ...post, repostCount: result.count, reposted };
-    }));
-    return result;
-  }
   const { data, error } = await supabase.rpc("set_post_repost", {
     target_post_id: postId,
     reposted,
@@ -186,26 +155,6 @@ export async function insertPost(body: string, author: Author, image?: File | nu
   const trimmed = body.trim();
   if (!trimmed || Array.from(trimmed).length > MAX_CHARACTERS) throw new Error("投稿は1〜70文字で入力してください。");
   const blob = image ? await shrinkImage(image) : null;
-  if (isDevelopmentSession()) {
-    const profile = readDevelopmentProfile();
-    const post: Post = {
-      imageUrl: blob ? await blobToDataUrl(blob) : null,
-      id: crypto.randomUUID(),
-      userId: localUser().id,
-      authorName: profile.name,
-      handle: `@${profile.handle}`,
-      initial: Array.from(profile.name)[0] ?? "開",
-      body: trimmed,
-      createdAt: new Date().toISOString(),
-      isMine: true,
-      avatarIndex: 0,
-      avatarUrl: profile.avatar_url,
-      quoteOf: quoteOf ?? null,
-      replyTo: replyTo ?? null,
-    };
-    writeDevelopmentPosts([post, ...readDevelopmentPosts()]);
-    return post;
-  }
   await ensureProfile(author);
   let imageUrl: string | undefined;
   if (blob) {

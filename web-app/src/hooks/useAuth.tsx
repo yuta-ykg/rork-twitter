@@ -1,9 +1,3 @@
-import {
-  canSkipLogin, clearLocalData, developerUser, endDevelopmentSession, expireGuestSessionIfNeeded,
-  isDevelopmentSession, isGuestSession, localUser, readDevelopmentPosts, startDevelopmentSession, startGuestSession,
-} from "@/lib/development";
-import { t } from "@/lib/language";
-import { toast } from "sonner";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { AuthContext } from "@/hooks/authContext";
 import type { AuthUser } from "@/hooks/authUser";
@@ -92,48 +86,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(ACCESS_TOKEN_KEY, access_token);
     localStorage.setItem(REFRESH_TOKEN_KEY, refresh_token);
     setUser(userData);
-    await carryOverGuestData(userData);
-  }
-
-  function signInAsGuest() {
-    setError(null);
-    setIsLoading(false);
-    setUser(startGuestSession());
-  }
-
-  /** Moves device-local guest posts into the newly signed-in account, then deletes the guest data. */
-  async function carryOverGuestData(author: AuthUser) {
-    if (!isGuestSession()) return;
-    const guestPosts = readDevelopmentPosts().filter((post) => {
-      if (post.parentId) return false;
-      const body = post.body.trim();
-      return body.length > 0 && Array.from(body).length <= 70;
-    });
-    endDevelopmentSession();
-    clearLocalData();
-    if (guestPosts.length === 0) return;
-    const { insertPost } = await import("@/lib/posts");
-    let moved = 0;
-    for (const post of guestPosts) {
-      try {
-        await insertPost(post.body.trim(), author);
-        moved += 1;
-      } catch { /* Skip posts that fail to move. */ }
-    }
-    if (moved > 0) toast.success(t("ゲストの投稿を新しいアカウントに引き継ぎました"));
-  }
-
-  function skipLogin() {
-    if (!canSkipLogin) return;
-    startDevelopmentSession();
-    setUser(developerUser);
-    setError(null);
-    setIsLoading(false);
   }
 
   async function signIn(provider: "google" | "apple") {
-    // Keep guest sessions alive so their posts can be carried over after sign-in.
-    if (!isGuestSession()) endDevelopmentSession();
     setIsSigningIn(true);
     setError(null);
     try {
@@ -203,8 +158,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const signOut = useCallback(() => {
-    if (isGuestSession()) clearLocalData();
-    endDevelopmentSession();
     localStorage.removeItem(ACCESS_TOKEN_KEY);
     localStorage.removeItem(REFRESH_TOKEN_KEY);
     localStorage.removeItem(CODE_VERIFIER_KEY);
@@ -233,10 +186,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkAuth = useCallback(async () => {
     try {
-      if (expireGuestSessionIfNeeded()) {
-        toast(t("ゲストのデータは保持期限（30日）を過ぎたため、削除されました。"));
-      }
-      if (isDevelopmentSession()) { setUser(localUser()); return; }
       const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
       if (accessToken) {
         const decoded = userFromToken(accessToken);
@@ -256,7 +205,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [checkAuth]);
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, isSigningIn, error, signIn, signInAsGuest, signOut, clearError, exchangeCode, canSkipLogin, skipLogin }}>
+    <AuthContext.Provider value={{ user, isLoading, isSigningIn, error, signIn, signOut, clearError, exchangeCode }}>
       {children}
     </AuthContext.Provider>
   );

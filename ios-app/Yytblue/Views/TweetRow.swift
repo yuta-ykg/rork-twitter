@@ -81,7 +81,7 @@ struct TweetRow: View {
 
     @ViewBuilder
     private var moreMenu: some View {
-        if let target = post.userId, !post.isMine, !DevelopmentData.isActive {
+        if let target = post.userId, !post.isMine {
             Menu {
                 Button {
                     Task { if await store.setRelationship(targetId: target, kind: "mute", active: true) { notice = L("ミュートしました") } }

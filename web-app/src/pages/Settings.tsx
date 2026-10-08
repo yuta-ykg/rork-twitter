@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/authContext";
-import { isDevelopmentSession } from "@/lib/development";
 import { listRelationships, setRelationship } from "@/lib/relationships";
 import { ChevronLeft } from "lucide-react";
 import { t, useLanguage, type Language } from "@/lib/language";
@@ -35,7 +34,7 @@ export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const enabled = Boolean(user?.id) && !isDevelopmentSession();
+  const enabled = Boolean(user?.id);
   const relations = useQuery({
     queryKey: ["relationships", user?.id],
     queryFn: () => listRelationships(user?.id ?? ""),

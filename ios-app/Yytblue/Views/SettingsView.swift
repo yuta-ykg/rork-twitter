@@ -28,7 +28,7 @@ struct SettingsView: View {
                     }
                     .pickerStyle(.segmented)
                 }
-                if !DevelopmentData.isActive {
+                do {
                     section(L("ミュート・ブロック中のアカウント")) {
                         if relations.isEmpty {
                             Text(L("まだありません"))

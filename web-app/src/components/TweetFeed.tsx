@@ -1,7 +1,6 @@
 import { avatarFills, fetchPosts, setPostLike, setPostRepost, sortTimeline, type Post } from "@/lib/posts";
 import { t, useLanguage } from "@/lib/language";
 import { useAuth } from "@/hooks/authContext";
-import { isDevelopmentSession } from "@/lib/development";
 import { setRelationship, type RelationKind } from "@/lib/relationships";
 import { toast } from "sonner";
 import { useOwnProfile } from "@/hooks/useOwnProfile";
@@ -137,7 +136,7 @@ export function TweetRow({ post }: { post: Post }) {
   const replyCount = (timeline.data ?? []).filter((item) => item.replyTo === post.id).length;
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const [moreOpen, setMoreOpen] = useState<boolean>(false);
-  const canModerate = Boolean(post.userId) && !post.isMine && !isDevelopmentSession();
+  const canModerate = Boolean(post.userId) && !post.isMine;
   const relate = useMutation({
     mutationFn: (kind: RelationKind) => setRelationship(post.userId ?? "", kind, true, user?.id ?? ""),
     onSuccess: async (_data, kind) => {

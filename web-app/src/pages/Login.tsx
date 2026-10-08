@@ -8,7 +8,7 @@ import { t, useLanguage } from "@/lib/language";
 
 export default function LoginPage() {
   useLanguage();
-  const { user, isSigningIn, error, signIn, signInAsGuest, clearError, canSkipLogin, skipLogin } = useAuth();
+  const { user, isSigningIn, error, signIn, clearError } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const stateFrom = (location.state as { from?: unknown } | null)?.from;
@@ -21,11 +21,6 @@ export default function LoginPage() {
   function beginSignIn(provider: "google" | "apple") {
     sessionStorage.setItem("iruka:auth_return_to", returnPath);
     void signIn(provider);
-  }
-
-  function beginGuestSignIn() {
-    sessionStorage.setItem("iruka:auth_return_to", returnPath);
-    signInAsGuest();
   }
 
   return (
@@ -67,26 +62,6 @@ export default function LoginPage() {
             {t("Appleで続ける")}
           </span>
         </button>
-        <button
-          type="button"
-          onClick={beginGuestSignIn}
-          className="h-[52px] w-full rounded-full border border-[hsl(var(--brand))] text-[17px] font-semibold text-[hsl(var(--brand))] transition active:scale-[0.98]"
-        >
-          {t("ゲストでログイン")}
-        </button>
-        <p className="text-sm text-muted-foreground">
-          {t("アカウント登録なしで試せます。データはこの端末にだけ保存され、30日で削除されます。")}
-        </p>
-        {canSkipLogin ? (
-          <button
-            type="button"
-            disabled={isSigningIn}
-            onClick={skipLogin}
-            className="min-h-11 rounded-full border border-input px-4 text-base text-muted-foreground"
-          >
-            {t("開発用にログインをスキップ")}
-          </button>
-        ) : null}
       </div>
     </div>
   );

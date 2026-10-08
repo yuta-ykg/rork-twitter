@@ -40,15 +40,6 @@ struct SignInView: View {
             .tint(Color.irukaBlue)
             .disabled(auth.isSigningIn)
 
-            if auth.canSkipLogin {
-                Button(L("開発用にログインをスキップ")) { auth.skipLogin() }
-                    .buttonStyle(.bordered)
-                    .frame(minHeight: 44)
-                    .disabled(auth.isSigningIn)
-                Text(L("スキップ中のデータはこの端末内に保存されます。"))
-                    .font(.footnote).foregroundStyle(Color.irukaSecondary)
-            }
-
             SignInWithAppleButton(.signIn) { request in
                 request.requestedScopes = [.fullName, .email]
             } onCompletion: { _ in
@@ -58,22 +49,6 @@ struct SignInView: View {
             .frame(height: 52)
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .disabled(auth.isSigningIn)
-
-            Button {
-                auth.signInAsGuest()
-            } label: {
-                Text(L("ゲストでログイン"))
-                    .font(.system(size: 17, weight: .semibold))
-                    .frame(maxWidth: .infinity)
-                    .frame(minHeight: 52)
-            }
-            .buttonStyle(.bordered)
-            .tint(Color.irukaBlue)
-            .disabled(auth.isSigningIn)
-
-            Text(L("アカウント登録なしで試せます。データはこの端末にだけ保存され、30日で削除されます。"))
-                .font(.footnote)
-                .foregroundStyle(Color.irukaSecondary)
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)

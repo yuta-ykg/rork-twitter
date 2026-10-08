@@ -35,15 +35,6 @@ enum ProfileService {
 
     /// 名前・ハンドル・自己紹介を保存する。
     static func save(userId: String, name: String, handle: String, bio: String, avatar: Data? = nil) async throws -> IrukaProfile {
-        if DevelopmentData.isActive {
-            let current = DevelopmentData.profile()
-            var avatarUrl = current.avatarUrl
-            if let avatar { avatarUrl = "data:image/jpeg;base64," + avatar.base64EncodedString() }
-            let next = IrukaProfile(id: current.id, name: name, handle: handle, bio: bio, avatarUrl: avatarUrl,
-                                    createdAt: current.createdAt, postCount: current.postCount)
-            DevelopmentData.save(profile: next)
-            return next
-        }
         var avatarUrl = ""
         if let avatar {
             let path = "\(userId)/\(UUID().uuidString).jpg"
@@ -61,7 +52,6 @@ enum ProfileService {
     }
 
     static func fetch(ids: [String]) async throws -> [IrukaProfile] {
-        if DevelopmentData.isActive { return ids.contains(DevelopmentData.userId) ? [DevelopmentData.profile()] : [] }
         guard !ids.isEmpty else { return [] }
         return try await IrukaDatabase.client
             .rpc("get_public_profiles", params: ProfileIDs(profile_ids: Array(Set(ids))))
@@ -69,7 +59,6 @@ enum ProfileService {
     }
 
     static func ensure(_ user: AuthManager.User) async throws {
-        if DevelopmentData.isActive { return }
         try await IrukaDatabase.client.rpc("ensure_profile", params: [
             "expected_user_id": user.id, "profile_email": user.email,
             "profile_name": user.name ?? "ユーザー", "profile_avatar": user.picture ?? ""

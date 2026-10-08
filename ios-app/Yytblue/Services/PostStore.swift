@@ -51,10 +51,6 @@ final class PostStore {
 
     func refresh(userId: String?) async {
         currentUserId = userId
-        if DevelopmentData.isActive {
-            posts = DevelopmentData.timeline()
-            return
-        }
         do {
             let rows: [PostRow] = try await IrukaDatabase.client
                 .rpc("get_visible_posts", params: VisiblePostsParams(expected_user_id: userId))
@@ -111,10 +107,6 @@ final class PostStore {
         updated.isLiked = next
         updated.likeCount = max(0, (original.likeCount ?? 0) + (next ? 1 : -1))
         posts[index] = updated
-        if DevelopmentData.isActive {
-            DevelopmentData.save(posts: posts)
-            return
-        }
         guard let userId = currentUserId else { return }
         Task {
             do {
@@ -138,10 +130,6 @@ final class PostStore {
         let next = !(original.isReposted ?? false)
         posts[index].isReposted = next
         posts[index].repostCount = max(0, (original.repostCount ?? 0) + (next ? 1 : -1))
-        if DevelopmentData.isActive {
-            DevelopmentData.save(posts: posts)
-            return
-        }
         guard let userId = currentUserId else { return }
         Task {
             do {
@@ -161,7 +149,7 @@ final class PostStore {
     /// ミュート／ブロックを付け外しし、タイムラインを読み込み直す。成功したら true。
     @discardableResult
     func setRelationship(targetId: String, kind: String, active: Bool) async -> Bool {
-        guard !DevelopmentData.isActive, let userId = currentUserId else { return false }
+        guard let userId = currentUserId else { return false }
         do {
             let _: [RelationshipStateRow] = try await IrukaDatabase.client
                 .rpc("set_user_relationship", params: SetRelationshipParams(
@@ -178,7 +166,7 @@ final class PostStore {
     }
 
     func relationships() async -> [RelationshipRow] {
-        guard !DevelopmentData.isActive, let userId = currentUserId else { return [] }
+        guard let userId = currentUserId else { return [] }
         return (try? await IrukaDatabase.client
             .rpc("list_user_relationships", params: ListRelationshipsParams(expected_user_id: userId))
             .execute()
@@ -190,20 +178,6 @@ final class PostStore {
     }
 
     private func insert(_ body: String, image: Data?, user: AuthManager.User, quoteOf: UUID?, replyTo: UUID?) async {
-        if user.id == DevelopmentData.userId && !DevelopmentData.isActive { return }
-        if DevelopmentData.isActive {
-            let profile = DevelopmentData.profile()
-            let post = Post(
-                id: UUID(), authorName: profile.name, handle: "@" + (profile.handle ?? "developer"),
-                initial: String(profile.name.prefix(1)), body: body, createdAt: Date(),
-                isMine: true, avatarIndex: 0, userId: DevelopmentData.userId, avatarUrl: profile.avatarUrl,
-                imageUrl: image.map { "data:image/jpeg;base64," + $0.base64EncodedString() },
-                quoteOf: quoteOf, replyTo: replyTo
-            )
-            posts.insert(post, at: 0)
-            DevelopmentData.save(posts: posts)
-            return
-        }
         await syncProfile(user)
         do {
             var imageUrl: String?
