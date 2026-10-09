@@ -13,6 +13,7 @@ struct ContentView: View {
     @State private var detailId: UUID?
     @State private var query = ""
     @State private var loadedUserId: String?
+    @State private var pendingPostId: UUID?
     private var didLoad: Bool { auth.user != nil && loadedUserId == auth.user?.id }
     @AppStorage("iruka-onboarded") private var onboarded = false
 
@@ -52,6 +53,28 @@ struct ContentView: View {
             Button("OK") { store.composeError = nil }
         } message: { Text(L(store.composeError ?? "")) }
         .environment(store)
+        .onOpenURL { url in
+            if let id = Self.postId(from: url) { pendingPostId = id }
+        }
+        .onChange(of: pendingPostId) { _, _ in openPendingPost() }
+        .onChange(of: didLoad) { _, _ in openPendingPost() }
+    }
+
+    /// https://yytblue.com/post/<UUID> から投稿 ID を取り出す。
+    private static func postId(from url: URL) -> UUID? {
+        guard let host = url.host?.lowercased(), host == "yytblue.com" || host == "www.yytblue.com" else { return nil }
+        let parts = url.pathComponents.filter { $0 != "/" }
+        guard parts.count >= 2, parts[0] == "post" else { return nil }
+        return UUID(uuidString: parts[1])
+    }
+
+    private func openPendingPost() {
+        guard didLoad, let id = pendingPostId else { return }
+        showsMine = false
+        showsSettings = false
+        showsComposer = false
+        detailId = id
+        pendingPostId = nil
     }
 
     private var mainShell: some View {

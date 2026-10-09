@@ -1,0 +1,12 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["APPLE_TEAM_ID.app.rork.yytblue"],
+        "components": [
+          { "/": "/post/*", "comment": "Post detail" }
+        ]
+      }
+    ]
+  }
+}
