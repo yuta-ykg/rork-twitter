@@ -13,6 +13,7 @@ struct ContentView: View {
     @State private var detailId: UUID?
     @State private var query = ""
     @State private var didLoad = false
+    @AppStorage("iruka-onboarded") private var onboarded = false
 
     private enum FeedTab: Hashable {
         case home, search, notifications, messages
@@ -26,7 +27,11 @@ struct ContentView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Color.irukaBackground)
             } else if auth.user == nil {
-                NavigationStack { SignInView() }
+                if onboarded {
+                    NavigationStack { SignInView() }
+                } else {
+                    OnboardingView { onboarded = true }
+                }
             } else {
                 mainShell
             }

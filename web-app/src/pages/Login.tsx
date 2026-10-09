@@ -1,8 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Fish } from "lucide-react";
 
 import { AppleMark, GoogleMark } from "@/components/BrandMarks";
+import Onboarding, { ONBOARDED_KEY } from "@/components/Onboarding";
 import { useAuth } from "@/hooks/authContext";
 import { t, useLanguage } from "@/lib/language";
 
@@ -11,6 +12,7 @@ export default function LoginPage() {
   const { user, isSigningIn, error, signIn, clearError } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [onboarded, setOnboarded] = useState<boolean>(() => localStorage.getItem(ONBOARDED_KEY) === "1");
   const stateFrom = (location.state as { from?: unknown } | null)?.from;
   const returnPath = typeof stateFrom === "string" && stateFrom.startsWith("/") && !stateFrom.startsWith("//") ? stateFrom : "/";
 
@@ -23,6 +25,17 @@ export default function LoginPage() {
     void signIn(provider);
   }
 
+  if (!onboarded && !user) {
+    return (
+      <Onboarding
+        onDone={() => {
+          localStorage.setItem(ONBOARDED_KEY, "1");
+          setOnboarded(true);
+        }}
+      />
+    );
+  }
+
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col justify-center px-6 pb-10">
       <div className="mb-8 flex items-center gap-2">
@@ -31,6 +44,7 @@ export default function LoginPage() {
       </div>
       <h2 className="text-[28px] font-bold leading-tight">{t("ログインしてはじめる")}</h2>
       <p className="mt-2 text-base text-muted-foreground">{t("投稿するには、GoogleかAppleで入ってください。")}</p>
+      <p className="mt-1 text-sm text-muted-foreground">{t("パスワード不要・数秒で完了します。")}</p>
       {error ? (
         <p className="mt-3 text-sm text-red-500">
           {t(error)}{" "}
