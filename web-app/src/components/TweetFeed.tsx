@@ -6,8 +6,8 @@ import { toast } from "sonner";
 import { useOwnProfile } from "@/hooks/useOwnProfile";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ban, Bell, Ellipsis, VolumeX, Heart, House, Mail, MessageCircle, Quote, Repeat2, Search, Settings, Share, SquarePen } from "lucide-react";
-import type { ReactNode } from "react";
-import { useState } from "react";
+import type { ReactNode, TouchEvent } from "react";
+import { useRef, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 
 export function useTimeline() {
@@ -28,14 +28,47 @@ const tabs: { id: TabId; to: string; label: string; icon: typeof House }[] = [
   { id: "messages", to: "/messages", label: "メッセージ", icon: Mail },
 ];
 
-export function TweetShell({ title, tab, showCompose = false, children }: {
+const PULL_THRESHOLD = 64;
+
+export function TweetShell({ title, tab, showCompose = false, onRefresh, children }: {
   title: string;
   tab: TabId;
   showCompose?: boolean;
+  onRefresh?: () => Promise<unknown>;
   children: ReactNode;
 }) {
   useLanguage();
   const own = useOwnProfile();
+  const startY = useRef<number | null>(null);
+  const [pull, setPull] = useState<number>(0);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+
+  function onTouchStart(event: TouchEvent<HTMLElement>) {
+    startY.current = onRefresh && window.scrollY <= 0 && !refreshing ? event.touches[0].clientY : null;
+  }
+  function onTouchMove(event: TouchEvent<HTMLElement>) {
+    if (startY.current === null) return;
+    const delta = event.touches[0].clientY - startY.current;
+    setPull(delta > 0 && window.scrollY <= 0 ? Math.min(delta * 0.5, 96) : 0);
+  }
+  async function onTouchEnd() {
+    const shouldRefresh = pull >= PULL_THRESHOLD && onRefresh !== undefined;
+    startY.current = null;
+    if (!shouldRefresh) {
+      setPull(0);
+      return;
+    }
+    setRefreshing(true);
+    setPull(PULL_THRESHOLD);
+    try {
+      await onRefresh();
+    } catch {
+      toast.error(t("タイムラインを読み込めませんでした。"));
+    } finally {
+      setRefreshing(false);
+      setPull(0);
+    }
+  }
   return (
     <div className="min-h-dvh bg-muted text-foreground">
       <div className="relative mx-auto flex min-h-dvh w-full max-w-[480px] flex-col bg-background">
@@ -48,7 +81,27 @@ export function TweetShell({ title, tab, showCompose = false, children }: {
             <Settings className="h-5 w-5" />
           </Link>
         </header>
-        <main className="flex-1">{children}</main>
+        <main
+          className="flex-1"
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={() => void onTouchEnd()}
+          onTouchCancel={() => { startY.current = null; setPull(0); }}
+        >
+          {onRefresh ? (
+            <div
+              className="flex items-center justify-center overflow-hidden transition-[height] duration-200"
+              style={{ height: pull }}
+              aria-hidden={!refreshing}
+            >
+              <span
+                className={`h-6 w-6 rounded-full border-2 border-[#1D9BF0] border-t-transparent ${refreshing ? "animate-spin" : ""}`}
+                style={{ opacity: Math.min(pull / PULL_THRESHOLD, 1), transform: refreshing ? undefined : `rotate(${pull * 4}deg)` }}
+              />
+            </div>
+          ) : null}
+          {children}
+        </main>
         {showCompose ? (
           <Link
             to="/compose"
