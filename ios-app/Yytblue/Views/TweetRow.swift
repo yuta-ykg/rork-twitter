@@ -79,16 +79,20 @@ struct TweetRow: View {
 
     }
 
+    private var postURL: URL {
+        URL(string: "https://yytblue.com/post/\(post.id.uuidString.lowercased())") ?? URL(string: "https://yytblue.com")!
+    }
+
     private var moreMenu: some View {
         Menu {
-            ShareLink(item: "\(post.body)\n\(post.handle)") {
+            ShareLink(item: postURL, message: Text(post.body)) {
                 Label(L("共有"), systemImage: "square.and.arrow.up")
             }
             Button {
-                UIPasteboard.general.string = post.body
+                UIPasteboard.general.url = postURL
                 notice = L("コピーしました")
             } label: {
-                Label(L("投稿をコピー"), systemImage: "doc.on.doc")
+                Label(L("リンクをコピー"), systemImage: "link")
             }
             if let target = post.userId, !post.isMine {
                 Button {

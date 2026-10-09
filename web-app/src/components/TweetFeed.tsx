@@ -190,7 +190,7 @@ export function TweetRow({ post }: { post: Post }) {
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const [moreOpen, setMoreOpen] = useState<boolean>(false);
   const canModerate = Boolean(post.userId) && !post.isMine;
-  const postUrl = `${window.location.origin}/post/${post.id}`;
+  const postUrl = `https://yytblue.com/post/${post.id}`;
   const copyLink = async (): Promise<void> => {
     try {
       await navigator.clipboard.writeText(postUrl);

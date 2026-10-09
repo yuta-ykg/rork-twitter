@@ -548,7 +548,7 @@ private let englishMessages: [String: String] = [
     "リポスト数順": "Most reposted",
     "コメント数順": "Most replies",
     "並び替え": "Sort",
-    "投稿をコピー": "Copy post",
+    "リンクをコピー": "Copy link",
     "投稿のメニュー": "Post menu",
     "メールアドレス": "Email",
     "ログインしていません。": "You are not signed in.",
