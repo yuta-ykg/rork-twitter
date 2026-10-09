@@ -78,7 +78,7 @@ export default function Onboarding({ onDone }: { onDone: () => void }) {
       <div className="flex h-11 items-center justify-between">
         <div className="flex items-center gap-2">
           <img src="/icon.png" alt="" className="h-7 w-7 rounded-full" />
-          <span className="text-lg font-bold">{t("イルカ")}</span>
+          <span className="text-lg font-bold">@yytblue</span>
         </div>
         {!last ? (
           <button type="button" onClick={onDone} className="h-11 px-2 text-[15px] font-semibold text-muted-foreground">

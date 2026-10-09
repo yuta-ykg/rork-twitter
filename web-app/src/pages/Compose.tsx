@@ -77,7 +77,7 @@ export default function ComposePage() {
             value={draft}
             onChange={(event) => change(event.target.value)}
             placeholder={replyId ? t("返信を投稿") : t("今の気持ちを、70字まで。")}
-            className="min-h-40 w-full resize-none bg-transparent text-lg outline-none placeholder:text-muted-foreground"
+            className="h-40 w-full resize-none overflow-y-auto bg-transparent text-lg outline-none placeholder:text-muted-foreground"
             autoFocus
           />
         </div>

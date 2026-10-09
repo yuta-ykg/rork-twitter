@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, ChevronLeft } from "lucide-react";
+import { CalendarDays, Check, ChevronDown, ChevronLeft, Repeat2 } from "lucide-react";
 import { Avatar, TweetList, useTimeline } from "@/components/TweetFeed";
 import { useAuth } from "@/hooks/authContext";
 import { useOwnProfile } from "@/hooks/useOwnProfile";
@@ -13,7 +13,18 @@ function joined(iso: string | null, lang: string): string {
   return new Date(iso).toLocaleDateString(lang === "ja" ? "ja-JP" : undefined, { year: "numeric", month: "long" });
 }
 
+type SortKey = "new" | "old" | "likes" | "reposts" | "replies";
+const SORTS: ReadonlyArray<readonly [SortKey, string]> = [
+  ["new", "新しい順"],
+  ["old", "古い順"],
+  ["likes", "いいね数順"],
+  ["reposts", "リポスト数順"],
+  ["replies", "コメント数順"],
+];
+
 export default function MinePage() {
+  const [sort, setSort] = useState<SortKey>("new");
+  const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const { language } = useLanguage();
   const { user } = useAuth();
   const own = useOwnProfile();
@@ -24,7 +35,21 @@ export default function MinePage() {
     enabled: Boolean(user?.id),
   });
   const [tab, setTab] = useState<"posts" | "reposts">("posts");
-  const mine = (timeline.data ?? []).filter((post) => post.isMine);
+  const replyCounts = new Map<string, number>();
+  for (const item of timeline.data ?? []) {
+    if (item.replyTo) replyCounts.set(item.replyTo, (replyCounts.get(item.replyTo) ?? 0) + 1);
+  }
+  const score = (post: { id: string; createdAt: string; likeCount?: number; repostCount?: number }): number => {
+    if (sort === "likes") return post.likeCount ?? 0;
+    if (sort === "reposts") return post.repostCount ?? 0;
+    if (sort === "replies") return replyCounts.get(post.id) ?? 0;
+    return 0;
+  };
+  const mine = (timeline.data ?? []).filter((post) => post.isMine).sort((a, b) => {
+    if (sort === "new") return b.createdAt.localeCompare(a.createdAt);
+    if (sort === "old") return a.createdAt.localeCompare(b.createdAt);
+    return score(b) - score(a) || b.createdAt.localeCompare(a.createdAt);
+  });
   const reposted = (timeline.data ?? []).filter((post) => post.reposted);
   const profile = profileQuery.data;
   const name = profile?.name ?? own?.name ?? "";
@@ -58,19 +83,45 @@ export default function MinePage() {
             <span><b className="text-foreground">{mine.length}</b> {t("投稿")}</span>
           </div>
         </section>
-        <div className="grid grid-cols-2 border-b border-t border-border" role="tablist">
+        <div className="relative grid grid-cols-2 border-b border-t border-border" role="tablist">
           {([["posts", "投稿"], ["reposts", "リポスト"]] as const).map(([key, label]) => (
             <button
               key={key}
               role="tab"
               aria-selected={tab === key}
-              onClick={() => setTab(key)}
-              className={`relative h-12 text-[15px] active:bg-muted ${tab === key ? "font-bold text-foreground" : "text-muted-foreground"}`}
+              aria-haspopup={key === "posts" ? "menu" : undefined}
+              aria-expanded={key === "posts" ? menuOpen : undefined}
+              onClick={() => {
+                if (key === "posts" && tab === "posts") setMenuOpen((open) => !open);
+                else { setTab(key); setMenuOpen(false); }
+              }}
+              className={`relative flex h-12 items-center justify-center gap-1.5 text-[15px] active:bg-muted ${tab === key ? "font-bold text-foreground" : "text-muted-foreground"}`}
             >
+              {key === "reposts" ? <Repeat2 className="h-[18px] w-[18px]" aria-hidden /> : null}
               {t(label)}
+              {key === "posts" ? <ChevronDown className={`h-4 w-4 transition-transform ${menuOpen ? "rotate-180" : ""}`} aria-hidden /> : null}
               {tab === key ? <span className="absolute inset-x-1/4 bottom-0 h-1 rounded-full bg-[#1D9BF0]" /> : null}
             </button>
           ))}
+          {menuOpen ? (
+            <>
+              <button type="button" aria-label={t("キャンセル")} className="fixed inset-0 z-10 cursor-default" onClick={() => setMenuOpen(false)} />
+              <div role="menu" className="absolute left-2 top-[52px] z-20 w-48 overflow-hidden rounded-2xl border border-border bg-background py-1 shadow-lg">
+                {SORTS.map(([key, label]) => (
+                  <button
+                    key={key}
+                    role="menuitemradio"
+                    aria-checked={sort === key}
+                    onClick={() => { setSort(key); setMenuOpen(false); }}
+                    className="flex h-11 w-full items-center justify-between px-4 text-[15px] active:bg-muted"
+                  >
+                    <span className={sort === key ? "font-bold" : ""}>{t(label)}</span>
+                    {sort === key ? <Check className="h-4 w-4 text-[#1D9BF0]" aria-hidden /> : null}
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : null}
         </div>
         {timeline.isLoading ? <p className="grid min-h-[40vh] place-items-center text-muted-foreground">{t("読み込み中…")}</p> : null}
         {timeline.data ? <TweetList posts={tab === "posts" ? mine : reposted} empty={tab === "posts" ? "まだ投稿がありません" : "まだリポストがありません"} /> : null}
