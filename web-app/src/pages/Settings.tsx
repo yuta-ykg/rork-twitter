@@ -1,7 +1,9 @@
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/authContext";
-import { listRelationships, setRelationship } from "@/lib/relationships";
+import { deleteAccount, listRelationships, setRelationship } from "@/lib/relationships";
+import { useState } from "react";
+import { toast } from "sonner";
 import { ChevronLeft } from "lucide-react";
 import { t, useLanguage, type Language } from "@/lib/language";
 import { useTheme, type ThemeMode } from "@/lib/theme";
@@ -32,8 +34,20 @@ function Segment<T extends string>({ value, options, onChange }: {
 export default function SettingsPage() {
   const { language, setLanguage } = useLanguage();
   const { theme, setTheme } = useTheme();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const queryClient = useQueryClient();
+  const [confirm, setConfirm] = useState<"signout" | "delete" | null>(null);
+  const removeAccount = useMutation({
+    mutationFn: () => deleteAccount(user?.id ?? ""),
+    onSuccess: () => {
+      queryClient.clear();
+      signOut();
+    },
+    onError: () => {
+      setConfirm(null);
+      toast.error(t("アカウントを削除できませんでした。"));
+    },
+  });
   const enabled = Boolean(user?.id);
   const relations = useQuery({
     queryKey: ["relationships", user?.id],
@@ -107,7 +121,41 @@ export default function SettingsPage() {
             )}
           </section>
         ) : null}
+        {enabled ? (
+          <section className="space-y-3 px-4 pb-12">
+            <h2 className="text-[13px] font-bold text-muted-foreground">{t("アカウント")}</h2>
+            <button type="button" onClick={() => setConfirm("signout")} className="h-12 w-full rounded-full border border-input text-[16px] font-semibold active:bg-muted">
+              {t("ログアウト")}
+            </button>
+            <button type="button" disabled={removeAccount.isPending} onClick={() => setConfirm("delete")} className="h-12 w-full rounded-full border border-red-300 text-[16px] font-semibold text-red-600 active:bg-red-50 disabled:opacity-50">
+              {removeAccount.isPending ? t("削除中…") : t("アカウントを削除")}
+            </button>
+          </section>
+        ) : null}
       </div>
+      {confirm ? (
+        <div className="fixed inset-0 z-20 grid place-items-center bg-black/40 px-6" role="alertdialog" aria-modal="true">
+          <div className="w-full max-w-[340px] rounded-2xl bg-background p-5">
+            <h3 className="text-[17px] font-bold">{t(confirm === "delete" ? "アカウントを削除しますか？" : "ログアウトしますか？")}</h3>
+            <p className="mt-2 text-[14px] text-muted-foreground">
+              {t(confirm === "delete" ? "投稿、プロフィール、いいね、ブックマーク、通知が削除されます。この操作は取り消せません。" : "この端末からサインアウトします。もう一度ログインできます。")}
+            </p>
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <button type="button" onClick={() => setConfirm(null)} className="h-11 rounded-full border border-input font-semibold">{t("キャンセル")}</button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (confirm === "delete") removeAccount.mutate();
+                  else signOut();
+                }}
+                className={`h-11 rounded-full font-semibold text-white ${confirm === "delete" ? "bg-red-600" : "bg-foreground text-background"}`}
+              >
+                {t(confirm === "delete" ? "削除する" : "ログアウト")}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

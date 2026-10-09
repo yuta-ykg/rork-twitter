@@ -279,6 +279,7 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      delete_account: { Args: { expected_user_id: string }; Returns: undefined }
       ensure_profile: {
         Args: {
           expected_user_id: string

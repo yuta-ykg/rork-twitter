@@ -20,6 +20,12 @@ export async function setRelationship(targetId: string, kind: RelationKind, acti
   if (error) throw error;
 }
 
+/** 自分の投稿・いいね・プロフィールなどをサーバーから削除する。 */
+export async function deleteAccount(userId: string): Promise<void> {
+  const { error } = await supabase.rpc("delete_account", { expected_user_id: userId });
+  if (error) throw error;
+}
+
 /** 自分がミュート／ブロックしているアカウントの一覧。 */
 export async function listRelationships(userId: string): Promise<Relationship[]> {
   const { data, error } = await supabase.rpc("list_user_relationships", { expected_user_id: userId });

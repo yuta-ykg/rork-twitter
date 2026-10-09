@@ -91,6 +91,10 @@ nonisolated struct SetRelationshipParams: Encodable, Sendable {
     let expected_user_id: String
 }
 
+nonisolated struct DeleteAccountParams: Encodable, Sendable {
+    let expected_user_id: String
+}
+
 nonisolated struct ListRelationshipsParams: Encodable, Sendable {
     let expected_user_id: String
 }

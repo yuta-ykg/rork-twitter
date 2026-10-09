@@ -173,6 +173,19 @@ final class PostStore {
             .value) ?? []
     }
 
+    /// 自分の投稿・いいね・プロフィールなどをサーバーから削除する。成功したら true。
+    func deleteAccount() async -> Bool {
+        guard let userId = currentUserId else { return false }
+        do {
+            try await IrukaDatabase.client
+                .rpc("delete_account", params: DeleteAccountParams(expected_user_id: userId))
+                .execute()
+            return true
+        } catch {
+            return false
+        }
+    }
+
     func syncProfile(_ user: AuthManager.User) async {
         try? await ProfileService.ensure(user)
     }

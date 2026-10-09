@@ -5,7 +5,12 @@ struct SettingsView: View {
     @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
     @AppStorage("iruka-theme") private var theme = "system"
     @Environment(PostStore.self) private var store
+    @Environment(AuthManager.self) private var auth
     @State private var relations: [RelationshipRow] = []
+    @State private var confirmsSignOut = false
+    @State private var confirmsDelete = false
+    @State private var isDeleting = false
+    @State private var deleteFailed = false
 
     var body: some View {
         ScrollView {
@@ -61,8 +66,39 @@ struct SettingsView: View {
                         }
                     }
                 }
+                section(L("アカウント")) {
+                    Button(L("ログアウト")) { confirmsSignOut = true }
+                        .font(.system(size: 16, weight: .semibold))
+                        .frame(maxWidth: .infinity, minHeight: 48)
+                        .buttonStyle(.bordered)
+                    Button(role: .destructive) { confirmsDelete = true } label: {
+                        Text(isDeleting ? L("削除中…") : L("アカウントを削除"))
+                            .font(.system(size: 16, weight: .semibold))
+                            .frame(maxWidth: .infinity, minHeight: 48)
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(isDeleting)
+                }
             }
             .padding(16)
+        }
+        .alert(L("ログアウトしますか？"), isPresented: $confirmsSignOut) {
+            Button(L("キャンセル"), role: .cancel) {}
+            Button(L("ログアウト")) { Task { await auth.signOut() } }
+        } message: { Text(L("この端末からサインアウトします。もう一度ログインできます。")) }
+        .alert(L("アカウントを削除しますか？"), isPresented: $confirmsDelete) {
+            Button(L("キャンセル"), role: .cancel) {}
+            Button(L("削除する"), role: .destructive) {
+                Task {
+                    isDeleting = true
+                    let ok = await store.deleteAccount()
+                    isDeleting = false
+                    if ok { await auth.signOut() } else { deleteFailed = true }
+                }
+            }
+        } message: { Text(L("投稿、プロフィール、いいね、ブックマーク、通知が削除されます。この操作は取り消せません。")) }
+        .alert(L("アカウントを削除できませんでした。"), isPresented: $deleteFailed) {
+            Button("OK") {}
         }
         .task { relations = await store.relationships() }
         .background(Color.irukaBackground)
