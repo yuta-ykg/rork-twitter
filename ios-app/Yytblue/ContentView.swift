@@ -12,7 +12,8 @@ struct ContentView: View {
     @State private var replyTarget: Post?
     @State private var detailId: UUID?
     @State private var query = ""
-    @State private var didLoad = false
+    @State private var loadedUserId: String?
+    private var didLoad: Bool { auth.user != nil && loadedUserId == auth.user?.id }
     @AppStorage("iruka-onboarded") private var onboarded = false
 
     private enum FeedTab: Hashable {
@@ -38,12 +39,11 @@ struct ContentView: View {
         }
         .tint(Color.irukaBlue)
         .task(id: auth.user?.id) {
-            didLoad = false
             if let user = auth.user {
                 await store.syncProfile(user)
             }
             await store.refresh(userId: auth.user?.id)
-            didLoad = true
+            loadedUserId = auth.user?.id
         }
         .alert(L("投稿"), isPresented: Binding(
             get: { store.composeError != nil },
