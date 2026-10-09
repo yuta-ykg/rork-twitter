@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Fish } from "lucide-react";
 
 import { AppleMark, GoogleMark } from "@/components/BrandMarks";
 import Onboarding, { ONBOARDED_KEY } from "@/components/Onboarding";
@@ -37,31 +36,26 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col justify-center px-6 pb-10">
-      <div className="mb-8 flex items-center gap-2">
-        <Fish className="h-7 w-7 text-[hsl(var(--brand))]" aria-hidden />
-        <h1 className="text-2xl font-bold">{t("イルカ")}</h1>
+    <div className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col px-6 pb-10">
+      <div className="flex flex-1 flex-col items-center justify-center gap-4">
+        <img src="/icon.png" alt="" className="h-24 w-24 rounded-[22px]" />
+        <h1 className="text-[30px] font-bold">@yytblue</h1>
       </div>
-      <h2 className="text-[28px] font-bold leading-tight">{t("ログインしてはじめる")}</h2>
-      <p className="mt-2 text-base text-muted-foreground">{t("投稿するには、GoogleかAppleで入ってください。")}</p>
-      <p className="mt-1 text-sm text-muted-foreground">{t("パスワード不要・数秒で完了します。")}</p>
       {error ? (
         <p className="mt-3 text-sm text-red-500">
           {t(error)}{" "}
           <button type="button" onClick={clearError} className="underline">{t("閉じる")}</button>
         </p>
       ) : null}
-      <div className="mt-6 grid gap-3">
+      <div className="mt-4 grid gap-3">
         <button
           type="button"
           disabled={isSigningIn}
           onClick={() => beginSignIn("google")}
-          className="h-[52px] w-full rounded-full bg-[hsl(var(--brand))] text-[17px] font-semibold text-white transition active:scale-[0.98] disabled:opacity-40"
+          className="h-[52px] w-full rounded-full border border-border bg-background text-[17px] font-semibold text-foreground transition active:scale-[0.98] disabled:opacity-40"
         >
           <span className="flex items-center justify-center gap-3">
-            <span className="grid h-7 w-7 place-items-center rounded-full bg-background">
-              <GoogleMark className="h-[18px] w-[18px]" />
-            </span>
+            <GoogleMark className="h-5 w-5" />
             {isSigningIn ? t("ログイン中…") : t("Googleで続ける")}
           </span>
         </button>

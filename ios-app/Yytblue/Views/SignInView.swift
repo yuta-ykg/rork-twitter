@@ -10,18 +10,22 @@ struct SignInView: View {
     var body: some View {
         @Bindable var auth = auth
 
-        VStack(alignment: .leading, spacing: 16) {
-            Text(L(title))
-                .font(.system(size: 28, weight: .bold))
+        VStack(spacing: 14) {
+            Spacer()
+            Image("BrandIcon")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 96, height: 96)
+                .clipShape(.rect(cornerRadius: 22, style: .continuous))
+            Text("@yytblue")
+                .font(.system(size: 30, weight: .bold))
                 .foregroundStyle(Color.irukaInk)
-            Text(L(message))
-                .font(.system(size: 16))
-                .foregroundStyle(Color.irukaSecondary)
+            Spacer()
 
             if auth.isSigningIn {
                 ProgressView()
                     .tint(Color.irukaBlue)
-                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .frame(minHeight: 24)
             }
 
             Button {
@@ -36,8 +40,9 @@ struct SignInView: View {
                 .frame(maxWidth: .infinity)
                 .frame(minHeight: 52)
             }
-            .buttonStyle(.borderedProminent)
-            .tint(Color.irukaBlue)
+            .foregroundStyle(Color.irukaInk)
+            .background(Color.irukaBackground, in: Capsule())
+            .overlay(Capsule().stroke(Color.irukaSecondary.opacity(0.4), lineWidth: 1))
             .disabled(auth.isSigningIn)
 
             SignInWithAppleButton(.signIn) { request in
@@ -47,11 +52,13 @@ struct SignInView: View {
             }
             .signInWithAppleButtonStyle(.black)
             .frame(height: 52)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .clipShape(Capsule())
             .disabled(auth.isSigningIn)
         }
-        .padding(20)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 24)
+        .padding(.bottom, 32)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.irukaBackground)
         .alert(L("ログインできませんでした"), isPresented: $auth.showError) {
             Button("OK") {}
         } message: {
