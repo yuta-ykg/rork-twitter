@@ -1,17 +1,74 @@
 import SwiftUI
 
 /// 通知タブ。フラットな行で、未読は薄い青の背景にする。
+enum NotificationFilter: String, CaseIterable, Identifiable {
+    case all, like, repost, reply
+
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .all: "すべて"
+        case .like: "いいね"
+        case .repost: "リポスト"
+        case .reply: "返信・引用"
+        }
+    }
+
+    func includes(_ kind: String) -> Bool {
+        switch self {
+        case .all: true
+        case .like: kind == "like"
+        case .repost: kind == "repost"
+        case .reply: kind == "reply" || kind == "quote"
+        }
+    }
+}
+
 struct NotificationsView: View {
     @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
     @Environment(AuthManager.self) private var auth
     let store: NotificationStore
     var onOpen: (UUID) -> Void
+    @State private var filter: NotificationFilter = .all
+
+    private var visibleItems: [AppNotification] {
+        store.items.filter { filter.includes($0.kind) }
+    }
 
     var body: some View {
+        VStack(spacing: 0) {
+            filterBar
+            content
+        }
+        .background(Color.irukaBackground)
+    }
+
+    private var filterBar: some View {
+        HStack(spacing: 0) {
+            ForEach(NotificationFilter.allCases) { entry in
+                Button { filter = entry } label: {
+                    Text(L(entry.title))
+                        .font(.system(size: 15, weight: filter == entry ? .bold : .medium))
+                        .foregroundStyle(filter == entry ? Color.irukaInk : Color.irukaSecondary)
+                        .frame(maxWidth: .infinity, minHeight: 48)
+                        .overlay(alignment: .bottom) {
+                            if filter == entry {
+                                Capsule().fill(Color.irukaBlue).frame(width: 48, height: 4)
+                            }
+                        }
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .overlay(alignment: .bottom) { Rectangle().fill(Color.irukaHairline).frame(height: 1) }
+    }
+
+    private var content: some View {
         Group {
             if store.isLoading && store.items.isEmpty {
                 ProgressView().tint(Color.irukaBlue).frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if store.items.isEmpty {
+            } else if visibleItems.isEmpty {
                 Text(L(store.failed ? "通知を読み込めませんでした。" : "通知はありません"))
                     .font(.system(size: 15))
                     .foregroundStyle(Color.irukaSecondary)
@@ -19,7 +76,7 @@ struct NotificationsView: View {
             } else {
                 ScrollView {
                     LazyVStack(spacing: 0) {
-                        ForEach(store.items) { item in
+                        ForEach(visibleItems) { item in
                             row(item)
                             Rectangle().fill(Color.irukaHairline).frame(height: 1)
                         }

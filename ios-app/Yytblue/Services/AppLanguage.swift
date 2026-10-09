@@ -368,6 +368,8 @@ private let englishMessages: [String: String] = [
     "ログイン": "Sign in",
     "閉じる": "Close",
     "いいね": "Like",
+    "すべて": "All",
+    "返信・引用": "Replies & quotes",
     "ライト": "Light",
     "ダーク": "Dark",
     "ダークブルー": "Dark blue",

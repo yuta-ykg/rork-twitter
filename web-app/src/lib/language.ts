@@ -402,6 +402,8 @@ const english: Record<string, string> = {
   "ログイン": "Sign in",
   "閉じる": "Close",
   "いいね": "Like",
+  "すべて": "All",
+  "返信・引用": "Replies & quotes",
   "ライト": "Light",
   "ダーク": "Dark",
   "ダークブルー": "Dark blue",

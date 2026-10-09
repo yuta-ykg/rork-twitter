@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Heart, MessageCircle, Quote, Repeat2 } from "lucide-react";
@@ -14,6 +14,21 @@ const kindMeta: Record<NotificationKind, { icon: typeof Heart; color: string; la
   reply: { icon: MessageCircle, color: "#1D9BF0", label: "があなたの投稿に返信しました" },
   quote: { icon: Quote, color: "#1D9BF0", label: "があなたの投稿を引用しました" },
 };
+
+type Filter = "all" | "like" | "repost" | "reply";
+
+const filters: { id: Filter; label: string }[] = [
+  { id: "all", label: "すべて" },
+  { id: "like", label: "いいね" },
+  { id: "repost", label: "リポスト" },
+  { id: "reply", label: "返信・引用" },
+];
+
+function matches(filter: Filter, kind: NotificationKind): boolean {
+  if (filter === "all") return true;
+  if (filter === "reply") return kind === "reply" || kind === "quote";
+  return kind === filter;
+}
 
 type Loaded = { items: AppNotification[]; profiles: Map<string, Profile> };
 
@@ -39,9 +54,29 @@ export default function NotificationsPage() {
     return () => window.clearTimeout(timer);
   }, [query.data, user?.id, queryClient]);
 
-  const items = query.data?.items ?? [];
+  const [filter, setFilter] = useState<Filter>("all");
+  const all = query.data?.items ?? [];
+  const items = all.filter((item) => matches(filter, item.kind));
   return (
     <TweetShell title="通知" tab="notifications" onRefresh={() => query.refetch()}>
+      <div role="tablist" className="sticky top-0 z-10 flex border-b border-border bg-background">
+        {filters.map((entry) => {
+          const selected = entry.id === filter;
+          return (
+            <button
+              key={entry.id}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              onClick={() => setFilter(entry.id)}
+              className="relative min-h-[48px] flex-1 px-1 text-[15px] active:bg-muted"
+            >
+              <span className={selected ? "font-bold text-foreground" : "font-medium text-muted-foreground"}>{t(entry.label)}</span>
+              {selected ? <span className="absolute bottom-0 left-1/2 h-1 w-12 -translate-x-1/2 rounded-full bg-[#1D9BF0]" /> : null}
+            </button>
+          );
+        })}
+      </div>
       {query.isLoading ? (
         <p className="grid min-h-[50vh] place-items-center text-[15px] text-muted-foreground">{t("読み込み中…")}</p>
       ) : query.isError ? (
