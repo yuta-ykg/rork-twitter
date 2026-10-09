@@ -1,6 +1,7 @@
 import { avatarFills, fetchPosts, setPostLike, setPostRepost, sortTimeline, type Post } from "@/lib/posts";
 import { t, useLanguage } from "@/lib/language";
 import { useAuth } from "@/hooks/authContext";
+import { fetchNotifications } from "@/lib/notifications";
 import { setRelationship, type RelationKind } from "@/lib/relationships";
 import { toast } from "sonner";
 import { useOwnProfile } from "@/hooks/useOwnProfile";
@@ -39,6 +40,13 @@ export function TweetShell({ title, tab, showCompose = false, onRefresh, childre
 }) {
   useLanguage();
   const own = useOwnProfile();
+  const { user: authUser } = useAuth();
+  const unread = useQuery<boolean>({
+    queryKey: ["notifications-unread", authUser?.id],
+    enabled: Boolean(authUser?.id),
+    refetchInterval: 60000,
+    queryFn: async () => (await fetchNotifications(authUser?.id ?? "")).some((item) => item.isNew),
+  });
   const startY = useRef<number | null>(null);
   const [pull, setPull] = useState<number>(0);
   const [refreshing, setRefreshing] = useState<boolean>(false);
@@ -125,7 +133,12 @@ export function TweetShell({ title, tab, showCompose = false, onRefresh, childre
                   aria-current={selected ? "page" : undefined}
                   className="grid h-12 place-items-center"
                 >
-                  <Icon className="h-[22px] w-[22px]" strokeWidth={selected ? 2.4 : 1.8} color={selected ? "#1D9BF0" : "#536471"} />
+                  <span className="relative">
+                    <Icon className="h-[22px] w-[22px]" strokeWidth={selected ? 2.4 : 1.8} color={selected ? "#1D9BF0" : "#536471"} />
+                    {item.id === "notifications" && unread.data && !selected ? (
+                      <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-background bg-[#1D9BF0]" aria-hidden />
+                    ) : null}
+                  </span>
                 </NavLink>
               );
             })}

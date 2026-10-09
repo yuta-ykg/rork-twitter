@@ -18,6 +18,21 @@ export type Database = {
   }
   public: {
     Tables: {
+      notification_state: {
+        Row: {
+          last_read_at: string
+          user_id: string
+        }
+        Insert: {
+          last_read_at?: string
+          user_id: string
+        }
+        Update: {
+          last_read_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       post_likes: {
         Row: {
           created_at: string
@@ -289,6 +304,18 @@ export type Database = {
         }
         Returns: undefined
       }
+      get_notifications: {
+        Args: { expected_user_id: string }
+        Returns: {
+          actor_id: string
+          body: string
+          created_at: string
+          is_new: boolean
+          kind: string
+          post_id: string
+          ref_post_id: string
+        }[]
+      }
       get_post_likes: {
         Args: { post_ids: string[] }
         Returns: {
@@ -348,6 +375,10 @@ export type Database = {
           target_id: string
           target_name: string
         }[]
+      }
+      mark_notifications_read: {
+        Args: { expected_user_id: string }
+        Returns: undefined
       }
       save_profile: {
         Args: {

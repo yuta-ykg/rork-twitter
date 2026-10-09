@@ -4,6 +4,7 @@ struct ContentView: View {
     @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
     @Environment(AuthManager.self) private var auth
     @State private var store = PostStore()
+    @State private var notifications = NotificationStore()
     @State private var selectedTab: FeedTab = .home
     @State private var showsComposer = false
     @State private var showsMine = false
@@ -45,6 +46,7 @@ struct ContentView: View {
             }
             await store.refresh(userId: auth.user?.id)
             loadedUserId = auth.user?.id
+            await notifications.refresh(userId: auth.user?.id)
         }
         .alert(L("投稿"), isPresented: Binding(
             get: { store.composeError != nil },
@@ -168,7 +170,7 @@ struct ContentView: View {
                 timeline(searchResults, searching: true)
             }
         case .notifications:
-            quietNote(L("通知はありません"))
+            NotificationsView(store: notifications, onOpen: { detailId = $0 })
         case .messages:
             quietNote(L("メッセージはありません"))
         }
@@ -248,7 +250,7 @@ struct ContentView: View {
             HStack(spacing: 0) {
                 tabButton(.home, symbol: selectedTab == .home ? "house.fill" : "house")
                 tabButton(.search, symbol: "magnifyingglass")
-                tabButton(.notifications, symbol: selectedTab == .notifications ? "bell.fill" : "bell")
+                tabButton(.notifications, symbol: selectedTab == .notifications ? "bell.fill" : "bell", showsDot: notifications.hasUnread && selectedTab != .notifications)
                 tabButton(.messages, symbol: selectedTab == .messages ? "envelope.fill" : "envelope")
             }
             .padding(.top, 6)
@@ -257,13 +259,20 @@ struct ContentView: View {
         }
     }
 
-    private func tabButton(_ tab: FeedTab, symbol: String) -> some View {
+    private func tabButton(_ tab: FeedTab, symbol: String, showsDot: Bool = false) -> some View {
         Button {
             selectedTab = tab
         } label: {
             Image(systemName: symbol)
                 .font(.system(size: 22, weight: selectedTab == tab ? .semibold : .regular))
                 .foregroundStyle(selectedTab == tab ? Color.irukaBlue : Color.irukaSecondary)
+                .overlay(alignment: .topTrailing) {
+                    if showsDot {
+                        Circle().fill(Color.irukaBlue).frame(width: 9, height: 9)
+                            .overlay { Circle().stroke(Color.irukaBackground, lineWidth: 2) }
+                            .offset(x: 3, y: -2)
+                    }
+                }
                 .frame(maxWidth: .infinity, minHeight: 44)
                 .contentShape(Rectangle())
         }
