@@ -1,5 +1,19 @@
 import SwiftUI
 
+enum ProfileSort: String, CaseIterable, Identifiable {
+    case newest, oldest, likes, reposts, replies
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .newest: "新しい順"
+        case .oldest: "古い順"
+        case .likes: "いいね数順"
+        case .reposts: "リポスト数順"
+        case .replies: "コメント数順"
+        }
+    }
+}
+
 struct ProfileView: View {
     @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
     @Environment(AuthManager.self) private var auth
@@ -11,9 +25,28 @@ struct ProfileView: View {
     @State private var profile: IrukaProfile?
     @State private var showsEdit = false
     @State private var showsReposts = false
+    @State private var sort: ProfileSort = .newest
 
     private var shown: [Post] {
-        showsReposts ? store.timeline.filter { $0.isReposted ?? false } : store.mine
+        let base = showsReposts ? store.timeline.filter { $0.isReposted ?? false } : store.mine
+        guard !showsReposts else { return base }
+        let score: (Post) -> Int = { post in
+            switch sort {
+            case .likes: post.likeCount ?? 0
+            case .reposts: post.repostCount ?? 0
+            case .replies: store.replyCount(of: post)
+            default: 0
+            }
+        }
+        return base.sorted { a, b in
+            switch sort {
+            case .newest: return a.createdAt > b.createdAt
+            case .oldest: return a.createdAt < b.createdAt
+            default:
+                let sa = score(a), sb = score(b)
+                return sa != sb ? sa > sb : a.createdAt > b.createdAt
+            }
+        }
     }
 
     var body: some View {
@@ -21,8 +54,8 @@ struct ProfileView: View {
             LazyVStack(spacing: 0) {
                 header
                 HStack(spacing: 0) {
-                    tabButton(L("投稿"), selected: !showsReposts) { showsReposts = false }
-                    tabButton(L("リポスト"), selected: showsReposts) { showsReposts = true }
+                    postsTab
+                    tabButton(L("リポスト"), selected: showsReposts, icon: "arrow.2.squarepath") { showsReposts = true }
                 }
                 .overlay(alignment: .top) { Rectangle().fill(Color.irukaHairline).frame(height: 1) }
                 .overlay(alignment: .bottom) { Rectangle().fill(Color.irukaHairline).frame(height: 1) }
@@ -61,15 +94,42 @@ struct ProfileView: View {
         .task(id: auth.user?.id) { await load() }
     }
 
-    private func tabButton(_ title: String, selected: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: 15, weight: selected ? .bold : .regular))
-                .foregroundStyle(selected ? Color.irukaInk : Color.irukaSecondary)
-                .frame(maxWidth: .infinity, minHeight: 48)
-                .overlay(alignment: .bottom) {
-                    if selected { Capsule().fill(Color.irukaBlue).frame(width: 48, height: 4) }
+    @ViewBuilder
+    private var postsTab: some View {
+        if showsReposts {
+            tabButton(L("投稿"), selected: false, chevron: true) { showsReposts = false }
+        } else {
+            Menu {
+                Picker(L("並び替え"), selection: $sort) {
+                    ForEach(ProfileSort.allCases) { option in
+                        Text(L(option.title)).tag(option)
+                    }
                 }
+            } label: {
+                tabLabel(L("投稿"), selected: true, icon: nil, chevron: true)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private func tabLabel(_ title: String, selected: Bool, icon: String?, chevron: Bool) -> some View {
+        HStack(spacing: 6) {
+            if let icon { Image(systemName: icon).font(.system(size: 14, weight: .semibold)) }
+            Text(title)
+            if chevron { Image(systemName: "chevron.down").font(.system(size: 11, weight: .bold)) }
+        }
+        .font(.system(size: 15, weight: selected ? .bold : .regular))
+        .foregroundStyle(selected ? Color.irukaInk : Color.irukaSecondary)
+        .frame(maxWidth: .infinity, minHeight: 48)
+        .overlay(alignment: .bottom) {
+            if selected { Capsule().fill(Color.irukaBlue).frame(width: 48, height: 4) }
+        }
+        .contentShape(Rectangle())
+    }
+
+    private func tabButton(_ title: String, selected: Bool, icon: String? = nil, chevron: Bool = false, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            tabLabel(title, selected: selected, icon: icon, chevron: chevron)
         }
         .buttonStyle(.plain)
     }
