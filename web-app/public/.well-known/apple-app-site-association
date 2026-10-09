@@ -2,7 +2,7 @@
   "applinks": {
     "details": [
       {
-        "appIDs": ["APPLE_TEAM_ID.app.rork.yytblue"],
+        "appIDs": ["48AU9N8RK4.app.rork.yytblue"],
         "components": [
           { "/": "/post/*", "comment": "Post detail" }
         ]
