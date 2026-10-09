@@ -68,6 +68,9 @@ struct NotificationsView: View {
         Group {
             if store.isLoading && store.items.isEmpty {
                 ProgressView().tint(Color.irukaBlue).frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if visibleItems.isEmpty && store.hasMore {
+                ProgressView().tint(Color.irukaBlue).frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .onAppear { Task { await store.loadMore() } }
             } else if visibleItems.isEmpty {
                 Text(L(store.failed ? "通知を読み込めませんでした。" : "通知はありません"))
                     .font(.system(size: 15))
@@ -78,7 +81,14 @@ struct NotificationsView: View {
                     LazyVStack(spacing: 0) {
                         ForEach(visibleItems) { item in
                             row(item)
+                                .onAppear {
+                                    if item.id == visibleItems.last?.id { Task { await store.loadMore() } }
+                                }
                             Rectangle().fill(Color.irukaHairline).frame(height: 1)
+                        }
+                        if store.hasMore {
+                            ProgressView().tint(Color.irukaBlue).frame(maxWidth: .infinity, minHeight: 56)
+                                .onAppear { Task { await store.loadMore() } }
                         }
                     }
                 }

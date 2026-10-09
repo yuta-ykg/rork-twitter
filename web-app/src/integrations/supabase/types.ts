@@ -316,6 +316,22 @@ export type Database = {
           ref_post_id: string
         }[]
       }
+      get_notifications_page: {
+        Args: {
+          before_at?: string
+          expected_user_id: string
+          page_size?: number
+        }
+        Returns: {
+          actor_id: string
+          body: string
+          created_at: string
+          is_new: boolean
+          kind: string
+          post_id: string
+          ref_post_id: string
+        }[]
+      }
       get_post_likes: {
         Args: { post_ids: string[] }
         Returns: {

@@ -12,9 +12,15 @@ export type AppNotification = {
   isNew: boolean;
 };
 
-/** 自分の投稿へのいいね・リポスト・返信・引用を新しい順に取る。 */
-export async function fetchNotifications(userId: string): Promise<AppNotification[]> {
-  const { data, error } = await supabase.rpc("get_notifications", { expected_user_id: userId });
+export const NOTIFICATION_PAGE_SIZE = 30;
+
+/** 自分の投稿へのいいね・リポスト・返信・引用を新しい順に1ページ分取る。`before`より古いものだけ返す。 */
+export async function fetchNotifications(userId: string, before?: string | null): Promise<AppNotification[]> {
+  const { data, error } = await supabase.rpc("get_notifications_page", {
+    expected_user_id: userId,
+    before_at: before ?? undefined,
+    page_size: NOTIFICATION_PAGE_SIZE,
+  });
   if (error) throw error;
   return (data ?? []).map((row) => ({
     kind: row.kind as NotificationKind,

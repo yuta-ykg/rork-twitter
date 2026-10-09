@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { Heart, MessageCircle, Quote, Repeat2 } from "lucide-react";
 import { Avatar, QuietNote, TweetShell, tweetAge } from "@/components/TweetFeed";
 import { useAuth } from "@/hooks/authContext";
 import { t, useLanguage } from "@/lib/language";
-import { fetchNotifications, markNotificationsRead, type AppNotification, type NotificationKind } from "@/lib/notifications";
+import { fetchNotifications, markNotificationsRead, NOTIFICATION_PAGE_SIZE, type AppNotification, type NotificationKind } from "@/lib/notifications";
 import { fetchProfiles, type Profile } from "@/lib/profiles";
 
 const kindMeta: Record<NotificationKind, { icon: typeof Heart; color: string; label: string }> = {
@@ -30,24 +30,41 @@ function matches(filter: Filter, kind: NotificationKind): boolean {
   return kind === filter;
 }
 
-type Loaded = { items: AppNotification[]; profiles: Map<string, Profile> };
+type Loaded = { items: AppNotification[]; profiles: Profile[] };
 
 export default function NotificationsPage() {
   const { language } = useLanguage();
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const query = useQuery<Loaded>({
+  const query = useInfiniteQuery<Loaded, Error, { pages: Loaded[] }, (string | undefined)[], string | null>({
     queryKey: ["notifications", user?.id],
     enabled: Boolean(user?.id),
-    queryFn: async () => {
-      const items = await fetchNotifications(user?.id ?? "");
+    initialPageParam: null,
+    queryFn: async ({ pageParam }) => {
+      const items = await fetchNotifications(user?.id ?? "", pageParam);
       const profiles = await fetchProfiles(items.map((item) => item.actorId));
-      return { items, profiles: new Map(profiles.map((profile) => [profile.id, profile])) };
+      return { items, profiles };
     },
+    getNextPageParam: (last) =>
+      last.items.length >= NOTIFICATION_PAGE_SIZE ? last.items[last.items.length - 1]?.createdAt ?? null : null,
   });
+  const pages = query.data?.pages ?? [];
+  const profileById = new Map<string, Profile>(pages.flatMap((page) => page.profiles).map((profile) => [profile.id, profile]));
+  const { hasNextPage, isFetchingNextPage, fetchNextPage } = query;
+  const sentinel = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (!user?.id || !query.data?.items.some((item) => item.isNew)) return;
+    const node = sentinel.current;
+    if (!node || !hasNextPage) return;
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting) && !isFetchingNextPage) void fetchNextPage();
+    }, { rootMargin: "400px" });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage, query.data]);
+
+  useEffect(() => {
+    if (!user?.id || !pages.some((page) => page.items.some((item) => item.isNew))) return;
     const timer = window.setTimeout(() => {
       void markNotificationsRead(user.id).then(() => queryClient.invalidateQueries({ queryKey: ["notifications-unread", user.id] }));
     }, 1500);
@@ -55,7 +72,7 @@ export default function NotificationsPage() {
   }, [query.data, user?.id, queryClient]);
 
   const [filter, setFilter] = useState<Filter>("all");
-  const all = query.data?.items ?? [];
+  const all = pages.flatMap((page) => page.items);
   const items = all.filter((item) => matches(filter, item.kind));
   return (
     <TweetShell title="通知" tab="notifications" onRefresh={() => query.refetch()}>
@@ -88,7 +105,7 @@ export default function NotificationsPage() {
           {items.map((item, index) => {
             const meta = kindMeta[item.kind];
             const Icon = meta.icon;
-            const actor = query.data?.profiles.get(item.actorId);
+            const actor = profileById.get(item.actorId);
             const name = actor?.name ?? t("ユーザー");
             const target = item.refPostId ?? item.postId;
             return (
@@ -110,6 +127,11 @@ export default function NotificationsPage() {
           })}
         </ul>
       )}
+      {hasNextPage ? (
+        <div ref={sentinel} className="grid h-14 place-items-center text-[13px] text-muted-foreground">
+          {isFetchingNextPage ? t("読み込み中…") : null}
+        </div>
+      ) : null}
     </TweetShell>
   );
 }
