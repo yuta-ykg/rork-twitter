@@ -79,10 +79,18 @@ struct TweetRow: View {
 
     }
 
-    @ViewBuilder
     private var moreMenu: some View {
-        if let target = post.userId, !post.isMine {
-            Menu {
+        Menu {
+            ShareLink(item: "\(post.body)\n\(post.handle)") {
+                Label(L("共有"), systemImage: "square.and.arrow.up")
+            }
+            Button {
+                UIPasteboard.general.string = post.body
+                notice = L("コピーしました")
+            } label: {
+                Label(L("投稿をコピー"), systemImage: "doc.on.doc")
+            }
+            if let target = post.userId, !post.isMine {
                 Button {
                     Task { if await store.setRelationship(targetId: target, kind: "mute", active: true) { notice = L("ミュートしました") } }
                 } label: {
@@ -93,15 +101,15 @@ struct TweetRow: View {
                 } label: {
                     Label("\(L("ブロック")) \(post.handle)", systemImage: "nosign")
                 }
-            } label: {
-                Image(systemName: "ellipsis")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(Color.irukaSecondary)
-                    .frame(width: 44, height: 28, alignment: .trailing)
-                    .contentShape(Rectangle())
             }
-            .accessibilityLabel(L("ミュート・ブロック中のアカウント"))
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(Color.irukaSecondary)
+                .frame(width: 44, height: 28, alignment: .trailing)
+                .contentShape(Rectangle())
         }
+        .accessibilityLabel(L("投稿のメニュー"))
     }
 
     private var tweetBody: Text {

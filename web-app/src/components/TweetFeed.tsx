@@ -5,7 +5,7 @@ import { setRelationship, type RelationKind } from "@/lib/relationships";
 import { toast } from "sonner";
 import { useOwnProfile } from "@/hooks/useOwnProfile";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Ban, Bell, Ellipsis, VolumeX, Heart, House, Mail, MessageCircle, Quote, Repeat2, Search, Settings, Share, SquarePen } from "lucide-react";
+import { Ban, Bell, Ellipsis, Link2, VolumeX, Heart, House, Mail, MessageCircle, Quote, Repeat2, Search, Settings, Share, SquarePen } from "lucide-react";
 import type { ReactNode, TouchEvent } from "react";
 import { useRef, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
@@ -190,6 +190,26 @@ export function TweetRow({ post }: { post: Post }) {
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const [moreOpen, setMoreOpen] = useState<boolean>(false);
   const canModerate = Boolean(post.userId) && !post.isMine;
+  const postUrl = `${window.location.origin}/post/${post.id}`;
+  const copyLink = async (): Promise<void> => {
+    try {
+      await navigator.clipboard.writeText(postUrl);
+      toast.success(t("コピーしました"));
+    } catch {
+      toast.error(t("操作できませんでした。もう一度試してください。"));
+    }
+  };
+  const sharePost = async (): Promise<void> => {
+    if (typeof navigator.share !== "function") {
+      await copyLink();
+      return;
+    }
+    try {
+      await navigator.share({ text: post.body, url: postUrl });
+    } catch {
+      // ユーザーが共有シートを閉じた場合は何もしない
+    }
+  };
   const relate = useMutation({
     mutationFn: (kind: RelationKind) => setRelationship(post.userId ?? "", kind, true, user?.id ?? ""),
     onSuccess: async (_data, kind) => {
@@ -229,14 +249,14 @@ export function TweetRow({ post }: { post: Post }) {
           <span className="truncate text-muted-foreground">{post.handle}</span>
           <span className="text-muted-foreground">·</span>
           <span className="shrink-0 text-muted-foreground">{tweetAge(post.createdAt, language)}</span>
-          {canModerate ? (
+          {(
             <div className="relative ml-auto">
               <button
                 type="button"
                 onClick={() => setMoreOpen((open) => !open)}
                 aria-haspopup="menu"
                 aria-expanded={moreOpen}
-                aria-label={t("ミュート・ブロック中のアカウント")}
+                aria-label={t("投稿のメニュー")}
                 className="-mr-2 grid h-9 w-9 place-items-center rounded-full"
               >
                 <Ellipsis className="h-[18px] w-[18px] text-muted-foreground" aria-hidden />
@@ -245,7 +265,15 @@ export function TweetRow({ post }: { post: Post }) {
                 <>
                   <button type="button" aria-label={t("閉じる")} className="fixed inset-0 z-20 cursor-default" onClick={() => setMoreOpen(false)} />
                   <div role="menu" className="absolute right-0 top-9 z-30 w-56 overflow-hidden rounded-2xl border border-border bg-background py-1 text-[15px] font-bold text-foreground shadow-[0_4px_20px_rgba(0,0,0,0.15)]">
-                    {(["mute", "block"] as const).map((kind) => (
+                    <button type="button" role="menuitem" onClick={() => { setMoreOpen(false); void sharePost(); }} className="flex h-11 w-full items-center gap-3 px-4 text-left active:bg-muted">
+                      <Share className="h-[18px] w-[18px]" aria-hidden />
+                      <span>{t("共有")}</span>
+                    </button>
+                    <button type="button" role="menuitem" onClick={() => { setMoreOpen(false); void copyLink(); }} className="flex h-11 w-full items-center gap-3 px-4 text-left active:bg-muted">
+                      <Link2 className="h-[18px] w-[18px]" aria-hidden />
+                      <span>{t("リンクをコピー")}</span>
+                    </button>
+                    {(canModerate ? (["mute", "block"] as const) : []).map((kind) => (
                       <button
                         key={kind}
                         type="button"
@@ -261,7 +289,7 @@ export function TweetRow({ post }: { post: Post }) {
                 </>
               ) : null}
             </div>
-          ) : null}
+          )}
         </div>
         {post.replyTo ? (
           <p className="text-[13px] text-muted-foreground">{t("返信先")} {parent ? parent.handle : t("投稿")}</p>
@@ -334,7 +362,14 @@ export function TweetRow({ post }: { post: Post }) {
             <Heart className="h-[16px] w-[16px]" fill={liked ? "#F91880" : "none"} />
             {likeCount > 0 ? <span className="tabular-nums">{likeCount}</span> : null}
           </button>
-          <Share className="h-[15px] w-[15px]" aria-hidden />
+          <button
+            type="button"
+            onClick={() => void sharePost()}
+            aria-label={t("共有")}
+            className="-ml-2 flex h-9 w-fit items-center rounded-full px-2 transition active:scale-90 hover:text-[#1D9BF0]"
+          >
+            <Share className="h-[15px] w-[15px]" aria-hidden />
+          </button>
         </div>
       </div>
     </article>
