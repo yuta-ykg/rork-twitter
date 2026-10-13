@@ -248,6 +248,7 @@ private let englishMessages: [String: String] = [
   "サブアカウントを削除しますか？": "Delete this sub-account?",
   "サブアカウントは最大5つまでです。": "You can have up to 5 sub-accounts.",
   "このIDはすでに使われています。": "This ID is already taken.",
+  "このIDは使えます。": "This ID is available.",
   "このサブアカウントの投稿、プロフィール、いいね、ブックマーク、通知が削除されます。この操作は取り消せません。": "This sub-account's posts, profile, likes, bookmarks and notifications will be deleted. This can't be undone.",
   "サブアカウントは投稿・フォロー・通知・いいねがすべて別になり、他のユーザーには別人として表示されます。": "Each sub-account has its own posts, follows, notifications and likes, and appears as a different person to others.",
   "別のGoogle／Appleアカウントでログインすると、新しいアカウントとして追加されます。": "Sign in with a different Google or Apple account to add it as a new account.",

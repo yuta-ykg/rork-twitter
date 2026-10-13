@@ -22,6 +22,7 @@ struct SettingsView: View {
     @State private var subToDelete: SubAccount?
     @State private var handleTaken = false
     @State private var isCheckingHandle = false
+    @State private var handleVerified = false
 
     var body: some View {
         ScrollView {
@@ -210,7 +211,7 @@ struct SettingsView: View {
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .frame(minHeight: 44)
-                        .onChange(of: subHandle) { _, _ in handleTaken = false }
+                        .onChange(of: subHandle) { _, _ in handleTaken = false; handleVerified = false }
                         .task(id: subHandle) {
                             guard subHandleValid else { isCheckingHandle = false; return }
                             isCheckingHandle = true
@@ -220,11 +221,17 @@ struct SettingsView: View {
                             let ok = await SubAccountService.isHandleAvailable(value)
                             guard !Task.isCancelled else { return }
                             handleTaken = !ok
+                            handleVerified = ok
                             isCheckingHandle = false
                         }
                     if handleTaken {
                         Text(L("このIDはすでに使われています。"))
                             .font(.system(size: 13)).foregroundStyle(.red)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    if handleVerified && !handleTaken && !isCheckingHandle && subHandleValid {
+                        Text(L("このIDは使えます。"))
+                            .font(.system(size: 13)).foregroundStyle(.green)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     HStack(spacing: 8) {

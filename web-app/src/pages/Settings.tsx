@@ -208,6 +208,7 @@ export default function SettingsPage() {
                 <input value={subName} onChange={(event) => setSubName(event.target.value)} maxLength={40} placeholder={t("名前")} aria-label={t("名前")} className="h-12 rounded-xl border border-input bg-background px-4 text-[16px] outline-none focus:border-[#1D9BF0]" />
                 <input value={subHandle} onChange={(event) => setSubHandle(event.target.value)} maxLength={25} placeholder={t("ユーザーID（英数字と_、3〜25字）")} aria-label={t("ユーザーID")} aria-invalid={handleTaken} autoCapitalize="none" className={`h-12 rounded-xl border border-input bg-background px-4 text-[16px] outline-none ${handleTaken ? "!border-red-500" : "focus:border-[#1D9BF0]"}`} />
                 {handleTaken && <p role="alert" className="-mt-1 px-1 text-[13px] text-red-500">{t("このIDはすでに使われています。")}</p>}
+                {handleValid && !handleTaken && !handleChecking && availability.data === true && <p role="status" className="-mt-1 px-1 text-[13px] text-green-600">{t("このIDは使えます。")}</p>}
                 <div className="grid grid-cols-2 gap-2">
                   <button type="button" onClick={() => setShowCreate(false)} className="h-11 rounded-full border border-input font-semibold">{t("キャンセル")}</button>
                   <button type="submit" disabled={!subName.trim() || !handleValid || handleTaken || handleChecking || createSub.isPending} className="h-11 rounded-full bg-foreground font-semibold text-background disabled:opacity-40">
