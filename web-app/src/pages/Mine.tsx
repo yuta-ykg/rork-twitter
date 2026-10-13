@@ -6,6 +6,7 @@ import { Avatar, TweetList, useTimeline } from "@/components/TweetFeed";
 import { useAuth } from "@/hooks/authContext";
 import { useOwnProfile } from "@/hooks/useOwnProfile";
 import { t, useLanguage } from "@/lib/language";
+import { fetchFollowInfo, type FollowInfo } from "@/lib/follows";
 import { fetchProfile } from "@/lib/profiles";
 
 function joined(iso: string | null, lang: string): string {
@@ -32,6 +33,11 @@ export default function MinePage() {
   const profileQuery = useQuery({
     queryKey: ["fullProfile", user?.id],
     queryFn: async () => (user?.id ? await fetchProfile(user.id) : null),
+    enabled: Boolean(user?.id),
+  });
+  const followInfo = useQuery<FollowInfo>({
+    queryKey: ["follow-info", user?.id, user?.id],
+    queryFn: () => fetchFollowInfo(user?.id ?? "", user?.id ?? ""),
     enabled: Boolean(user?.id),
   });
   const [tab, setTab] = useState<"posts" | "reposts">("posts");
@@ -81,6 +87,8 @@ export default function MinePage() {
               <span className="flex items-center gap-1"><CalendarDays className="h-4 w-4" aria-hidden />{joined(profile.created_at, language)}{t("から利用")}</span>
             ) : null}
             <span><b className="text-foreground">{mine.length}</b> {t("投稿")}</span>
+            <span><b className="text-foreground">{followInfo.data?.followingCount ?? 0}</b> {t("フォロー中")}</span>
+            <span><b className="text-foreground">{followInfo.data?.followerCount ?? 0}</b> {t("フォロワー")}</span>
           </div>
         </section>
         <div className="relative grid grid-cols-2 border-b border-t border-border" role="tablist">

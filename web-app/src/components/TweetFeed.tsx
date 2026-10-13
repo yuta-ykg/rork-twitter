@@ -273,11 +273,15 @@ export function TweetRow({ post }: { post: Post }) {
   });
   return (
     <article className="flex gap-2.5 px-4 py-3" aria-label={`${post.authorName} ${post.handle}. ${post.body}`}>
-      <Avatar initial={post.initial} index={post.avatarIndex} url={post.avatarUrl} size={40} />
+      <Link to={post.isMine ? "/mine" : post.userId ? `/u/${post.userId}` : "#"} className="h-fit shrink-0" aria-label={post.authorName}>
+        <Avatar initial={post.initial} index={post.avatarIndex} url={post.avatarUrl} size={40} />
+      </Link>
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-1 text-[15px]">
-          <span className="truncate font-bold">{post.authorName}</span>
-          <span className="truncate text-muted-foreground">{post.handle}</span>
+          <Link to={post.isMine ? "/mine" : post.userId ? `/u/${post.userId}` : "#"} className="flex min-w-0 items-baseline gap-1">
+            <span className="truncate font-bold">{post.authorName}</span>
+            <span className="truncate text-muted-foreground">{post.handle}</span>
+          </Link>
           <span className="text-muted-foreground">·</span>
           <span className="shrink-0 text-muted-foreground">{tweetAge(post.createdAt, language)}</span>
           {(

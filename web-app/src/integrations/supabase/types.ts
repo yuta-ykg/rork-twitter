@@ -178,6 +178,24 @@ export type Database = {
         }
         Relationships: []
       }
+      user_follows: {
+        Row: {
+          created_at: string
+          followee_id: string
+          follower_id: string
+        }
+        Insert: {
+          created_at?: string
+          followee_id: string
+          follower_id: string
+        }
+        Update: {
+          created_at?: string
+          followee_id?: string
+          follower_id?: string
+        }
+        Relationships: []
+      }
       user_relationships: {
         Row: {
           created_at: string
@@ -303,6 +321,21 @@ export type Database = {
           profile_name: string
         }
         Returns: undefined
+      }
+      get_follow_info: {
+        Args: { expected_user_id: string; target_user_id: string }
+        Returns: {
+          follower_count: number
+          following_count: number
+          follows_you: boolean
+          is_following: boolean
+        }[]
+      }
+      get_following_ids: {
+        Args: { expected_user_id: string }
+        Returns: {
+          followee_id: string
+        }[]
       }
       get_notifications: {
         Args: { expected_user_id: string }
@@ -436,6 +469,14 @@ export type Database = {
           name: string
           post_count: number
         }[]
+      }
+      set_follow: {
+        Args: {
+          active: boolean
+          expected_user_id: string
+          target_user_id: string
+        }
+        Returns: boolean
       }
       set_post_like: {
         Args: {
