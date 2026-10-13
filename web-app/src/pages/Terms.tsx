@@ -5,6 +5,7 @@ import { t, useLanguage } from "@/lib/language";
 type Clause = [string, string];
 
 const JA: Clause[] = [
+  ["運営者情報", "運営者: 山崎裕太\n所在地: 岡山県\n問い合わせ先: yuta1102orenge@icloud.com"],
   [
     "第1条（適用）",
     "本規約は、Yytblue（以下「本サービス」）の利用に関する条件を定めるものです。本サービスを利用する方（以下「ユーザー」）は、本規約に同意したうえで利用するものとします。"
@@ -43,11 +44,12 @@ const JA: Clause[] = [
   ],
   [
     "第10条（準拠法・管轄）",
-    "本規約は日本法に準拠します。本サービスに関して紛争が生じた場合は、運営者の所在地を管轄する裁判所を第一審の専属的合意管轄とします。"
+    "本規約は日本法に準拠します。本サービスに関して紛争が生じた場合は、岡山地方裁判所を第一審の専属的合意管轄とします。"
   ]
 ];
 
 const EN: Clause[] = [
+  ["Operator", "Operator: Yuta Yamazaki\nLocation: Okayama, Japan\nContact: yuta1102orenge@icloud.com"],
   [
     "Article 1 (Scope)",
     "These Terms govern your use of Yytblue (the \\\"Service\\\"). By using the Service you agree to these Terms."
@@ -86,7 +88,7 @@ const EN: Clause[] = [
   ],
   [
     "Article 10 (Governing law)",
-    "These Terms are governed by the laws of Japan. The court with jurisdiction over the operator's location has exclusive first-instance jurisdiction."
+    "These Terms are governed by the laws of Japan. The Okayama District Court has exclusive first-instance jurisdiction."
   ]
 ];
 
