@@ -27,6 +27,33 @@ async function generateCodeChallenge(verifier: string): Promise<string> {
     .replace(/=+$/, "");
 }
 
+const ACCOUNTS_KEY = "rork:accounts";
+
+interface StoredAccount {
+  user: AuthUser;
+  access: string;
+  refresh: string;
+}
+
+function readAccounts(): StoredAccount[] {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(ACCOUNTS_KEY) ?? "[]") as StoredAccount[];
+    return Array.isArray(parsed) ? parsed.filter((item) => item?.user?.id && item.refresh) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeAccounts(list: StoredAccount[]): void {
+  localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(list));
+}
+
+function upsertAccount(account: StoredAccount): AuthUser[] {
+  const next = [...readAccounts().filter((item) => item.user.id !== account.user.id), account];
+  writeAccounts(next);
+  return next.map((item) => item.user);
+}
+
 function userFromToken(token: string): AuthUser | null {
   try {
     const parts = token.split(".");
@@ -45,6 +72,7 @@ function userFromToken(token: string): AuthUser | null {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [accounts, setAccounts] = useState<AuthUser[]>(() => readAccounts().map((item) => item.user));
   const [isLoading, setIsLoading] = useState(true);
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -85,7 +113,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     localStorage.setItem(ACCESS_TOKEN_KEY, access_token);
     localStorage.setItem(REFRESH_TOKEN_KEY, refresh_token);
-    setUser(userData);
+    const decoded = userFromToken(access_token) ?? userData;
+    setAccounts(upsertAccount({ user: decoded, access: access_token, refresh: refresh_token }));
+    setUser(decoded);
   }
 
   async function signIn(provider: "google" | "apple") {
@@ -157,12 +187,63 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const signOut = useCallback(() => {
+  const activate = useCallback(async (target: StoredAccount): Promise<boolean> => {
+    let access = target.access;
+    let decoded = userFromToken(access);
+    if (!decoded) {
+      const response = await fetch(`${AUTH_URL}/oauth/refresh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ app_key: APP_KEY, refresh_token: target.refresh }),
+      }).catch(() => null);
+      if (!response?.ok) return false;
+      access = ((await response.json()) as { access_token: string }).access_token;
+      decoded = userFromToken(access);
+      if (!decoded) return false;
+    }
+    localStorage.setItem(ACCESS_TOKEN_KEY, access);
+    localStorage.setItem(REFRESH_TOKEN_KEY, target.refresh);
+    setAccounts(upsertAccount({ user: decoded, access, refresh: target.refresh }));
+    setUser(decoded);
+    return true;
+  }, []);
+
+  const clearActive = useCallback(() => {
     localStorage.removeItem(ACCESS_TOKEN_KEY);
     localStorage.removeItem(REFRESH_TOKEN_KEY);
     localStorage.removeItem(CODE_VERIFIER_KEY);
     setUser(null);
   }, []);
+
+  /** 保存済みアカウントへ切り替える。失効していれば一覧から外す。 */
+  const switchAccount = useCallback(async (id: string): Promise<boolean> => {
+    const target = readAccounts().find((item) => item.user.id === id);
+    if (!target) return false;
+    const ok = await activate(target);
+    if (!ok) {
+      const rest = readAccounts().filter((item) => item.user.id !== id);
+      writeAccounts(rest);
+      setAccounts(rest.map((item) => item.user));
+    }
+    return ok;
+  }, [activate]);
+
+  /** 指定アカウントをこの端末から外す。使用中なら残りのアカウントへ切り替える。 */
+  const removeAccount = useCallback(async (id: string): Promise<void> => {
+    const rest = readAccounts().filter((item) => item.user.id !== id);
+    writeAccounts(rest);
+    setAccounts(rest.map((item) => item.user));
+    if (user?.id !== id) return;
+    clearActive();
+    for (const candidate of rest) {
+      if (await activate(candidate)) return;
+    }
+  }, [user?.id, activate, clearActive]);
+
+  const signOut = useCallback(() => {
+    if (user?.id) void removeAccount(user.id);
+    else clearActive();
+  }, [user?.id, removeAccount, clearActive]);
 
   const refreshToken = useCallback(async () => {
     const stored = localStorage.getItem(REFRESH_TOKEN_KEY);
@@ -181,7 +262,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const { access_token } = (await response.json()) as { access_token: string };
     localStorage.setItem(ACCESS_TOKEN_KEY, access_token);
-    setUser(userFromToken(access_token));
+    const decoded = userFromToken(access_token);
+    if (decoded) setAccounts(upsertAccount({ user: decoded, access: access_token, refresh: stored }));
+    setUser(decoded);
   }, [signOut]);
 
   const checkAuth = useCallback(async () => {
@@ -190,6 +273,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (accessToken) {
         const decoded = userFromToken(accessToken);
         if (decoded) {
+          const stored = localStorage.getItem(REFRESH_TOKEN_KEY);
+          if (stored && !readAccounts().some((item) => item.user.id === decoded.id)) {
+            setAccounts(upsertAccount({ user: decoded, access: accessToken, refresh: stored }));
+          }
           setUser(decoded);
           return;
         }
@@ -205,7 +292,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [checkAuth]);
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, isSigningIn, error, signIn, signOut, clearError, exchangeCode }}>
+    <AuthContext.Provider value={{ user, accounts, switchAccount, removeAccount, isLoading, isSigningIn, error, signIn, signOut, clearError, exchangeCode }}>
       {children}
     </AuthContext.Provider>
   );

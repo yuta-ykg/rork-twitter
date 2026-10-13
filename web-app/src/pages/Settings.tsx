@@ -4,7 +4,8 @@ import { useAuth } from "@/hooks/authContext";
 import { deleteAccount, listRelationships, setRelationship } from "@/lib/relationships";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ChevronLeft } from "lucide-react";
+import { Check, ChevronLeft, Plus } from "lucide-react";
+import { AppleMark, GoogleMark } from "@/components/BrandMarks";
 import { t, useLanguage, type Language } from "@/lib/language";
 import { useTheme, type ThemeMode } from "@/lib/theme";
 
@@ -34,10 +35,23 @@ function Segment<T extends string>({ value, options, onChange }: {
 export default function SettingsPage() {
   const { language, setLanguage } = useLanguage();
   const { theme, setTheme } = useTheme();
-  const { user, signOut } = useAuth();
+  const { user, signOut, accounts, switchAccount, removeAccount: forgetAccount, signIn, isSigningIn } = useAuth();
+  const [switching, setSwitching] = useState<string | null>(null);
+  const [showAdd, setShowAdd] = useState<boolean>(false);
+  async function onSwitch(id: string) {
+    setSwitching(id);
+    const ok = await switchAccount(id);
+    setSwitching(null);
+    if (!ok) toast.error(t("アカウントを切り替えられませんでした。もう一度ログインしてください。"));
+    else toast.success(t("アカウントを切り替えました"));
+  }
+  function onAdd(provider: "google" | "apple") {
+    sessionStorage.setItem("iruka:auth_return_to", "/settings");
+    void signIn(provider);
+  }
   const queryClient = useQueryClient();
   const [confirm, setConfirm] = useState<"signout" | "delete" | null>(null);
-  const removeAccount = useMutation({
+  const deleteMine = useMutation({
     mutationFn: () => deleteAccount(user?.id ?? ""),
     onSuccess: () => {
       queryClient.clear();
@@ -94,6 +108,56 @@ export default function SettingsPage() {
           />
         </section>
         {enabled ? (
+          <section className="space-y-2 px-4 pt-8">
+            <h2 className="text-[13px] font-bold text-muted-foreground">{t("アカウントの切り替え")}</h2>
+            <ul className="divide-y divide-border rounded-2xl border border-border">
+              {accounts.map((account) => {
+                const current = account.id === user?.id;
+                const label = account.name?.trim() || account.email || account.id;
+                return (
+                  <li key={account.id} className="flex items-center gap-3 px-4 py-2">
+                    <button
+                      type="button"
+                      disabled={current || switching !== null}
+                      onClick={() => void onSwitch(account.id)}
+                      className="flex min-h-11 min-w-0 flex-1 items-center gap-3 text-left active:opacity-70"
+                    >
+                      <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-muted text-[15px] font-bold">
+                        {account.picture ? <img src={account.picture} alt="" referrerPolicy="no-referrer" className="h-full w-full object-cover" /> : Array.from(label)[0]}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[15px] font-bold">{label}</span>
+                        <span className="block truncate text-[13px] text-muted-foreground">{account.email}</span>
+                      </span>
+                      {current ? <Check className="h-5 w-5 shrink-0 text-[#1D9BF0]" aria-label={t("使用中")} /> : switching === account.id ? <span className="text-[13px] text-muted-foreground">…</span> : null}
+                    </button>
+                    {!current ? (
+                      <button type="button" onClick={() => void forgetAccount(account.id)} className="h-9 shrink-0 rounded-full border border-input px-3 text-[13px] font-bold active:bg-muted">
+                        {t("外す")}
+                      </button>
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ul>
+            {showAdd ? (
+              <div className="grid gap-2 pt-1">
+                <button type="button" disabled={isSigningIn} onClick={() => onAdd("google")} className="flex h-12 items-center justify-center gap-3 rounded-full border border-input text-[16px] font-semibold active:bg-muted disabled:opacity-50">
+                  <GoogleMark className="h-5 w-5" />{t("Googleで続ける")}
+                </button>
+                <button type="button" disabled={isSigningIn} onClick={() => onAdd("apple")} className="flex h-12 items-center justify-center gap-3 rounded-full bg-black text-[16px] font-semibold text-white disabled:opacity-50">
+                  <AppleMark className="h-5 w-5" />{t("Appleで続ける")}
+                </button>
+                <p className="text-[13px] text-muted-foreground">{t("別のGoogle／Appleアカウントでログインすると、新しいアカウントとして追加されます。")}</p>
+              </div>
+            ) : (
+              <button type="button" onClick={() => setShowAdd(true)} className="flex h-12 w-full items-center justify-center gap-2 rounded-full border border-input text-[16px] font-semibold active:bg-muted">
+                <Plus className="h-5 w-5" aria-hidden />{t("アカウントを追加")}
+              </button>
+            )}
+          </section>
+        ) : null}
+        {enabled ? (
           <section className="space-y-2 px-4 pb-10 pt-8">
             <h2 className="text-[13px] font-bold text-muted-foreground">{t("ミュート・ブロック中のアカウント")}</h2>
             {(relations.data ?? []).length === 0 ? (
@@ -127,8 +191,8 @@ export default function SettingsPage() {
             <button type="button" onClick={() => setConfirm("signout")} className="h-12 w-full rounded-full border border-input text-[16px] font-semibold active:bg-muted">
               {t("ログアウト")}
             </button>
-            <button type="button" disabled={removeAccount.isPending} onClick={() => setConfirm("delete")} className="h-12 w-full rounded-full border border-red-300 text-[16px] font-semibold text-red-600 active:bg-red-50 disabled:opacity-50">
-              {removeAccount.isPending ? t("削除中…") : t("アカウントを削除")}
+            <button type="button" disabled={deleteMine.isPending} onClick={() => setConfirm("delete")} className="h-12 w-full rounded-full border border-red-300 text-[16px] font-semibold text-red-600 active:bg-red-50 disabled:opacity-50">
+              {deleteMine.isPending ? t("削除中…") : t("アカウントを削除")}
             </button>
           </section>
         ) : null}
@@ -145,7 +209,7 @@ export default function SettingsPage() {
               <button
                 type="button"
                 onClick={() => {
-                  if (confirm === "delete") removeAccount.mutate();
+                  if (confirm === "delete") deleteMine.mutate();
                   else signOut();
                 }}
                 className={`h-11 rounded-full font-semibold text-white ${confirm === "delete" ? "bg-red-600" : "bg-foreground text-background"}`}

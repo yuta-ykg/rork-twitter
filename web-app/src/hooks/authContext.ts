@@ -3,6 +3,9 @@ import type { AuthUser } from "@/hooks/authUser";
 
 export interface AuthContextType {
   user: AuthUser | null;
+  accounts: AuthUser[];
+  switchAccount: (id: string) => Promise<boolean>;
+  removeAccount: (id: string) => Promise<void>;
   isLoading: boolean;
   isSigningIn: boolean;
   error: string | null;
