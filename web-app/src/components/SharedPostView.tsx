@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Heart } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Avatar, tweetAge } from "@/components/TweetFeed";
+import { PollView } from "@/components/PollView";
 import { t, useLanguage } from "@/lib/language";
 import { fetchSharedPost, type Post } from "@/lib/posts";
 
@@ -23,6 +24,7 @@ function ReadOnlyRow({ post, language }: { post: Post; language: string }) {
         </div>
         <Link to={`/post/${post.id}`} className="block whitespace-pre-wrap break-words text-[15px] leading-snug">{post.body}</Link>
         {image ? <img src={image} alt="" loading="lazy" className="mt-2 max-h-[420px] w-full rounded-2xl border border-border object-cover" /> : null}
+        {post.poll ? <PollView postId={post.id} poll={post.poll} readOnly /> : null}
         {(post.likeCount ?? 0) > 0 ? (
           <p className="mt-2 flex items-center gap-1 text-[13px] text-muted-foreground">
             <Heart className="h-[14px] w-[14px]" aria-hidden />

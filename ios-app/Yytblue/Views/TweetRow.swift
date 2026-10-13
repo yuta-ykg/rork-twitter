@@ -76,6 +76,10 @@ struct TweetRow: View {
                         .padding(.top, 8)
                         .accessibilityLabel(L("投稿の画像"))
                 }
+                if let poll = post.poll {
+                    PollView(poll: poll) { store.vote(post, option: $0) }
+                        .padding(.top, 8)
+                }
                 if post.quoteOf != nil { quoteCard }
                 actionRow
                     .padding(.top, 8)

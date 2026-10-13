@@ -59,6 +59,64 @@ export type Database = {
           },
         ]
       }
+      post_poll_votes: {
+        Row: {
+          created_at: string
+          option_index: number
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          option_index: number
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          option_index?: number
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_poll_votes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "post_polls"
+            referencedColumns: ["post_id"]
+          },
+        ]
+      }
+      post_polls: {
+        Row: {
+          created_at: string
+          ends_at: string
+          options: string[]
+          post_id: string
+        }
+        Insert: {
+          created_at?: string
+          ends_at: string
+          options: string[]
+          post_id: string
+        }
+        Update: {
+          created_at?: string
+          ends_at?: string
+          options?: string[]
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_polls_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: true
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       post_reposts: {
         Row: {
           created_at: string
@@ -245,6 +303,21 @@ export type Database = {
         Args: { author_id: string; viewer_id: string }
         Returns: boolean
       }
+      create_poll: {
+        Args: {
+          duration_minutes: number
+          expected_user_id: string
+          poll_options: string[]
+          target_post_id: string
+        }
+        Returns: {
+          counts: number[]
+          ends_at: string
+          my_vote: number
+          options: string[]
+          post_id: string
+        }[]
+      }
       create_post: {
         Args: {
           expected_user_id: string
@@ -398,6 +471,16 @@ export type Database = {
           kind: string
           post_id: string
           ref_post_id: string
+        }[]
+      }
+      get_polls: {
+        Args: { expected_user_id?: string; post_ids: string[] }
+        Returns: {
+          counts: number[]
+          ends_at: string
+          my_vote: number
+          options: string[]
+          post_id: string
         }[]
       }
       get_post_likes: {
@@ -563,6 +646,20 @@ export type Database = {
         }[]
       }
       user_id: { Args: never; Returns: string }
+      vote_poll: {
+        Args: {
+          expected_user_id: string
+          option_index: number
+          target_post_id: string
+        }
+        Returns: {
+          counts: number[]
+          ends_at: string
+          my_vote: number
+          options: string[]
+          post_id: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

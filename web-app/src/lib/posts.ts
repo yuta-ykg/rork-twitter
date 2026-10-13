@@ -1,3 +1,4 @@
+import { createPoll, fetchPolls, type Poll } from "@/lib/polls";
 import { ensureProfile, fetchProfiles, type Profile } from "@/lib/profiles";
 import { supabase } from "@/lib/supabase";
 
@@ -24,6 +25,7 @@ export type Post = {
   replyTo?: string | null;
   repostCount?: number;
   reposted?: boolean;
+  poll?: Poll | null;
 };
 
 type Row = {
@@ -39,6 +41,8 @@ type Row = {
   quote_of?: string | null;
   reply_to?: string | null;
 };
+
+export type PollDraft = { options: string[]; durationMinutes: number };
 
 export type Author = {
   id: string;
@@ -108,11 +112,13 @@ export async function fetchSharedPost(postId: string): Promise<SharedPost | null
   const profileById = new Map<string, Profile>(profiles.map((profile) => [profile.id, profile]));
   const likes = await supabase.rpc("get_post_likes", { post_ids: posts.map((post) => post.id) });
   const likeById = new Map<string, number>((likes.data ?? []).map((row) => [row.post_id, Number(row.like_count)]));
+  const pollById = await fetchPolls(posts.map((post) => post.id)).catch(() => new Map<string, Poll>());
   const filled = posts.map((post): Post => {
     const profile = post.userId ? profileById.get(post.userId) : undefined;
     const name = profile?.name ?? post.authorName;
     return {
       ...post,
+      poll: pollById.get(post.id) ?? null,
       likeCount: likeById.get(post.id) ?? 0,
       authorName: name,
       handle: profile?.handle ? `@${profile.handle}` : post.handle,
@@ -146,11 +152,13 @@ export async function fetchPosts(userId?: string | null): Promise<Post[]> {
   const repostById = new Map<string, { count: number; reposted: boolean }>(
     (reposts.data ?? []).map((row) => [row.post_id, { count: Number(row.repost_count), reposted: row.is_reposted }]),
   );
+  const pollById = await fetchPolls(posts.map((post) => post.id), userId).catch(() => new Map<string, Poll>());
   return posts.map((post) => {
     const profile = post.userId ? profileById.get(post.userId) : undefined;
     const name = profile?.name ?? post.authorName;
     return {
       ...post,
+      poll: pollById.get(post.id) ?? null,
       likeCount: likeById.get(post.id)?.count ?? 0,
       liked: likeById.get(post.id)?.liked ?? false,
       repostCount: repostById.get(post.id)?.count ?? 0,
@@ -186,7 +194,7 @@ export async function setPostRepost(postId: string, reposted: boolean, userId: s
 }
 
 /** 本文（70字まで）と任意の画像1枚で投稿を作る。quoteOf を渡すと引用投稿になる。 */
-export async function insertPost(body: string, author: Author, image?: File | null, quoteOf?: string | null, replyTo?: string | null): Promise<Post> {
+export async function insertPost(body: string, author: Author, image?: File | null, quoteOf?: string | null, replyTo?: string | null, poll?: PollDraft | null): Promise<Post> {
   const trimmed = body.trim();
   if (!trimmed || Array.from(trimmed).length > MAX_CHARACTERS) throw new Error("投稿は1〜70文字で入力してください。");
   const blob = image ? await shrinkImage(image) : null;
@@ -221,6 +229,9 @@ export async function insertPost(body: string, author: Author, image?: File | nu
         post_image_url: imageUrl,
       });
   if (error || !data?.[0]) throw error ?? new Error("投稿できませんでした");
+  if (poll) {
+    await createPoll(data[0].id, poll.options, poll.durationMinutes, author.id);
+  }
   return toPost(data[0], author.id);
 }
 

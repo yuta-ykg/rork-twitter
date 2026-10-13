@@ -3,6 +3,7 @@ import { t, useLanguage } from "@/lib/language";
 import { useAuth } from "@/hooks/authContext";
 import { fetchNotifications } from "@/lib/notifications";
 import { setRelationship, type RelationKind } from "@/lib/relationships";
+import { PollView } from "@/components/PollView";
 import { toast } from "sonner";
 import { useOwnProfile } from "@/hooks/useOwnProfile";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -338,6 +339,7 @@ export function TweetRow({ post }: { post: Post }) {
             className="mt-2 max-h-[420px] w-full rounded-2xl border border-border object-cover"
           />
         ) : null}
+        {post.poll ? <PollView postId={post.id} poll={post.poll} /> : null}
         {post.quoteOf ? <QuoteCard post={quoted} /> : null}
         <div className="mt-1 grid grid-cols-4 items-center text-muted-foreground">
           <button

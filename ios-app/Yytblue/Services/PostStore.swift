@@ -34,10 +34,10 @@ final class PostStore {
         timeline.filter(\.isMine)
     }
 
-    func add(body: String, image: Data?, user: AuthManager.User, quoteOf: UUID? = nil, replyTo: UUID? = nil) {
+    func add(body: String, image: Data?, user: AuthManager.User, quoteOf: UUID? = nil, replyTo: UUID? = nil, poll: PollDraft? = nil) {
         let trimmed = body.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, trimmed.count <= PostLimits.maxCharacters else { return }
-        Task { await insert(trimmed, image: image, user: user, quoteOf: quoteOf, replyTo: replyTo) }
+        Task { await insert(trimmed, image: image, user: user, quoteOf: quoteOf, replyTo: replyTo, poll: poll) }
     }
 
     /// 選んだ画像を長辺1600px以内のJPEGに縮める。
@@ -74,6 +74,11 @@ final class PostStore {
                 .execute()
                 .value) ?? []
             let repostById = Dictionary(repostRows.map { ($0.postId, $0) }, uniquingKeysWith: { first, _ in first })
+            let pollRows: [PollRow] = (try? await IrukaDatabase.client
+                .rpc("get_polls", params: GetPollsParams(post_ids: rows.map(\.id), expected_user_id: userId))
+                .execute()
+                .value) ?? []
+            let pollById = Dictionary(pollRows.map { ($0.postId, $0.poll) }, uniquingKeysWith: { first, _ in first })
             let followed: [String]? = if let userId { try? await FollowService.followingIds(userId: userId) } else { nil }
             guard currentUserId == userId else { return }
             followingIds = Set(followed ?? [])
@@ -98,7 +103,8 @@ final class PostStore {
                     quoteOf: row.quoteOf,
                     replyTo: row.replyTo,
                     repostCount: repostById[row.id]?.repostCount ?? 0,
-                    isReposted: repostById[row.id]?.isReposted ?? false
+                    isReposted: repostById[row.id]?.isReposted ?? false,
+                    poll: pollById[row.id]
                 )
             }
         } catch {
@@ -128,6 +134,24 @@ final class PostStore {
                 posts[i].isLiked = row.isLiked
             } catch {
                 if let i = posts.firstIndex(where: { $0.id == post.id }) { posts[i] = original }
+            }
+        }
+    }
+
+    /// 投票する。1アカウント1回で、結果はサーバーの値で置き換える。
+    func vote(_ post: Post, option: Int) {
+        guard let userId = currentUserId, let index = posts.firstIndex(where: { $0.id == post.id }),
+              posts[index].poll?.myVote == nil else { return }
+        Task {
+            do {
+                let rows: [PollRow] = try await IrukaDatabase.client
+                    .rpc("vote_poll", params: VotePollParams(target_post_id: post.id, option_index: option, expected_user_id: userId))
+                    .execute()
+                    .value
+                guard let row = rows.first, let i = posts.firstIndex(where: { $0.id == post.id }) else { return }
+                posts[i].poll = row.poll
+            } catch {
+                composeError = "投票できませんでした。"
             }
         }
     }
@@ -199,7 +223,7 @@ final class PostStore {
         try? await ProfileService.ensure(user)
     }
 
-    private func insert(_ body: String, image: Data?, user: AuthManager.User, quoteOf: UUID?, replyTo: UUID?) async {
+    private func insert(_ body: String, image: Data?, user: AuthManager.User, quoteOf: UUID?, replyTo: UUID?, poll: PollDraft?) async {
         await syncProfile(user)
         do {
             var imageUrl: String?
@@ -209,6 +233,7 @@ final class PostStore {
                 try await bucket.upload(path, data: image, options: FileOptions(contentType: "image/jpeg"))
                 imageUrl = try bucket.getPublicURL(path: path).absoluteString
             }
+            let createdId = UUID()
             if let replyTo {
                 let _: [PostRow] = try await IrukaDatabase.client
                     .rpc("create_reply_post", params: CreateReplyParams(
@@ -222,8 +247,14 @@ final class PostStore {
             } else {
                 let _: [PostRow] = try await IrukaDatabase.client
                     .rpc("create_post", params: CreatePostParams(
-                        post_id: UUID(), post_body: body, expected_user_id: user.id, post_image_url: imageUrl
+                        post_id: createdId, post_body: body, expected_user_id: user.id, post_image_url: imageUrl
                     )).execute().value
+            }
+            if let poll {
+                try await IrukaDatabase.client
+                    .rpc("create_poll", params: CreatePollParams(
+                        target_post_id: createdId, poll_options: poll.options, duration_minutes: poll.durationMinutes, expected_user_id: user.id
+                    )).execute()
             }
             await refresh(userId: user.id)
         } catch {

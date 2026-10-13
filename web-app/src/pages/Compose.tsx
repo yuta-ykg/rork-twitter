@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ImagePlus, X } from "lucide-react";
+import { ChartBar, ImagePlus, Plus, X } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -7,7 +7,15 @@ import { Avatar, QuoteCard, useTimeline } from "@/components/TweetFeed";
 import { useAuth } from "@/hooks/authContext";
 import { useOwnProfile } from "@/hooks/useOwnProfile";
 import { t, useLanguage } from "@/lib/language";
-import { insertPost, MAX_CHARACTERS } from "@/lib/posts";
+import { insertPost, MAX_CHARACTERS, type PollDraft } from "@/lib/posts";
+import { MAX_POLL_OPTIONS, MAX_POLL_OPTION_CHARS } from "@/lib/polls";
+
+const DURATIONS: { minutes: number; label: string }[] = [
+  { minutes: 60, label: "1時間" },
+  { minutes: 1440, label: "1日" },
+  { minutes: 4320, label: "3日" },
+  { minutes: 10080, label: "7日" },
+];
 
 export default function ComposePage() {
   useLanguage();
@@ -24,12 +32,17 @@ export default function ComposePage() {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [image, setImage] = useState<File | null>(null);
+  const [pollOn, setPollOn] = useState<boolean>(false);
+  const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
+  const [duration, setDuration] = useState<number>(1440);
+  const filledOptions = pollOptions.map((option) => option.trim()).filter((option) => option.length > 0);
+  const pollValid = !pollOn || filledOptions.length >= 2;
   const fileInput = useRef<HTMLInputElement>(null);
   const preview = useMemo(() => (image ? URL.createObjectURL(image) : null), [image]);
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
   const count = Array.from(draft).length;
   const trimmed = draft.trim();
-  const canPost = trimmed.length > 0 && Array.from(trimmed).length <= MAX_CHARACTERS && !sending;
+  const canPost = trimmed.length > 0 && Array.from(trimmed).length <= MAX_CHARACTERS && !sending && pollValid;
 
   function change(value: string) {
     const chars = Array.from(value);
@@ -40,7 +53,8 @@ export default function ComposePage() {
     if (!canPost || !user) return;
     setSending(true);
     try {
-      await insertPost(trimmed, user, image, quoteId, replyId);
+      const poll: PollDraft | null = pollOn ? { options: filledOptions, durationMinutes: duration } : null;
+      await insertPost(trimmed, user, image, quoteId, replyId, poll);
       await queryClient.invalidateQueries({ queryKey: ["timeline", user.id] });
       navigate(replyId ? `/post/${replyId}` : "/", { replace: true });
     } catch {
@@ -94,6 +108,47 @@ export default function ComposePage() {
             </button>
           </div>
         ) : null}
+        {pollOn ? (
+          <div className="mx-4 ml-[68px] mt-3 space-y-2 rounded-2xl border border-border p-3">
+            {pollOptions.map((option, index) => (
+              <div key={index} className="flex items-center gap-2">
+                <input
+                  value={option}
+                  onChange={(event) => setPollOptions((list) => list.map((item, i) => i === index ? Array.from(event.target.value).slice(0, MAX_POLL_OPTION_CHARS).join("") : item))}
+                  placeholder={`${t("選択肢")} ${index + 1}`}
+                  aria-label={`${t("選択肢")} ${index + 1}`}
+                  className="h-11 min-w-0 flex-1 rounded-lg border border-input bg-transparent px-3 text-[15px] outline-none focus:border-[#1D9BF0]"
+                />
+                {pollOptions.length > 2 ? (
+                  <button type="button" aria-label={t("選択肢を削除")} onClick={() => setPollOptions((list) => list.filter((_, i) => i !== index))} className="grid h-11 w-11 place-items-center text-muted-foreground">
+                    <X className="h-4 w-4" />
+                  </button>
+                ) : null}
+              </div>
+            ))}
+            {pollOptions.length < MAX_POLL_OPTIONS ? (
+              <button type="button" onClick={() => setPollOptions((list) => [...list, ""])} className="flex h-11 items-center gap-1 text-[15px] font-bold text-[#1D9BF0]">
+                <Plus className="h-4 w-4" />{t("選択肢を追加")}
+              </button>
+            ) : null}
+            <div className="flex items-center gap-2 pt-1">
+              <span className="text-[14px] text-muted-foreground">{t("期間")}</span>
+              <div className="flex flex-1 gap-1">
+                {DURATIONS.map((item) => (
+                  <button
+                    key={item.minutes}
+                    type="button"
+                    onClick={() => setDuration(item.minutes)}
+                    aria-pressed={duration === item.minutes}
+                    className={`h-9 flex-1 rounded-full text-[13px] font-bold ${duration === item.minutes ? "bg-[#1D9BF0] text-white" : "bg-muted text-foreground"}`}
+                  >
+                    {t(item.label)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : null}
         {quoteId ? <div className="mx-4 ml-[68px]"><QuoteCard post={quoted} /></div> : null}
         <div className="mt-auto flex items-center justify-between border-t border-border px-4 py-2 pb-5">
           <input
@@ -103,6 +158,7 @@ export default function ComposePage() {
             className="hidden"
             onChange={(event) => { setImage(event.target.files?.[0] ?? null); event.target.value = ""; }}
           />
+          <div className="flex items-center">
           <button
             type="button"
             onClick={() => fileInput.current?.click()}
@@ -111,6 +167,18 @@ export default function ComposePage() {
           >
             <ImagePlus className="h-[22px] w-[22px]" />
           </button>
+          {!replyId && !quoteId ? (
+            <button
+              type="button"
+              onClick={() => setPollOn((on) => !on)}
+              aria-pressed={pollOn}
+              aria-label={t("投票を追加")}
+              className={`grid h-11 w-11 place-items-center rounded-full text-[#1D9BF0] active:bg-[#1D9BF0]/10 ${pollOn ? "bg-[#1D9BF0]/10" : ""}`}
+            >
+              <ChartBar className="h-[22px] w-[22px]" />
+            </button>
+          ) : null}
+          </div>
           <p className="font-mono text-[15px] text-muted-foreground">{count} / {MAX_CHARACTERS}</p>
         </div>
       </div>

@@ -14,12 +14,20 @@ struct ComposeView: View {
     @State private var draft = ""
     @State private var pickerItem: PhotosPickerItem?
     @State private var imageData: Data?
+    @State private var pollOn = false
+    @State private var pollOptions: [String] = ["", ""]
+    @State private var pollMinutes = 1440
     @FocusState private var isFocused: Bool
+
+    private let durations: [(minutes: Int, label: String)] = [(60, "1時間"), (1440, "1日"), (4320, "3日"), (10080, "7日")]
+    private var filledOptions: [String] {
+        pollOptions.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+    }
 
     private var count: Int { draft.count }
     private var canPost: Bool {
         let trimmed = draft.trimmingCharacters(in: .whitespacesAndNewlines)
-        return !trimmed.isEmpty && count <= PostLimits.maxCharacters
+        return !trimmed.isEmpty && count <= PostLimits.maxCharacters && (!pollOn || filledOptions.count >= 2)
     }
 
     var body: some View {
@@ -95,6 +103,7 @@ struct ComposeView: View {
                     }
                     .padding(.leading, 52)
             }
+            if pollOn { pollEditor }
             if let quoting {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 6) {
@@ -118,6 +127,20 @@ struct ComposeView: View {
                         .frame(width: 44, height: 44)
                 }
                 .accessibilityLabel(L("画像を追加"))
+                if quoting == nil && replying == nil {
+                    Button {
+                        withAnimation(.snappy) { pollOn.toggle() }
+                    } label: {
+                        Image(systemName: "chart.bar")
+                            .font(.system(size: 22))
+                            .foregroundStyle(Color.irukaBlue)
+                            .frame(width: 44, height: 44)
+                            .background(pollOn ? Color.irukaBlue.opacity(0.12) : .clear, in: Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(L("投票を追加"))
+                    .accessibilityAddTraits(pollOn ? .isSelected : [])
+                }
                 Spacer()
                 Text("\(count) / \(PostLimits.maxCharacters)")
                     .font(.system(size: 15, weight: .medium, design: .monospaced))
@@ -159,7 +182,64 @@ struct ComposeView: View {
 
     private func submit() {
         guard canPost, let user = auth.user else { return }
-        store.add(body: draft, image: imageData, user: user, quoteOf: quoting?.id, replyTo: replying?.id)
+        store.add(body: draft, image: imageData, user: user, quoteOf: quoting?.id, replyTo: replying?.id,
+                  poll: pollOn ? PollDraft(options: filledOptions, durationMinutes: pollMinutes) : nil)
         dismiss()
+    }
+
+    private var pollEditor: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(pollOptions.indices, id: \.self) { index in
+                HStack(spacing: 8) {
+                    TextField("\(L("選択肢")) \(index + 1)", text: Binding(
+                        get: { pollOptions[index] },
+                        set: { pollOptions[index] = String($0.prefix(Poll.maxOptionCharacters)) }
+                    ))
+                    .padding(.horizontal, 12)
+                    .frame(minHeight: 44)
+                    .overlay { RoundedRectangle(cornerRadius: 10).stroke(Color.irukaHairline, lineWidth: 1) }
+                    if pollOptions.count > 2 {
+                        Button {
+                            pollOptions.remove(at: index)
+                        } label: {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundStyle(Color.irukaSecondary)
+                                .frame(width: 44, height: 44)
+                        }
+                        .accessibilityLabel(L("選択肢を削除"))
+                    }
+                }
+            }
+            if pollOptions.count < Poll.maxOptions {
+                Button {
+                    pollOptions.append("")
+                } label: {
+                    Label(L("選択肢を追加"), systemImage: "plus")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(Color.irukaBlue)
+                        .frame(minHeight: 44)
+                }
+            }
+            HStack(spacing: 6) {
+                Text(L("期間")).font(.system(size: 14)).foregroundStyle(Color.irukaSecondary)
+                ForEach(durations, id: \.minutes) { item in
+                    Button {
+                        pollMinutes = item.minutes
+                    } label: {
+                        Text(L(item.label))
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(pollMinutes == item.minutes ? .white : Color.irukaInk)
+                            .frame(maxWidth: .infinity, minHeight: 36)
+                            .background(pollMinutes == item.minutes ? Color.irukaBlue : Color.irukaField, in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(pollMinutes == item.minutes ? .isSelected : [])
+                }
+            }
+        }
+        .padding(12)
+        .overlay { RoundedRectangle(cornerRadius: 16).stroke(Color.irukaHairline, lineWidth: 1) }
+        .padding(.leading, 52)
     }
 }
