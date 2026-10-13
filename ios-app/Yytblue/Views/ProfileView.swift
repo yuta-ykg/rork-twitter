@@ -23,6 +23,7 @@ struct ProfileView: View {
     var onOpen: (Post) -> Void = { _ in }
 
     @State private var profile: IrukaProfile?
+    @State private var followInfo: FollowInfo?
     @State private var showsEdit = false
     @State private var showsReposts = false
     @State private var sort: ProfileSort = .newest
@@ -175,6 +176,11 @@ struct ProfileView: View {
             .font(.system(size: 14))
             .foregroundStyle(Color.irukaSecondary)
             .padding(.top, 8)
+            HStack(spacing: 16) {
+                followCount(followInfo?.followingCount ?? 0, L("フォロー中"))
+                followCount(followInfo?.followerCount ?? 0, L("フォロワー"))
+            }
+            .padding(.top, 6)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
@@ -183,5 +189,13 @@ struct ProfileView: View {
     private func load() async {
         guard let id = auth.user?.id else { return }
         profile = try? await ProfileService.fetch(ids: [id]).first
+        followInfo = try? await FollowService.info(targetId: id, userId: id)
+    }
+
+    private func followCount(_ count: Int, _ title: String) -> some View {
+        HStack(spacing: 4) {
+            Text("\(count)").font(.system(size: 14, weight: .bold)).foregroundStyle(Color.irukaInk)
+            Text(title).font(.system(size: 14)).foregroundStyle(Color.irukaSecondary)
+        }
     }
 }

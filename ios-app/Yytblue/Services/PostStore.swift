@@ -9,7 +9,14 @@ import UIKit
 final class PostStore {
     private(set) var posts: [Post] = []
     var composeError: String?
+    private(set) var followingIds: Set<String> = []
+    /// アバターがタップされたユーザーID。ContentViewがプロフィールを開く。
+    var profileRequest: String?
     private var currentUserId: String?
+
+    func setFollowing(_ id: String, _ following: Bool) {
+        if following { followingIds.insert(id) } else { followingIds.remove(id) }
+    }
 
     var timeline: [Post] {
         posts.sorted { $0.createdAt > $1.createdAt }
@@ -67,7 +74,9 @@ final class PostStore {
                 .execute()
                 .value) ?? []
             let repostById = Dictionary(repostRows.map { ($0.postId, $0) }, uniquingKeysWith: { first, _ in first })
+            let followed: [String]? = if let userId { try? await FollowService.followingIds(userId: userId) } else { nil }
             guard currentUserId == userId else { return }
+            followingIds = Set(followed ?? [])
             let profileById = Dictionary(uniqueKeysWithValues: profiles.map { ($0.id, $0) })
             posts = rows.map { row in
                 let profile = row.userId.flatMap { profileById[$0] }

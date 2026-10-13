@@ -17,7 +17,14 @@ struct TweetRow: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
-            AvatarView(initial: post.initial, index: post.avatarIndex, url: post.avatarUrl, size: 40)
+            Button {
+                store.profileRequest = post.userId
+            } label: {
+                AvatarView(initial: post.initial, index: post.avatarIndex, url: post.avatarUrl, size: 40)
+            }
+            .buttonStyle(.plain)
+            .disabled(post.userId == nil)
+            .accessibilityLabel(L("プロフィールを見る"))
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
                     Text(post.authorName)

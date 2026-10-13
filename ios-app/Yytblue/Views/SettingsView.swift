@@ -11,6 +11,9 @@ struct SettingsView: View {
     @State private var confirmsDelete = false
     @State private var isDeleting = false
     @State private var deleteFailed = false
+    @State private var showsAddAccount = false
+    @State private var switchFailed = false
+    @State private var switchingId: String?
 
     var body: some View {
         ScrollView {
@@ -33,6 +36,7 @@ struct SettingsView: View {
                     }
                     .pickerStyle(.segmented)
                 }
+                section(L("アカウントの切り替え")) { accountSwitcher }
                 do {
                     section(L("ミュート・ブロック中のアカウント")) {
                         if relations.isEmpty {
@@ -100,10 +104,69 @@ struct SettingsView: View {
         .alert(L("アカウントを削除できませんでした。"), isPresented: $deleteFailed) {
             Button("OK") {}
         }
+        .alert(L("アカウントを切り替えられませんでした。もう一度ログインしてください。"), isPresented: $switchFailed) {
+            Button("OK") {}
+        }
+        .confirmationDialog(L("アカウントを追加"), isPresented: $showsAddAccount, titleVisibility: .visible) {
+            Button(L("Googleで続ける")) { Task { await auth.signIn(provider: "google") } }
+            Button(L("Appleで続ける")) { Task { await auth.signIn(provider: "apple") } }
+            Button(L("キャンセル"), role: .cancel) {}
+        } message: { Text(L("別のGoogle／Appleアカウントでログインすると、新しいアカウントとして追加されます。")) }
         .task { relations = await store.relationships() }
         .background(Color.irukaBackground)
         .navigationTitle(L("設定"))
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private var accountSwitcher: some View {
+        VStack(spacing: 0) {
+            ForEach(auth.accounts, id: \.id) { account in
+                let current = account.id == auth.user?.id
+                HStack(spacing: 12) {
+                    Button {
+                        guard !current, switchingId == nil else { return }
+                        Task {
+                            switchingId = account.id
+                            let ok = await auth.switchAccount(to: account.id)
+                            switchingId = nil
+                            if !ok { switchFailed = true }
+                        }
+                    } label: {
+                        HStack(spacing: 12) {
+                            AvatarView(initial: account.initial, index: 0, url: account.picture, size: 36)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(account.displayName).font(.system(size: 15, weight: .bold)).foregroundStyle(Color.irukaInk).lineLimit(1)
+                                Text(account.email).font(.system(size: 13)).foregroundStyle(Color.irukaSecondary).lineLimit(1)
+                            }
+                            Spacer(minLength: 0)
+                            if current {
+                                Image(systemName: "checkmark").foregroundStyle(Color.irukaBlue).accessibilityLabel(L("使用中"))
+                            } else if switchingId == account.id {
+                                ProgressView()
+                            }
+                        }
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    if !current {
+                        Button(L("外す")) { auth.removeAccount(id: account.id) }
+                            .font(.system(size: 13, weight: .bold))
+                            .buttonStyle(.bordered)
+                            .frame(minHeight: 44)
+                    }
+                }
+                .padding(.vertical, 4)
+                Rectangle().fill(Color.irukaHairline).frame(height: 1)
+            }
+            Button { showsAddAccount = true } label: {
+                Label(L("アカウントを追加"), systemImage: "plus")
+                    .font(.system(size: 16, weight: .semibold))
+                    .frame(maxWidth: .infinity, minHeight: 48)
+            }
+            .buttonStyle(.bordered)
+            .padding(.top, 10)
+        }
     }
 
     private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {

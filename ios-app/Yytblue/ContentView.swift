@@ -15,8 +15,14 @@ struct ContentView: View {
     @State private var query = ""
     @State private var loadedUserId: String?
     @State private var pendingPostId: UUID?
+    @State private var profileId: String?
+    @State private var homeFeed: HomeFeed = .forYou
     private var didLoad: Bool { auth.user != nil && loadedUserId == auth.user?.id }
     @AppStorage("iruka-onboarded") private var onboarded = false
+
+    private enum HomeFeed: Hashable {
+        case forYou, following
+    }
 
     private enum FeedTab: Hashable {
         case home, search, notifications, messages
@@ -58,6 +64,18 @@ struct ContentView: View {
         .onOpenURL { url in
             if let id = Self.postId(from: url) { pendingPostId = id }
         }
+        .onChange(of: store.profileRequest) { _, id in
+            guard let id else { return }
+            store.profileRequest = nil
+            if id == auth.user?.id { showsMine = true } else { profileId = id }
+        }
+        .onChange(of: auth.user?.id) { _, _ in
+            showsMine = false
+            detailId = nil
+            profileId = nil
+            selectedTab = .home
+            homeFeed = .forYou
+        }
         .onChange(of: pendingPostId) { _, _ in openPendingPost() }
         .onChange(of: didLoad) { _, _ in openPendingPost() }
     }
@@ -93,6 +111,9 @@ struct ContentView: View {
                 ProfileView(store: store, onQuote: startQuote, onReply: startReply, onOpen: { detailId = $0.id })
             }
             .navigationDestination(isPresented: $showsSettings) { SettingsView() }
+            .navigationDestination(item: $profileId) { id in
+                UserProfileView(store: store, userId: id, onQuote: startQuote, onReply: startReply, onOpen: { detailId = $0.id })
+            }
             .navigationDestination(item: $detailId) { id in
                 PostDetailView(store: store, postId: id, onQuote: startQuote, onReply: startReply, onOpen: { detailId = $0.id })
             }
@@ -163,7 +184,10 @@ struct ContentView: View {
     private var feed: some View {
         switch selectedTab {
         case .home:
-            timeline(store.timeline.filter { $0.replyTo == nil }, searching: false)
+            VStack(spacing: 0) {
+                homeFeedPicker
+                timeline(homePosts, searching: false)
+            }
         case .search:
             VStack(spacing: 0) {
                 searchField
@@ -174,6 +198,37 @@ struct ContentView: View {
         case .messages:
             quietNote(L("メッセージはありません"))
         }
+    }
+
+    private var homePosts: [Post] {
+        let base = store.timeline.filter { $0.replyTo == nil }
+        guard homeFeed == .following else { return base }
+        return base.filter { $0.isMine || ($0.userId.map { store.followingIds.contains($0) } ?? false) }
+    }
+
+    private var homeFeedPicker: some View {
+        HStack(spacing: 0) {
+            feedTabButton(L("おすすめ"), feed: .forYou)
+            feedTabButton(L("フォロー中"), feed: .following)
+        }
+        .overlay(alignment: .bottom) { Rectangle().fill(Color.irukaHairline).frame(height: 1) }
+    }
+
+    private func feedTabButton(_ title: String, feed: HomeFeed) -> some View {
+        Button {
+            homeFeed = feed
+        } label: {
+            Text(title)
+                .font(.system(size: 15, weight: homeFeed == feed ? .bold : .regular))
+                .foregroundStyle(homeFeed == feed ? Color.irukaInk : Color.irukaSecondary)
+                .frame(maxWidth: .infinity, minHeight: 48)
+                .overlay(alignment: .bottom) {
+                    if homeFeed == feed { Capsule().fill(Color.irukaBlue).frame(width: 48, height: 4) }
+                }
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(homeFeed == feed ? .isSelected : [])
     }
 
     private var searchResults: [Post] {
