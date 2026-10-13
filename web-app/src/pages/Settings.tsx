@@ -2,7 +2,8 @@ import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/authContext";
 import { deleteAccount, listRelationships, setRelationship } from "@/lib/relationships";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createSubAccount, deleteSubAccount, MAX_SUB_ACCOUNTS, type SubAccount } from "@/lib/subAccounts";
 import { toast } from "sonner";
 import { Check, ChevronLeft, Plus } from "lucide-react";
 import { AppleMark, GoogleMark } from "@/components/BrandMarks";
@@ -35,7 +36,68 @@ function Segment<T extends string>({ value, options, onChange }: {
 export default function SettingsPage() {
   const { language, setLanguage } = useLanguage();
   const { theme, setTheme } = useTheme();
-  const { user, signOut, accounts, switchAccount, removeAccount: forgetAccount, signIn, isSigningIn } = useAuth();
+  const { user, owner, signOut, accounts, switchAccount, removeAccount: forgetAccount, signIn, isSigningIn, subAccounts, switchPersona, reloadSubAccounts } = useAuth();
+  const onSub = Boolean(owner && user && owner.id !== user.id);
+  const [showCreate, setShowCreate] = useState<boolean>(false);
+  const [subName, setSubName] = useState<string>("");
+  const [subHandle, setSubHandle] = useState<string>("");
+  const [subDelete, setSubDelete] = useState<SubAccount | null>(null);
+  useEffect(() => {
+    void reloadSubAccounts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const createSub = useMutation({
+    mutationFn: () => createSubAccount(subName.trim(), subHandle.trim().toLowerCase()),
+    onSuccess: async (sub) => {
+      await reloadSubAccounts();
+      setShowCreate(false);
+      setSubName("");
+      setSubHandle("");
+      switchPersona(sub);
+      toast.success(t("サブアカウントを作成しました"));
+    },
+    onError: (err: unknown) => {
+      const code = (err as { code?: string } | null)?.code;
+      if (code === "23505") toast.error(t("このIDはすでに使われています。"));
+      else if (code === "P0001") toast.error(t("サブアカウントは最大5つまでです。"));
+      else toast.error(t("サブアカウントを作成できませんでした。"));
+    },
+  });
+  const removeSub = useMutation({
+    mutationFn: (sub: SubAccount) => deleteSubAccount(sub.id),
+    onSuccess: async (_data, sub) => {
+      if (user?.id === sub.id) switchPersona(null);
+      setSubDelete(null);
+      await reloadSubAccounts();
+      toast.success(t("サブアカウントを削除しました"));
+    },
+    onError: () => {
+      setSubDelete(null);
+      toast.error(t("サブアカウントを削除できませんでした。"));
+    },
+  });
+  const handleValid = /^[a-z0-9_]{3,25}$/.test(subHandle.trim().toLowerCase());
+  function personaRow(id: string, label: string, sub: string, picture: string | undefined, current: boolean, onPick: () => void, onDelete?: () => void) {
+    return (
+      <li key={id} className="flex items-center gap-3 px-4 py-2">
+        <button type="button" disabled={current} onClick={onPick} className="flex min-h-11 min-w-0 flex-1 items-center gap-3 text-left active:opacity-70">
+          <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-muted text-[15px] font-bold">
+            {picture ? <img src={picture} alt="" referrerPolicy="no-referrer" className="h-full w-full object-cover" /> : Array.from(label)[0]}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[15px] font-bold">{label}</span>
+            <span className="block truncate text-[13px] text-muted-foreground">{sub}</span>
+          </span>
+          {current ? <Check className="h-5 w-5 shrink-0 text-[#1D9BF0]" aria-label={t("使用中")} /> : null}
+        </button>
+        {onDelete ? (
+          <button type="button" onClick={onDelete} className="h-9 shrink-0 rounded-full border border-input px-3 text-[13px] font-bold active:bg-muted">
+            {t("削除")}
+          </button>
+        ) : null}
+      </li>
+    );
+  }
   const [switching, setSwitching] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState<boolean>(false);
   async function onSwitch(id: string) {
@@ -52,7 +114,11 @@ export default function SettingsPage() {
   const queryClient = useQueryClient();
   const [confirm, setConfirm] = useState<"signout" | "delete" | null>(null);
   const deleteMine = useMutation({
-    mutationFn: () => deleteAccount(user?.id ?? ""),
+    mutationFn: async () => {
+      for (const sub of subAccounts) await deleteSubAccount(sub.id);
+      switchPersona(null);
+      await deleteAccount(owner?.id ?? "");
+    },
     onSuccess: () => {
       queryClient.clear();
       signOut();
@@ -107,12 +173,48 @@ export default function SettingsPage() {
             ]}
           />
         </section>
+        {enabled && owner ? (
+          <section className="space-y-2 px-4 pt-8">
+            <h2 className="text-[13px] font-bold text-muted-foreground">{t("サブアカウント")}</h2>
+            <ul className="divide-y divide-border rounded-2xl border border-border">
+              {personaRow(owner.id, owner.name?.trim() || owner.email, t("メインアカウント"), owner.picture, !onSub, () => switchPersona(null))}
+              {subAccounts.map((sub) =>
+                personaRow(sub.id, sub.name, sub.handle ? `@${sub.handle}` : "", sub.avatarUrl ?? undefined, user?.id === sub.id, () => switchPersona(sub), () => setSubDelete(sub)),
+              )}
+            </ul>
+            {showCreate ? (
+              <form
+                className="grid gap-2 pt-1"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  if (subName.trim() && handleValid) createSub.mutate();
+                }}
+              >
+                <input value={subName} onChange={(event) => setSubName(event.target.value)} maxLength={40} placeholder={t("名前")} aria-label={t("名前")} className="h-12 rounded-xl border border-input bg-background px-4 text-[16px] outline-none focus:border-[#1D9BF0]" />
+                <input value={subHandle} onChange={(event) => setSubHandle(event.target.value)} maxLength={25} placeholder={t("ユーザーID（英数字と_、3〜25字）")} aria-label={t("ユーザーID")} autoCapitalize="none" className="h-12 rounded-xl border border-input bg-background px-4 text-[16px] outline-none focus:border-[#1D9BF0]" />
+                <div className="grid grid-cols-2 gap-2">
+                  <button type="button" onClick={() => setShowCreate(false)} className="h-11 rounded-full border border-input font-semibold">{t("キャンセル")}</button>
+                  <button type="submit" disabled={!subName.trim() || !handleValid || createSub.isPending} className="h-11 rounded-full bg-foreground font-semibold text-background disabled:opacity-40">
+                    {createSub.isPending ? t("作成中…") : t("作成")}
+                  </button>
+                </div>
+              </form>
+            ) : subAccounts.length < MAX_SUB_ACCOUNTS ? (
+              <button type="button" onClick={() => setShowCreate(true)} className="flex h-12 w-full items-center justify-center gap-2 rounded-full border border-input text-[16px] font-semibold active:bg-muted">
+                <Plus className="h-5 w-5" aria-hidden />{t("サブアカウントを作成")}
+              </button>
+            ) : (
+              <p className="text-[13px] text-muted-foreground">{t("サブアカウントは最大5つまでです。")}</p>
+            )}
+            <p className="text-[13px] text-muted-foreground">{t("サブアカウントは投稿・フォロー・通知・いいねがすべて別になり、他のユーザーには別人として表示されます。")}</p>
+          </section>
+        ) : null}
         {enabled ? (
           <section className="space-y-2 px-4 pt-8">
             <h2 className="text-[13px] font-bold text-muted-foreground">{t("アカウントの切り替え")}</h2>
             <ul className="divide-y divide-border rounded-2xl border border-border">
               {accounts.map((account) => {
-                const current = account.id === user?.id;
+                const current = account.id === owner?.id;
                 const label = account.name?.trim() || account.email || account.id;
                 return (
                   <li key={account.id} className="flex items-center gap-3 px-4 py-2">
@@ -191,12 +293,24 @@ export default function SettingsPage() {
             <button type="button" onClick={() => setConfirm("signout")} className="h-12 w-full rounded-full border border-input text-[16px] font-semibold active:bg-muted">
               {t("ログアウト")}
             </button>
-            <button type="button" disabled={deleteMine.isPending} onClick={() => setConfirm("delete")} className="h-12 w-full rounded-full border border-red-300 text-[16px] font-semibold text-red-600 active:bg-red-50 disabled:opacity-50">
+            {onSub ? null : <button type="button" disabled={deleteMine.isPending} onClick={() => setConfirm("delete")} className="h-12 w-full rounded-full border border-red-300 text-[16px] font-semibold text-red-600 active:bg-red-50 disabled:opacity-50">
               {deleteMine.isPending ? t("削除中…") : t("アカウントを削除")}
-            </button>
+            </button>}
           </section>
         ) : null}
       </div>
+      {subDelete ? (
+        <div className="fixed inset-0 z-20 grid place-items-center bg-black/40 px-6" role="alertdialog" aria-modal="true">
+          <div className="w-full max-w-[340px] rounded-2xl bg-background p-5">
+            <h3 className="text-[17px] font-bold">{t("サブアカウントを削除しますか？")}</h3>
+            <p className="mt-2 text-[14px] text-muted-foreground">{t("このサブアカウントの投稿、プロフィール、いいね、ブックマーク、通知が削除されます。この操作は取り消せません。")}</p>
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <button type="button" onClick={() => setSubDelete(null)} className="h-11 rounded-full border border-input font-semibold">{t("キャンセル")}</button>
+              <button type="button" disabled={removeSub.isPending} onClick={() => removeSub.mutate(subDelete)} className="h-11 rounded-full bg-red-600 font-semibold text-white disabled:opacity-50">{t("削除する")}</button>
+            </div>
+          </div>
+        </div>
+      ) : null}
       {confirm ? (
         <div className="fixed inset-0 z-20 grid place-items-center bg-black/40 px-6" role="alertdialog" aria-modal="true">
           <div className="w-full max-w-[340px] rounded-2xl bg-background p-5">

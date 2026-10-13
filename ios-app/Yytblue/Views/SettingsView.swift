@@ -14,6 +14,12 @@ struct SettingsView: View {
     @State private var showsAddAccount = false
     @State private var switchFailed = false
     @State private var switchingId: String?
+    @State private var showsCreateSub = false
+    @State private var subName = ""
+    @State private var subHandle = ""
+    @State private var isCreatingSub = false
+    @State private var subError: String?
+    @State private var subToDelete: SubAccount?
 
     var body: some View {
         ScrollView {
@@ -36,6 +42,7 @@ struct SettingsView: View {
                     }
                     .pickerStyle(.segmented)
                 }
+                section(L("サブアカウント")) { subAccountsSection }
                 section(L("アカウントの切り替え")) { accountSwitcher }
                 do {
                     section(L("ミュート・ブロック中のアカウント")) {
@@ -75,6 +82,7 @@ struct SettingsView: View {
                         .font(.system(size: 16, weight: .semibold))
                         .frame(maxWidth: .infinity, minHeight: 48)
                         .buttonStyle(.bordered)
+                    if auth.isMainPersona {
                     Button(role: .destructive) { confirmsDelete = true } label: {
                         Text(isDeleting ? L("削除中…") : L("アカウントを削除"))
                             .font(.system(size: 16, weight: .semibold))
@@ -82,6 +90,7 @@ struct SettingsView: View {
                     }
                     .buttonStyle(.bordered)
                     .disabled(isDeleting)
+                    }
                 }
             }
             .padding(16)
@@ -95,6 +104,8 @@ struct SettingsView: View {
             Button(L("削除する"), role: .destructive) {
                 Task {
                     isDeleting = true
+                    for sub in auth.subAccounts { try? await SubAccountService.delete(id: sub.id) }
+                    auth.switchPersona(nil)
                     let ok = await store.deleteAccount()
                     isDeleting = false
                     if ok { await auth.signOut() } else { deleteFailed = true }
@@ -112,16 +123,147 @@ struct SettingsView: View {
             Button(L("Appleで続ける")) { Task { await auth.signIn(provider: "apple") } }
             Button(L("キャンセル"), role: .cancel) {}
         } message: { Text(L("別のGoogle／Appleアカウントでログインすると、新しいアカウントとして追加されます。")) }
-        .task { relations = await store.relationships() }
+        .alert(L("サブアカウントを削除しますか？"), isPresented: Binding(get: { subToDelete != nil }, set: { if !$0 { subToDelete = nil } })) {
+            Button(L("キャンセル"), role: .cancel) {}
+            Button(L("削除する"), role: .destructive) {
+                guard let sub = subToDelete else { return }
+                Task {
+                    do {
+                        try await SubAccountService.delete(id: sub.id)
+                        if auth.user?.id == sub.id { auth.switchPersona(nil) }
+                        await auth.reloadSubAccounts()
+                    } catch {
+                        subError = L("サブアカウントを削除できませんでした。")
+                    }
+                }
+            }
+        } message: { Text(L("このサブアカウントの投稿、プロフィール、いいね、ブックマーク、通知が削除されます。この操作は取り消せません。")) }
+        .alert(subError ?? "", isPresented: Binding(get: { subError != nil }, set: { if !$0 { subError = nil } })) {
+            Button("OK") {}
+        }
+        .task {
+            relations = await store.relationships()
+            await auth.reloadSubAccounts()
+        }
         .background(Color.irukaBackground)
         .navigationTitle(L("設定"))
         .navigationBarTitleDisplayMode(.inline)
     }
 
+    private var subHandleValid: Bool {
+        let h = subHandle.trimmingCharacters(in: .whitespaces).lowercased()
+        return h.count >= 3 && h.count <= 25 && h.allSatisfy { ($0.isASCII && ($0.isLetter || $0.isNumber)) || $0 == "_" }
+    }
+
+    private func personaRow(id: String, title: String, subtitle: String, picture: String?, current: Bool, pick: @escaping () -> Void, delete: (() -> Void)? = nil) -> some View {
+        HStack(spacing: 12) {
+            Button(action: pick) {
+                HStack(spacing: 12) {
+                    AvatarView(initial: String(title.prefix(1)), index: 0, url: picture, size: 36)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(title).font(.system(size: 15, weight: .bold)).foregroundStyle(Color.irukaInk).lineLimit(1)
+                        Text(subtitle).font(.system(size: 13)).foregroundStyle(Color.irukaSecondary).lineLimit(1)
+                    }
+                    Spacer(minLength: 0)
+                    if current {
+                        Image(systemName: "checkmark").foregroundStyle(Color.irukaBlue).accessibilityLabel(L("使用中"))
+                    }
+                }
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(current)
+            if let delete {
+                Button(L("削除"), action: delete)
+                    .font(.system(size: 13, weight: .bold))
+                    .buttonStyle(.bordered)
+                    .frame(minHeight: 44)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    private var subAccountsSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if let owner = auth.owner {
+                personaRow(id: owner.id, title: owner.displayName, subtitle: L("メインアカウント"), picture: owner.picture, current: auth.isMainPersona) {
+                    auth.switchPersona(nil)
+                }
+                Rectangle().fill(Color.irukaHairline).frame(height: 1)
+            }
+            ForEach(auth.subAccounts) { sub in
+                personaRow(id: sub.id, title: sub.name, subtitle: sub.handle.map { "@" + $0 } ?? "", picture: sub.avatarUrl, current: auth.user?.id == sub.id, pick: {
+                    auth.switchPersona(sub)
+                }, delete: { subToDelete = sub })
+                Rectangle().fill(Color.irukaHairline).frame(height: 1)
+            }
+            if showsCreateSub {
+                VStack(spacing: 8) {
+                    TextField(L("名前"), text: $subName)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(minHeight: 44)
+                    TextField(L("ユーザーID（英数字と_、3〜25字）"), text: $subHandle)
+                        .textFieldStyle(.roundedBorder)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .frame(minHeight: 44)
+                    HStack(spacing: 8) {
+                        Button(L("キャンセル")) { showsCreateSub = false }
+                            .buttonStyle(.bordered)
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                        Button(isCreatingSub ? L("作成中…") : L("作成")) { Task { await createSub() } }
+                            .buttonStyle(.borderedProminent)
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .disabled(isCreatingSub || subName.trimmingCharacters(in: .whitespaces).isEmpty || !subHandleValid)
+                    }
+                }
+                .padding(.top, 10)
+            } else if auth.subAccounts.count < SubAccountService.maxCount {
+                Button { showsCreateSub = true } label: {
+                    Label(L("サブアカウントを作成"), systemImage: "plus")
+                        .font(.system(size: 16, weight: .semibold))
+                        .frame(maxWidth: .infinity, minHeight: 48)
+                }
+                .buttonStyle(.bordered)
+                .padding(.top, 10)
+            } else {
+                Text(L("サブアカウントは最大5つまでです。"))
+                    .font(.system(size: 13)).foregroundStyle(Color.irukaSecondary).padding(.top, 8)
+            }
+            Text(L("サブアカウントは投稿・フォロー・通知・いいねがすべて別になり、他のユーザーには別人として表示されます。"))
+                .font(.system(size: 13)).foregroundStyle(Color.irukaSecondary).padding(.top, 8)
+        }
+    }
+
+    private func createSub() async {
+        isCreatingSub = true
+        defer { isCreatingSub = false }
+        do {
+            let sub = try await SubAccountService.create(
+                name: subName.trimmingCharacters(in: .whitespaces),
+                handle: subHandle.trimmingCharacters(in: .whitespaces).lowercased())
+            await auth.reloadSubAccounts()
+            subName = ""
+            subHandle = ""
+            showsCreateSub = false
+            auth.switchPersona(sub)
+        } catch {
+            let message = "\(error)"
+            if message.contains("23505") || message.contains("Handle taken") {
+                subError = L("このIDはすでに使われています。")
+            } else if message.contains("P0001") || message.contains("limit") {
+                subError = L("サブアカウントは最大5つまでです。")
+            } else {
+                subError = L("サブアカウントを作成できませんでした。")
+            }
+        }
+    }
+
     private var accountSwitcher: some View {
         VStack(spacing: 0) {
             ForEach(auth.accounts, id: \.id) { account in
-                let current = account.id == auth.user?.id
+                let current = account.id == auth.owner?.id
                 HStack(spacing: 12) {
                     Button {
                         guard !current, switchingId == nil else { return }

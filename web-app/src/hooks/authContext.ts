@@ -1,8 +1,16 @@
 import { createContext, useContext } from "react";
 import type { AuthUser } from "@/hooks/authUser";
+import type { SubAccount } from "@/lib/subAccounts";
 
 export interface AuthContextType {
+  /** 操作中のユーザー（サブアカウントに切り替え中はそのサブアカウント）。 */
   user: AuthUser | null;
+  /** ログインしている本人（メインアカウント）。 */
+  owner: AuthUser | null;
+  subAccounts: SubAccount[];
+  /** サブアカウントのIDに切り替える。null でメインに戻る。 */
+  switchPersona: (sub: SubAccount | null) => void;
+  reloadSubAccounts: () => Promise<void>;
   accounts: AuthUser[];
   switchAccount: (id: string) => Promise<boolean>;
   removeAccount: (id: string) => Promise<void>;

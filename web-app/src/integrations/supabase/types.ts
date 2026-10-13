@@ -178,6 +178,24 @@ export type Database = {
         }
         Relationships: []
       }
+      sub_accounts: {
+        Row: {
+          created_at: string
+          id: string
+          owner_id: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          owner_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          owner_id?: string
+        }
+        Relationships: []
+      }
       user_follows: {
         Row: {
           created_at: string
@@ -222,6 +240,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      acting_user_id: { Args: never; Returns: string }
       can_view_account: {
         Args: { author_id: string; viewer_id: string }
         Returns: boolean
@@ -312,7 +331,17 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      create_sub_account: {
+        Args: { sub_handle: string; sub_name: string }
+        Returns: {
+          avatar_url: string
+          handle: string
+          id: string
+          name: string
+        }[]
+      }
       delete_account: { Args: { expected_user_id: string }; Returns: undefined }
+      delete_sub_account: { Args: { sub_id: string }; Returns: undefined }
       ensure_profile: {
         Args: {
           expected_user_id: string
@@ -438,6 +467,15 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      list_sub_accounts: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          handle: string
+          id: string
+          name: string
+        }[]
       }
       list_user_relationships: {
         Args: { expected_user_id: string }

@@ -6,7 +6,27 @@ import SwiftUI
 
 @Observable
 class AuthManager {
-    var user: User?
+    /// ログインしている本人（メインアカウント）。
+    private(set) var owner: User? {
+        didSet {
+            if let acting, owner?.id != acting.owner { setActing(nil) }
+        }
+    }
+    /// サブアカウントとして操作中なら、その情報。
+    private var acting: ActingStored?
+    private(set) var subAccounts: [SubAccount] = []
+
+    /// 操作中のユーザー（サブアカウントに切り替え中はそのサブアカウント）。
+    var user: User? {
+        guard let owner else { return nil }
+        if let acting, acting.owner == owner.id {
+            return User(id: acting.id, email: "", name: acting.name, picture: acting.picture)
+        }
+        return owner
+    }
+
+    /// 本人（メイン）のまま操作しているか。
+    var isMainPersona: Bool { user?.id == owner?.id }
     /// この端末に保存済みのアカウント。
     private(set) var accounts: [User] = []
     var isLoading = true
@@ -47,8 +67,20 @@ class AuthManager {
         }
     }
 
+    nonisolated struct ActingStored: Codable, Sendable {
+        var owner: String
+        var id: String
+        var name: String
+        var picture: String?
+    }
+
     init() {
         accounts = loadAccounts().map(\.user)
+        if let text = KeychainHelper.get("acting_as"), let data = text.data(using: .utf8),
+           let stored = try? JSONDecoder().decode(ActingStored.self, from: data) {
+            acting = stored
+            IrukaDatabase.setActing(stored.id)
+        }
         Task { await checkAuth() }
     }
 
@@ -104,14 +136,14 @@ class AuthManager {
         KeychainHelper.set("access_token", value: access)
         KeychainHelper.set("refresh_token", value: account.refresh)
         remember(user: resolved, access: access, refresh: account.refresh)
-        user = resolved
+        owner = resolved
         return true
     }
 
     /// 保存済みのアカウントへ切り替える。失効していれば一覧から外す。
     @MainActor
     func switchAccount(to id: String) async -> Bool {
-        guard id != user?.id, let target = loadAccounts().first(where: { $0.user.id == id }) else { return false }
+        guard id != owner?.id, let target = loadAccounts().first(where: { $0.user.id == id }) else { return false }
         if await activate(target) { return true }
         saveAccounts(loadAccounts().filter { $0.user.id != id })
         return false
@@ -120,8 +152,47 @@ class AuthManager {
     /// 使っていないアカウントをこの端末から外す。
     @MainActor
     func removeAccount(id: String) {
-        guard id != user?.id else { return }
+        guard id != owner?.id else { return }
         saveAccounts(loadAccounts().filter { $0.user.id != id })
+    }
+
+    private func setActing(_ value: ActingStored?) {
+        acting = value
+        IrukaDatabase.setActing(value?.id)
+        if let value, let data = try? JSONEncoder().encode(value), let text = String(data: data, encoding: .utf8) {
+            KeychainHelper.set("acting_as", value: text)
+        } else {
+            KeychainHelper.delete("acting_as")
+        }
+    }
+
+    /// サブアカウントへ切り替える。nil でメインアカウントに戻る。
+    @MainActor
+    func switchPersona(_ sub: SubAccount?) {
+        guard let owner, let sub else {
+            setActing(nil)
+            return
+        }
+        setActing(ActingStored(owner: owner.id, id: sub.id, name: sub.name, picture: sub.avatarUrl))
+    }
+
+    /// サブアカウント一覧を読み込み、操作中のサブアカウントの表示を最新にする。
+    @MainActor
+    func reloadSubAccounts() async {
+        guard owner != nil else {
+            subAccounts = []
+            return
+        }
+        guard let list = try? await SubAccountService.list() else { return }
+        subAccounts = list
+        guard let current = acting else { return }
+        if let match = list.first(where: { $0.id == current.id }) {
+            if match.name != current.name || match.avatarUrl != current.picture {
+                setActing(ActingStored(owner: current.owner, id: match.id, name: match.name, picture: match.avatarUrl))
+            }
+        } else {
+            setActing(nil)
+        }
     }
 
     func getAccessToken() -> String? {
@@ -193,7 +264,7 @@ class AuthManager {
         defer { isLoading = false }
         if let accessToken = KeychainHelper.get("access_token"),
            let user = userFromToken(accessToken) {
-            self.user = user
+            self.owner = user
             if let refresh = KeychainHelper.get("refresh_token") {
                 remember(user: user, access: accessToken, refresh: refresh)
             }
@@ -345,7 +416,7 @@ class AuthManager {
             KeychainHelper.set("access_token", value: tokenResponse.access_token)
             KeychainHelper.set("refresh_token", value: tokenResponse.refresh_token)
             remember(user: tokenResponse.user, access: tokenResponse.access_token, refresh: tokenResponse.refresh_token)
-            user = tokenResponse.user
+            owner = tokenResponse.user
         } catch {
             setError("ログインに失敗しました")
         }
@@ -354,7 +425,7 @@ class AuthManager {
     @MainActor
     private func refreshToken() async {
         guard let storedRefreshToken = getRefreshToken() else {
-            user = nil
+            owner = nil
             return
         }
         guard let url = URL(string: "\(authURL)/oauth/refresh") else { return }
@@ -373,8 +444,8 @@ class AuthManager {
             }
             let refreshResponse = try JSONDecoder().decode(RefreshResponse.self, from: data)
             KeychainHelper.set("access_token", value: refreshResponse.access_token)
-            user = userFromToken(refreshResponse.access_token)
-            if let user { remember(user: user, access: refreshResponse.access_token, refresh: storedRefreshToken) }
+            owner = userFromToken(refreshResponse.access_token)
+            if let user = owner { remember(user: user, access: refreshResponse.access_token, refresh: storedRefreshToken) }
         } catch {
             await signOut()
         }
@@ -382,13 +453,13 @@ class AuthManager {
 
     @MainActor
     func signOut() async {
-        let leaving = user?.id
+        let leaving = owner?.id
         let rest = loadAccounts().filter { $0.user.id != leaving }
         saveAccounts(rest)
         KeychainHelper.delete("access_token")
         KeychainHelper.delete("refresh_token")
         UserDefaults.standard.removeObject(forKey: "RORK_AUTH_REFRESH_TOKEN")
-        user = nil
+        owner = nil
         for candidate in rest {
             if await activate(candidate) { return }
             saveAccounts(loadAccounts().filter { $0.user.id != candidate.user.id })

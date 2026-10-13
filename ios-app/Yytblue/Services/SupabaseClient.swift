@@ -3,15 +3,25 @@ import PostgREST
 import Supabase
 
 enum IrukaDatabase {
-    static let client = SupabaseClient(
-        supabaseURL: URL(string: Config.EXPO_PUBLIC_SUPABASE_URL)!,
-        supabaseKey: Config.EXPO_PUBLIC_SUPABASE_ANON_KEY,
-        options: .init(
-            auth: .init(accessToken: {
-                KeychainHelper.get("access_token")
-            })
+    private(set) static var client: SupabaseClient = make(acting: nil)
+
+    private static func make(acting: String?) -> SupabaseClient {
+        SupabaseClient(
+            supabaseURL: URL(string: Config.EXPO_PUBLIC_SUPABASE_URL)!,
+            supabaseKey: Config.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+            options: .init(
+                auth: .init(accessToken: {
+                    KeychainHelper.get("access_token")
+                }),
+                global: .init(headers: acting.map { ["x-acting-as": $0] } ?? [:])
+            )
         )
-    )
+    }
+
+    /// サブアカウントとして操作するユーザーIDを全リクエストに付ける。nil で本人。
+    static func setActing(_ id: String?) {
+        client = make(acting: id)
+    }
 }
 
 nonisolated struct PostRow: Codable, Sendable {

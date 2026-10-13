@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { ACTING_KEY } from "@/lib/supabase";
+import { listSubAccounts, type SubAccount } from "@/lib/subAccounts";
 import { AuthContext } from "@/hooks/authContext";
 import type { AuthUser } from "@/hooks/authUser";
 
@@ -70,8 +72,75 @@ function userFromToken(token: string): AuthUser | null {
   }
 }
 
+interface ActingStored {
+  owner: string;
+  id: string;
+  name: string;
+  picture?: string;
+}
+
+function readActing(): ActingStored | null {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(ACTING_KEY) ?? "null") as ActingStored | null;
+    return parsed?.id && parsed.owner ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [loginUser, setUser] = useState<AuthUser | null>(null);
+  const [acting, setActing] = useState<ActingStored | null>(readActing);
+  const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
+  const user = useMemo<AuthUser | null>(() => {
+    if (!loginUser) return null;
+    if (acting && acting.owner === loginUser.id) return { id: acting.id, email: "", name: acting.name, picture: acting.picture };
+    return loginUser;
+  }, [loginUser, acting]);
+
+  const switchPersona = useCallback((sub: SubAccount | null) => {
+    if (!sub || !loginUser) {
+      localStorage.removeItem(ACTING_KEY);
+      setActing(null);
+      return;
+    }
+    const next: ActingStored = { owner: loginUser.id, id: sub.id, name: sub.name, picture: sub.avatarUrl ?? undefined };
+    localStorage.setItem(ACTING_KEY, JSON.stringify(next));
+    setActing(next);
+  }, [loginUser]);
+
+  const reloadSubAccounts = useCallback(async (): Promise<void> => {
+    if (!loginUser) {
+      setSubAccounts([]);
+      return;
+    }
+    try {
+      const list = await listSubAccounts();
+      setSubAccounts(list);
+      const current = readActing();
+      if (!current || current.owner !== loginUser.id) return;
+      const match = list.find((item) => item.id === current.id);
+      if (!match) {
+        localStorage.removeItem(ACTING_KEY);
+        setActing(null);
+      } else if (match.name !== current.name || (match.avatarUrl ?? undefined) !== current.picture) {
+        const next: ActingStored = { ...current, name: match.name, picture: match.avatarUrl ?? undefined };
+        localStorage.setItem(ACTING_KEY, JSON.stringify(next));
+        setActing(next);
+      }
+    } catch {
+      // 一覧を取得できなくても、メインアカウントでの利用は続けられる。
+    }
+  }, [loginUser]);
+
+  useEffect(() => {
+    if (loginUser && acting && acting.owner !== loginUser.id) {
+      localStorage.removeItem(ACTING_KEY);
+      setActing(null);
+    }
+    void reloadSubAccounts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loginUser?.id]);
   const [accounts, setAccounts] = useState<AuthUser[]>(() => readAccounts().map((item) => item.user));
   const [isLoading, setIsLoading] = useState(true);
   const [isSigningIn, setIsSigningIn] = useState(false);
@@ -233,17 +302,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const rest = readAccounts().filter((item) => item.user.id !== id);
     writeAccounts(rest);
     setAccounts(rest.map((item) => item.user));
-    if (user?.id !== id) return;
+    if (loginUser?.id !== id) return;
     clearActive();
     for (const candidate of rest) {
       if (await activate(candidate)) return;
     }
-  }, [user?.id, activate, clearActive]);
+  }, [loginUser?.id, activate, clearActive]);
 
   const signOut = useCallback(() => {
-    if (user?.id) void removeAccount(user.id);
+    if (loginUser?.id) void removeAccount(loginUser.id);
     else clearActive();
-  }, [user?.id, removeAccount, clearActive]);
+  }, [loginUser?.id, removeAccount, clearActive]);
 
   const refreshToken = useCallback(async () => {
     const stored = localStorage.getItem(REFRESH_TOKEN_KEY);
@@ -292,7 +361,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [checkAuth]);
 
   return (
-    <AuthContext.Provider value={{ user, accounts, switchAccount, removeAccount, isLoading, isSigningIn, error, signIn, signOut, clearError, exchangeCode }}>
+    <AuthContext.Provider value={{ user, owner: loginUser, subAccounts, switchPersona, reloadSubAccounts, accounts, switchAccount, removeAccount, isLoading, isSigningIn, error, signIn, signOut, clearError, exchangeCode }}>
       {children}
     </AuthContext.Provider>
   );
