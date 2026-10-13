@@ -2,6 +2,12 @@ import { useAuth } from "@/hooks/authContext";
 import { t } from "@/lib/language";
 import { useState, type ReactNode } from "react";
 
+const KEY_POINTS: string[] = [
+  "他の人を傷つける投稿や、違法な投稿はできません。",
+  "投稿やプロフィールは他のユーザーに公開されます。",
+  "違反があった場合、投稿の削除やアカウントの停止を行うことがあります。",
+];
+
 const keyFor = (id: string): string => `yytblue-terms-accepted-v1:${id}`;
 
 function hasAccepted(id: string): boolean {
@@ -41,6 +47,14 @@ export default function TermsGate({ children }: { children: ReactNode }) {
             {t("はじめる前に、利用規約とプライバシーポリシーをご確認ください。")}
           </p>
         </div>
+        <ul className="space-y-2 rounded-2xl bg-[#F7F9F9] p-4 text-[14px] leading-6 text-[#0F1419]">
+          {KEY_POINTS.map((point) => (
+            <li key={point} className="flex gap-2">
+              <span aria-hidden className="text-[#1D9BF0]">•</span>
+              <span>{t(point)}</span>
+            </li>
+          ))}
+        </ul>
         <label className="flex min-h-[44px] cursor-pointer items-start gap-3 rounded-2xl border border-[#EFF3F4] p-4">
           <input
             type="checkbox"

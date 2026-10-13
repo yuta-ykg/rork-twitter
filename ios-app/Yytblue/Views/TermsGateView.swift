@@ -5,6 +5,11 @@ struct TermsGateView: View {
     let onAccept: () -> Void
     let onDecline: () -> Void
     @State private var agreed = false
+    private let keyPoints: [String] = [
+        "他の人を傷つける投稿や、違法な投稿はできません。",
+        "投稿やプロフィールは他のユーザーに公開されます。",
+        "違反があった場合、投稿の削除やアカウントの停止を行うことがあります。",
+    ]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
@@ -17,6 +22,19 @@ struct TermsGateView: View {
                     .font(.system(size: 15))
                     .foregroundStyle(Color.irukaSecondary)
             }
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(keyPoints, id: \.self) { point in
+                    HStack(alignment: .top, spacing: 8) {
+                        Text("•").foregroundStyle(Color.irukaBlue)
+                        Text(L(point)).foregroundStyle(Color.irukaInk)
+                        Spacer(minLength: 0)
+                    }
+                    .font(.system(size: 14))
+                }
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.irukaField, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             Button {
                 agreed.toggle()
             } label: {
