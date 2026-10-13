@@ -17,9 +17,18 @@ struct ComposeView: View {
     @State private var pollOn = false
     @State private var pollOptions: [String] = ["", ""]
     @State private var pollMinutes = 1440
+    @State private var customDuration = false
+    @State private var customDays = "1"
+    @State private var customHours = "0"
+    @State private var customMinutes = "0"
     @FocusState private var isFocused: Bool
 
     private let durations: [(minutes: Int, label: String)] = [(60, "1時間"), (1440, "1日"), (4320, "3日"), (10080, "7日")]
+    private var effectiveMinutes: Int {
+        guard customDuration else { return pollMinutes }
+        return (Int(customDays) ?? 0) * 1440 + (Int(customHours) ?? 0) * 60 + (Int(customMinutes) ?? 0)
+    }
+    private var durationValid: Bool { (5...10080).contains(effectiveMinutes) }
     private var filledOptions: [String] {
         pollOptions.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
     }
@@ -27,7 +36,7 @@ struct ComposeView: View {
     private var count: Int { draft.count }
     private var canPost: Bool {
         let trimmed = draft.trimmingCharacters(in: .whitespacesAndNewlines)
-        return !trimmed.isEmpty && count <= PostLimits.maxCharacters && (!pollOn || filledOptions.count >= 2)
+        return !trimmed.isEmpty && count <= PostLimits.maxCharacters && (!pollOn || (filledOptions.count >= 2 && durationValid))
     }
 
     var body: some View {
@@ -183,7 +192,7 @@ struct ComposeView: View {
     private func submit() {
         guard canPost, let user = auth.user else { return }
         store.add(body: draft, image: imageData, user: user, quoteOf: quoting?.id, replyTo: replying?.id,
-                  poll: pollOn ? PollDraft(options: filledOptions, durationMinutes: pollMinutes) : nil)
+                  poll: pollOn ? PollDraft(options: filledOptions, durationMinutes: effectiveMinutes) : nil)
         dismiss()
     }
 
@@ -221,25 +230,73 @@ struct ComposeView: View {
                         .frame(minHeight: 44)
                 }
             }
-            HStack(spacing: 6) {
-                Text(L("期間")).font(.system(size: 14)).foregroundStyle(Color.irukaSecondary)
-                ForEach(durations, id: \.minutes) { item in
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 4) {
+                    Text(L("期間")).font(.system(size: 14)).foregroundStyle(Color.irukaSecondary)
+                    ForEach(durations, id: \.minutes) { item in
+                        let selected = !customDuration && pollMinutes == item.minutes
+                        Button {
+                            customDuration = false
+                            pollMinutes = item.minutes
+                        } label: {
+                            Text(L(item.label))
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundStyle(selected ? .white : Color.irukaInk)
+                                .frame(maxWidth: .infinity, minHeight: 36)
+                                .background(selected ? Color.irukaBlue : Color.irukaField, in: Capsule())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityAddTraits(selected ? .isSelected : [])
+                    }
                     Button {
-                        pollMinutes = item.minutes
+                        if !customDuration {
+                            customDays = String(pollMinutes / 1440)
+                            customHours = String((pollMinutes % 1440) / 60)
+                            customMinutes = String(pollMinutes % 60)
+                        }
+                        customDuration = true
                     } label: {
-                        Text(L(item.label))
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(pollMinutes == item.minutes ? .white : Color.irukaInk)
+                        Text(L("カスタム"))
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(customDuration ? .white : Color.irukaInk)
                             .frame(maxWidth: .infinity, minHeight: 36)
-                            .background(pollMinutes == item.minutes ? Color.irukaBlue : Color.irukaField, in: Capsule())
+                            .background(customDuration ? Color.irukaBlue : Color.irukaField, in: Capsule())
                     }
                     .buttonStyle(.plain)
-                    .accessibilityAddTraits(pollMinutes == item.minutes ? .isSelected : [])
+                    .accessibilityAddTraits(customDuration ? .isSelected : [])
+                }
+                if customDuration {
+                    HStack(spacing: 8) {
+                        durationField(text: $customDays, unit: L("日").trimmingCharacters(in: .whitespaces))
+                        durationField(text: $customHours, unit: L("時間").trimmingCharacters(in: .whitespaces))
+                        durationField(text: $customMinutes, unit: L("分").trimmingCharacters(in: .whitespaces))
+                    }
+                    if !durationValid {
+                        Text(L("5分〜7日（10080分）の間で設定してください。"))
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color.red)
+                    }
                 }
             }
         }
         .padding(12)
         .overlay { RoundedRectangle(cornerRadius: 16).stroke(Color.irukaHairline, lineWidth: 1) }
         .padding(.leading, 52)
+    }
+
+    private func durationField(text: Binding<String>, unit: String) -> some View {
+        HStack(spacing: 4) {
+            TextField("0", text: Binding(
+                get: { text.wrappedValue },
+                set: { text.wrappedValue = String($0.filter(\.isNumber).prefix(2)) }
+            ))
+            .keyboardType(.numberPad)
+            .multilineTextAlignment(.center)
+            .font(.system(size: 15))
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .overlay { RoundedRectangle(cornerRadius: 10).stroke(Color.irukaHairline, lineWidth: 1) }
+            .accessibilityLabel(unit)
+            Text(unit).font(.system(size: 13)).foregroundStyle(Color.irukaSecondary)
+        }
     }
 }

@@ -16,6 +16,8 @@ const DURATIONS: { minutes: number; label: string }[] = [
   { minutes: 4320, label: "3日" },
   { minutes: 10080, label: "7日" },
 ];
+const MIN_DURATION = 5;
+const MAX_DURATION = 10080;
 
 export default function ComposePage() {
   useLanguage();
@@ -35,8 +37,16 @@ export default function ComposePage() {
   const [pollOn, setPollOn] = useState<boolean>(false);
   const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
   const [duration, setDuration] = useState<number>(1440);
+  const [customDuration, setCustomDuration] = useState<boolean>(false);
+  const [customDays, setCustomDays] = useState<string>("1");
+  const [customHours, setCustomHours] = useState<string>("0");
+  const [customMinutes, setCustomMinutes] = useState<string>("0");
+  const effectiveDuration = customDuration
+    ? (parseInt(customDays || "0", 10) || 0) * 1440 + (parseInt(customHours || "0", 10) || 0) * 60 + (parseInt(customMinutes || "0", 10) || 0)
+    : duration;
+  const durationValid = effectiveDuration >= MIN_DURATION && effectiveDuration <= MAX_DURATION;
   const filledOptions = pollOptions.map((option) => option.trim()).filter((option) => option.length > 0);
-  const pollValid = !pollOn || filledOptions.length >= 2;
+  const pollValid = !pollOn || (filledOptions.length >= 2 && durationValid);
   const fileInput = useRef<HTMLInputElement>(null);
   const preview = useMemo(() => (image ? URL.createObjectURL(image) : null), [image]);
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
@@ -53,7 +63,7 @@ export default function ComposePage() {
     if (!canPost || !user) return;
     setSending(true);
     try {
-      const poll: PollDraft | null = pollOn ? { options: filledOptions, durationMinutes: duration } : null;
+      const poll: PollDraft | null = pollOn ? { options: filledOptions, durationMinutes: effectiveDuration } : null;
       await insertPost(trimmed, user, image, quoteId, replyId, poll);
       await queryClient.invalidateQueries({ queryKey: ["timeline", user.id] });
       navigate(replyId ? `/post/${replyId}` : "/", { replace: true });
@@ -131,21 +141,89 @@ export default function ComposePage() {
                 <Plus className="h-4 w-4" />{t("選択肢を追加")}
               </button>
             ) : null}
-            <div className="flex items-center gap-2 pt-1">
-              <span className="text-[14px] text-muted-foreground">{t("期間")}</span>
-              <div className="flex flex-1 gap-1">
-                {DURATIONS.map((item) => (
+            <div className="space-y-2 pt-1">
+              <div className="flex items-center gap-2">
+                <span className="text-[14px] text-muted-foreground">{t("期間")}</span>
+                <div className="flex flex-1 flex-wrap gap-1">
+                  {DURATIONS.map((item) => (
+                    <button
+                      key={item.minutes}
+                      type="button"
+                      onClick={() => { setCustomDuration(false); setDuration(item.minutes); }}
+                      aria-pressed={!customDuration && duration === item.minutes}
+                      className={`h-9 flex-1 rounded-full px-2 text-[13px] font-bold ${!customDuration && duration === item.minutes ? "bg-[#1D9BF0] text-white" : "bg-muted text-foreground"}`}
+                    >
+                      {t(item.label)}
+                    </button>
+                  ))}
                   <button
-                    key={item.minutes}
                     type="button"
-                    onClick={() => setDuration(item.minutes)}
-                    aria-pressed={duration === item.minutes}
-                    className={`h-9 flex-1 rounded-full text-[13px] font-bold ${duration === item.minutes ? "bg-[#1D9BF0] text-white" : "bg-muted text-foreground"}`}
+                    onClick={() => {
+                      if (!customDuration) {
+                        const d = Math.floor(duration / 1440);
+                        const h = Math.floor((duration % 1440) / 60);
+                        const m = duration % 60;
+                        setCustomDays(String(d));
+                        setCustomHours(String(h));
+                        setCustomMinutes(String(m));
+                      }
+                      setCustomDuration(true);
+                    }}
+                    aria-pressed={customDuration}
+                    className={`h-9 flex-1 rounded-full px-2 text-[13px] font-bold ${customDuration ? "bg-[#1D9BF0] text-white" : "bg-muted text-foreground"}`}
                   >
-                    {t(item.label)}
+                    {t("カスタム")}
                   </button>
-                ))}
+                </div>
               </div>
+              {customDuration ? (
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <label className="flex flex-1 items-center gap-1">
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        min={0}
+                        max={7}
+                        value={customDays}
+                        onChange={(event) => setCustomDays(event.target.value.replace(/\D/g, "").slice(0, 2))}
+                        aria-label={t("日").trim()}
+                        className="h-11 w-full rounded-lg border border-input bg-transparent px-2 text-center text-[15px] outline-none focus:border-[#1D9BF0]"
+                      />
+                      <span className="text-[13px] text-muted-foreground">{t("日").trim()}</span>
+                    </label>
+                    <label className="flex flex-1 items-center gap-1">
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        min={0}
+                        max={23}
+                        value={customHours}
+                        onChange={(event) => setCustomHours(event.target.value.replace(/\D/g, "").slice(0, 2))}
+                        aria-label={t("時間").trim()}
+                        className="h-11 w-full rounded-lg border border-input bg-transparent px-2 text-center text-[15px] outline-none focus:border-[#1D9BF0]"
+                      />
+                      <span className="text-[13px] text-muted-foreground">{t("時間").trim()}</span>
+                    </label>
+                    <label className="flex flex-1 items-center gap-1">
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        min={0}
+                        max={59}
+                        value={customMinutes}
+                        onChange={(event) => setCustomMinutes(event.target.value.replace(/\D/g, "").slice(0, 2))}
+                        aria-label={t("分").trim()}
+                        className="h-11 w-full rounded-lg border border-input bg-transparent px-2 text-center text-[15px] outline-none focus:border-[#1D9BF0]"
+                      />
+                      <span className="text-[13px] text-muted-foreground">{t("分").trim()}</span>
+                    </label>
+                  </div>
+                  {!durationValid ? (
+                    <p className="text-[12px] text-destructive">{t("5分〜7日（10080分）の間で設定してください。")}</p>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           </div>
         ) : null}
