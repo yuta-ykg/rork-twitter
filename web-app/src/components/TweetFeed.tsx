@@ -205,11 +205,29 @@ export function TweetRow({ post }: { post: Post }) {
   const canModerate = Boolean(post.userId) && !post.isMine;
   const postUrl = `https://yytblue.com/post/${post.id}`;
   const copyLink = async (): Promise<void> => {
+    const legacyCopy = (): boolean => {
+      const area = document.createElement("textarea");
+      area.value = postUrl;
+      area.setAttribute("readonly", "");
+      area.style.cssText = "position:fixed;top:0;left:0;opacity:0";
+      document.body.appendChild(area);
+      area.select();
+      area.setSelectionRange(0, postUrl.length);
+      const ok = document.execCommand("copy");
+      document.body.removeChild(area);
+      return ok;
+    };
     try {
-      await navigator.clipboard.writeText(postUrl);
+      if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(postUrl);
+      else if (!legacyCopy()) throw new Error("copy unsupported");
       toast.success(t("コピーしました"));
     } catch {
-      toast.error(t("操作できませんでした。もう一度試してください。"));
+      try {
+        if (!legacyCopy()) throw new Error("copy failed");
+        toast.success(t("コピーしました"));
+      } catch {
+        toast.error(t("操作できませんでした。もう一度試してください。"));
+      }
     }
   };
   const sharePost = async (): Promise<void> => {
