@@ -20,6 +20,7 @@ nonisolated struct Post: Identifiable, Codable, Hashable, Sendable {
     var repostCount: Int? = nil
     var isReposted: Bool? = nil
     var poll: Poll? = nil
+    var editedAt: Date? = nil
 
     var characterCount: Int { body.count }
 }

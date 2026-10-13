@@ -3,6 +3,7 @@ import { t, useLanguage } from "@/lib/language";
 import { useAuth } from "@/hooks/authContext";
 import { fetchNotifications } from "@/lib/notifications";
 import { setRelationship, type RelationKind } from "@/lib/relationships";
+import { PostEditHistory } from "@/components/PostEditHistory";
 import { PollView } from "@/components/PollView";
 import { toast } from "sonner";
 import { useOwnProfile } from "@/hooks/useOwnProfile";
@@ -413,7 +414,7 @@ export function TweetRow({ post }: { post: Post }) {
               className="w-full resize-none rounded-2xl border border-border bg-background px-3 py-2 text-[15px] leading-5 outline-none focus:border-[#1D9BF0]"
             />
             <div className="flex items-center justify-between gap-2">
-              <span className={`text-[13px] ${draftLength > 70 || draftLength === 0 ? "text-destructive" : "text-muted-foreground"}`}>{draftLength}/70</span>
+              <span className={`text-[13px] ${draftLength > 70 ? "text-destructive" : draftLength >= 60 ? "text-orange-500" : "text-muted-foreground"}`}>{draftLength}/70</span>
               <div className="flex gap-2">
                 <button
                   type="button"
@@ -444,6 +445,7 @@ export function TweetRow({ post }: { post: Post }) {
             className="mt-2 max-h-[420px] w-full rounded-2xl border border-border object-cover"
           />
         ) : null}
+        <PostEditHistory post={post} />
         {post.poll ? <PollView postId={post.id} poll={post.poll} /> : null}
         {post.quoteOf ? <QuoteCard post={quoted} /> : null}
         <div className="mt-1 grid grid-cols-4 items-center text-muted-foreground">

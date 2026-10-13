@@ -33,6 +33,35 @@ export type Database = {
         }
         Relationships: []
       }
+      post_edit_history: {
+        Row: {
+          body: string
+          edited_at: string
+          id: string
+          post_id: string
+        }
+        Insert: {
+          body: string
+          edited_at?: string
+          id?: string
+          post_id: string
+        }
+        Update: {
+          body?: string
+          edited_at?: string
+          id?: string
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_edit_history_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       post_likes: {
         Row: {
           created_at: string
@@ -149,6 +178,7 @@ export type Database = {
           avatar_index: number
           body: string
           created_at: string
+          edited_at: string | null
           handle: string
           id: string
           image_url: string | null
@@ -163,6 +193,7 @@ export type Database = {
           avatar_index?: number
           body: string
           created_at?: string
+          edited_at?: string | null
           handle: string
           id?: string
           image_url?: string | null
@@ -177,6 +208,7 @@ export type Database = {
           avatar_index?: number
           body?: string
           created_at?: string
+          edited_at?: string | null
           handle?: string
           id?: string
           image_url?: string | null
@@ -330,6 +362,7 @@ export type Database = {
           avatar_index: number
           body: string
           created_at: string
+          edited_at: string | null
           handle: string
           id: string
           image_url: string | null
@@ -359,6 +392,7 @@ export type Database = {
           avatar_index: number
           body: string
           created_at: string
+          edited_at: string | null
           handle: string
           id: string
           image_url: string | null
@@ -388,6 +422,7 @@ export type Database = {
           avatar_index: number
           body: string
           created_at: string
+          edited_at: string | null
           handle: string
           id: string
           image_url: string | null
@@ -430,6 +465,7 @@ export type Database = {
           avatar_index: number
           body: string
           created_at: string
+          edited_at: string | null
           handle: string
           id: string
           image_url: string | null
@@ -514,6 +550,21 @@ export type Database = {
           post_id: string
         }[]
       }
+      get_post_edit_history: {
+        Args: { target_post_id: string }
+        Returns: {
+          body: string
+          edited_at: string
+          id: string
+          post_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "post_edit_history"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_post_likes: {
         Args: { post_ids: string[] }
         Returns: {
@@ -549,6 +600,7 @@ export type Database = {
           avatar_index: number
           body: string
           created_at: string
+          edited_at: string | null
           handle: string
           id: string
           image_url: string | null
@@ -572,6 +624,7 @@ export type Database = {
           avatar_index: number
           body: string
           created_at: string
+          edited_at: string | null
           handle: string
           id: string
           image_url: string | null

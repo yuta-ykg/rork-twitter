@@ -37,10 +37,12 @@ nonisolated struct PostRow: Codable, Sendable {
     let imageUrl: String?
     var quoteOf: UUID? = nil
     var replyTo: UUID? = nil
+    var editedAt: Date? = nil
 
     enum CodingKeys: String, CodingKey {
         case quoteOf = "quote_of"
         case replyTo = "reply_to"
+        case editedAt = "edited_at"
         case id
         case authorName = "author_name"
         case handle

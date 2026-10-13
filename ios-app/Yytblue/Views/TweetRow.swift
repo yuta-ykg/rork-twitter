@@ -84,6 +84,9 @@ struct TweetRow: View {
                         .padding(.top, 8)
                         .accessibilityLabel(L("投稿の画像"))
                 }
+                if post.editedAt != nil {
+                    PostEditHistoryView(post: post)
+                }
                 if let poll = post.poll {
                     PollView(poll: poll) { store.vote(post, option: $0) }
                         .padding(.top, 8)
@@ -175,7 +178,7 @@ struct TweetRow: View {
                 Text("\(count) / 70")
                     .font(.system(size: 13))
                     .monospacedDigit()
-                    .foregroundStyle(count >= 70 ? Color.red : Color.irukaSecondary)
+                    .foregroundStyle(count > 70 ? Color.red : count >= 60 ? Color.orange : Color.irukaSecondary)
                     .accessibilityLabel("\(count) / 70")
                 Spacer(minLength: 8)
                 Button(L("キャンセル")) {

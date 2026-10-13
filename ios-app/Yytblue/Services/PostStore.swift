@@ -108,7 +108,8 @@ final class PostStore {
                     replyTo: row.replyTo,
                     repostCount: repostById[row.id]?.repostCount ?? 0,
                     isReposted: repostById[row.id]?.isReposted ?? false,
-                    poll: pollById[row.id]
+                    poll: pollById[row.id],
+                    editedAt: row.editedAt
                 )
             }
         } catch {
@@ -153,9 +154,13 @@ final class PostStore {
         guard let userId = currentUserId else { return }
         Task {
             do {
-                try await IrukaDatabase.client
+                let rows: [PostRow] = try await IrukaDatabase.client
                     .rpc("edit_post", params: EditPostParams(target_post_id: post.id, new_body: trimmed, expected_user_id: userId))
-                    .execute()
+                    .execute().value
+                if currentUserId == userId, let row = rows.first, let i = posts.firstIndex(where: { $0.id == post.id }) {
+                    posts[i].body = row.body
+                    posts[i].editedAt = row.editedAt
+                }
             } catch {
                 if let i = posts.firstIndex(where: { $0.id == post.id }) { posts[i].body = original.body }
                 composeError = "投稿を更新できませんでした。"

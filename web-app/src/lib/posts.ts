@@ -13,6 +13,7 @@ export type Post = {
   initial: string;
   body: string;
   createdAt: string;
+  editedAt?: string | null;
   isMine: boolean;
   avatarIndex: number;
   userId?: string | null;
@@ -35,6 +36,7 @@ type Row = {
   initial: string;
   body: string;
   created_at: string;
+  edited_at?: string | null;
   avatar_index: number;
   user_id: string | null;
   image_url?: string | null;
@@ -59,6 +61,7 @@ function toPost(row: Row, userId?: string | null): Post {
     initial: row.initial,
     body: row.body,
     createdAt: row.created_at,
+    editedAt: row.edited_at ?? null,
     isMine: Boolean(userId) && row.user_id === userId,
     avatarIndex: row.avatar_index,
     userId: row.user_id,
