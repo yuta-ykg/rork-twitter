@@ -142,6 +142,27 @@ final class PostStore {
         }
     }
 
+    /// 自分の投稿の本文を修正する（1〜70字）。先に画面を更新し、失敗したら元に戻す。
+    func edit(_ post: Post, body: String) {
+        let trimmed = body.trimmingCharacters(in: .whitespacesAndNewlines)
+        let length = trimmed.count
+        guard post.isMine, length >= 1, length <= 70, currentUserId != nil else { return }
+        guard let index = posts.firstIndex(where: { $0.id == post.id }) else { return }
+        let original = posts[index]
+        posts[index].body = trimmed
+        guard let userId = currentUserId else { return }
+        Task {
+            do {
+                try await IrukaDatabase.client
+                    .rpc("edit_post", params: EditPostParams(target_post_id: post.id, new_body: trimmed, expected_user_id: userId))
+                    .execute()
+            } catch {
+                if let i = posts.firstIndex(where: { $0.id == post.id }) { posts[i].body = original.body }
+                composeError = "投稿を更新できませんでした。"
+            }
+        }
+    }
+
     /// 自分の投稿を削除する。先に画面から外し、失敗したら元に戻す。
     func delete(_ post: Post) {
         guard post.isMine, currentUserId != nil, let index = posts.firstIndex(where: { $0.id == post.id }) else { return }

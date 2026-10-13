@@ -7,6 +7,8 @@ struct TweetRow: View {
     @State private var notice: String?
     @State private var confirmDelete = false
     @State private var showsQuoteExplanation: Bool = false
+    @State private var editing = false
+    @State private var draft = ""
     let post: Post
     var quoted: Post? = nil
     var onLike: () -> Void = {}
@@ -52,16 +54,20 @@ struct TweetRow: View {
                         .font(.system(size: 13))
                         .foregroundStyle(Color.irukaSecondary)
                 }
-                Button { onOpen?() } label: {
-                    tweetBody
-                        .font(.system(size: 15))
-                        .multilineTextAlignment(.leading)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .contentShape(Rectangle())
+                if editing {
+                    editField
+                } else {
+                    Button { onOpen?() } label: {
+                        tweetBody
+                            .font(.system(size: 15))
+                            .multilineTextAlignment(.leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(onOpen == nil)
                 }
-                .buttonStyle(.plain)
-                .disabled(onOpen == nil)
                 if let urlString = post.imageUrl, let url = URL(string: urlString) {
                     Color(.secondarySystemBackground)
                         .frame(height: 220)
@@ -119,6 +125,12 @@ struct TweetRow: View {
                 Label(L("リンクをコピー"), systemImage: "link")
             }
             if post.isMine {
+                Button {
+                    draft = post.body
+                    editing = true
+                } label: {
+                    Label(L("投稿を編集"), systemImage: "pencil")
+                }
                 Button(role: .destructive) {
                     confirmDelete = true
                 } label: {
@@ -145,6 +157,47 @@ struct TweetRow: View {
                 .contentShape(Rectangle())
         }
         .accessibilityLabel(L("投稿のメニュー"))
+    }
+
+    private var editField: some View {
+        let trimmed = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        let count = trimmed.count
+        let canSave = count >= 1 && count <= 70
+        return VStack(alignment: .leading, spacing: 8) {
+            TextField(L("投稿本文"), text: $draft, axis: .vertical)
+                .font(.system(size: 15))
+                .lineLimit(1...4)
+                .padding(12)
+                .background(Color.irukaBackground)
+                .clipShape(.rect(cornerRadius: 16))
+                .overlay { RoundedRectangle(cornerRadius: 16).stroke(Color.irukaHairline, lineWidth: 1) }
+            HStack(spacing: 8) {
+                Text("\(count) / 70")
+                    .font(.system(size: 13))
+                    .monospacedDigit()
+                    .foregroundStyle(count >= 70 ? Color.red : Color.irukaSecondary)
+                    .accessibilityLabel("\(count) / 70")
+                Spacer(minLength: 8)
+                Button(L("キャンセル")) {
+                    editing = false
+                    draft = ""
+                }
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(Color.irukaInk)
+                .frame(minHeight: 44)
+                .padding(.horizontal, 8)
+                Button(L("保存")) {
+                    store.edit(post, body: draft)
+                    editing = false
+                    draft = ""
+                }
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(canSave ? Color.irukaBlue : Color.irukaSecondary)
+                .frame(minHeight: 44)
+                .padding(.horizontal, 8)
+                .disabled(!canSave)
+            }
+        }
     }
 
     private var tweetBody: Text {

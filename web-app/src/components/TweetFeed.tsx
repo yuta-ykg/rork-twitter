@@ -1,4 +1,4 @@
-import { avatarFills, deletePost, fetchPosts, setPostLike, setPostRepost, sortTimeline, type Post } from "@/lib/posts";
+import { avatarFills, deletePost, fetchPosts, setPostLike, setPostRepost, sortTimeline, updatePostBody, type Post } from "@/lib/posts";
 import { t, useLanguage } from "@/lib/language";
 import { useAuth } from "@/hooks/authContext";
 import { fetchNotifications } from "@/lib/notifications";
@@ -7,7 +7,7 @@ import { PollView } from "@/components/PollView";
 import { toast } from "sonner";
 import { useOwnProfile } from "@/hooks/useOwnProfile";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Ban, Bell, Ellipsis, Link2, Trash2, VolumeX, Heart, House, Mail, MessageCircle, Quote, Repeat2, Search, Settings, Share, SquarePen } from "lucide-react";
+import { Ban, Bell, Ellipsis, Link2, Pencil, Trash2, VolumeX, Heart, House, Mail, MessageCircle, Quote, Repeat2, Search, Settings, Share, SquarePen } from "lucide-react";
 import type { ReactNode, TouchEvent } from "react";
 import { useRef, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
@@ -204,7 +204,19 @@ export function TweetRow({ post }: { post: Post }) {
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const [moreOpen, setMoreOpen] = useState<boolean>(false);
   const [confirmDelete, setConfirmDelete] = useState<boolean>(false);
+  const [editing, setEditing] = useState<boolean>(false);
+  const [draftBody, setDraftBody] = useState<string>("");
   const canModerate = Boolean(post.userId) && !post.isMine;
+  const draftLength = Array.from(draftBody).length;
+  const saveEdit = useMutation({
+    mutationFn: () => updatePostBody(post.id, draftBody, user?.id ?? ""),
+    onSuccess: async () => {
+      setEditing(false);
+      toast.success(t("投稿を更新しました"));
+      await queryClient.invalidateQueries({ queryKey: ["timeline", user?.id] });
+    },
+    onError: () => toast.error(t("投稿を更新できませんでした。")),
+  });
   const remove = {
     isPending: false,
     mutate: () => {
@@ -346,6 +358,21 @@ export function TweetRow({ post }: { post: Post }) {
                       <button
                         type="button"
                         role="menuitem"
+                        onClick={() => {
+                          setMoreOpen(false);
+                          setDraftBody(post.body);
+                          setEditing(true);
+                        }}
+                        className="flex h-11 w-full items-center gap-3 px-4 text-left active:bg-muted"
+                      >
+                        <Pencil className="h-[18px] w-[18px]" aria-hidden />
+                        <span>{t("投稿を編集")}</span>
+                      </button>
+                    ) : null}
+                    {post.isMine ? (
+                      <button
+                        type="button"
+                        role="menuitem"
                         onClick={() => { setMoreOpen(false); setConfirmDelete(true); }}
                         className="flex h-11 w-full items-center gap-3 px-4 text-left text-destructive active:bg-muted"
                       >
@@ -374,7 +401,41 @@ export function TweetRow({ post }: { post: Post }) {
         {post.replyTo ? (
           <p className="text-[13px] text-muted-foreground">{t("返信先")} {parent ? parent.handle : t("投稿")}</p>
         ) : null}
-        <Link to={`/post/${post.id}`} className="block"><TweetBody body={post.body} /></Link>
+        {editing ? (
+          <div className="mt-1 space-y-2">
+            <textarea
+              value={draftBody}
+              onChange={(event) => setDraftBody(event.target.value)}
+              maxLength={400}
+              rows={3}
+              aria-label={t("投稿を編集")}
+              autoFocus
+              className="w-full resize-none rounded-2xl border border-border bg-background px-3 py-2 text-[15px] leading-5 outline-none focus:border-[#1D9BF0]"
+            />
+            <div className="flex items-center justify-between gap-2">
+              <span className={`text-[13px] ${draftLength > 70 || draftLength === 0 ? "text-destructive" : "text-muted-foreground"}`}>{draftLength}/70</span>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditing(false)}
+                  className="h-9 rounded-full border border-border px-4 text-[14px] font-bold"
+                >
+                  {t("キャンセル")}
+                </button>
+                <button
+                  type="button"
+                  disabled={saveEdit.isPending || draftLength === 0 || draftLength > 70}
+                  onClick={() => saveEdit.mutate()}
+                  className="h-9 rounded-full bg-[#1D9BF0] px-4 text-[14px] font-bold text-white disabled:opacity-50"
+                >
+                  {saveEdit.isPending ? t("保存中…") : t("保存")}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <Link to={`/post/${post.id}`} className="block"><TweetBody body={post.body} /></Link>
+        )}
         {safeImage(post.imageUrl) ? (
           <img
             src={safeImage(post.imageUrl) ?? undefined}

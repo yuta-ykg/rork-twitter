@@ -235,6 +235,16 @@ export async function insertPost(body: string, author: Author, image?: File | nu
   return toPost(data[0], author.id);
 }
 
+/** 自分の投稿の本文を修正する（1〜70字）。 */
+export async function updatePostBody(postId: string, body: string, userId: string): Promise<void> {
+  const { error } = await supabase.rpc("edit_post", {
+    target_post_id: postId,
+    new_body: body,
+    expected_user_id: userId,
+  });
+  if (error) throw error;
+}
+
 /** 自分の投稿を削除する。返信や投票などもまとめて消える。 */
 export async function deletePost(postId: string, userId: string): Promise<void> {
   const { error } = await supabase.rpc("delete_post", {

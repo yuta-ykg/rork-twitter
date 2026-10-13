@@ -5,7 +5,7 @@ nonisolated struct Post: Identifiable, Codable, Hashable, Sendable {
     let authorName: String
     let handle: String
     let initial: String
-    let body: String
+    var body: String
     let createdAt: Date
     let isMine: Bool
     let avatarIndex: Int
