@@ -92,7 +92,7 @@ struct TweetRow: View {
             Button(L("削除する"), role: .destructive) { store.delete(post) }
             Button(L("キャンセル"), role: .cancel) {}
         } message: {
-            Text(L("この操作は取り消せません。"))
+            Text(L("この投稿への返信・いいね・リポスト・投票も一緒に削除されます。この操作は取り消せません。"))
         }
 
     }

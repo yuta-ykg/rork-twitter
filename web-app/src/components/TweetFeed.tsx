@@ -433,7 +433,7 @@ export function TweetRow({ post }: { post: Post }) {
           <div className="fixed inset-0 z-40 grid place-items-center bg-black/40 px-6" role="dialog" aria-modal="true" aria-label={t("投稿を削除しますか？")}>
             <div className="w-full max-w-[320px] space-y-3 rounded-2xl bg-background p-5 text-foreground shadow-lg">
               <p className="text-[17px] font-bold">{t("投稿を削除しますか？")}</p>
-              <p className="text-[14px] text-muted-foreground">{t("この操作は取り消せません。")}</p>
+              <p className="text-[14px] text-muted-foreground">{t("この投稿への返信・いいね・リポスト・投票も一緒に削除されます。この操作は取り消せません。")}</p>
               <div className="flex flex-col gap-2 pt-1">
                 <button
                   type="button"
