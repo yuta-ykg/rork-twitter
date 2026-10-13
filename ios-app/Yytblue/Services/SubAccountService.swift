@@ -22,6 +22,11 @@ nonisolated struct DeleteSubParams: Encodable, Sendable {
     let sub_id: String
 }
 
+nonisolated struct HandleCheckParams: Encodable, Sendable {
+    let expected_user_id: String
+    let candidate_handle: String
+}
+
 /// サブアカウント（最大5つ）の取得・作成・削除。
 @MainActor
 enum SubAccountService {
@@ -29,6 +34,14 @@ enum SubAccountService {
 
     static func list() async throws -> [SubAccount] {
         try await IrukaDatabase.client.rpc("list_sub_accounts").execute().value
+    }
+
+    /// ユーザーIDが未使用か。通信失敗時は true（作成時にサーバーが検証する）。
+    static func isHandleAvailable(_ handle: String) async -> Bool {
+        let result: Bool? = try? await IrukaDatabase.client
+            .rpc("handle_available", params: HandleCheckParams(expected_user_id: "", candidate_handle: handle))
+            .execute().value
+        return result ?? true
     }
 
     static func create(name: String, handle: String) async throws -> SubAccount {

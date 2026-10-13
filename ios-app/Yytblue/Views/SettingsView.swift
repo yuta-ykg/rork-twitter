@@ -20,6 +20,8 @@ struct SettingsView: View {
     @State private var isCreatingSub = false
     @State private var subError: String?
     @State private var subToDelete: SubAccount?
+    @State private var handleTaken = false
+    @State private var isCheckingHandle = false
 
     var body: some View {
         ScrollView {
@@ -208,6 +210,23 @@ struct SettingsView: View {
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .frame(minHeight: 44)
+                        .onChange(of: subHandle) { _, _ in handleTaken = false }
+                        .task(id: subHandle) {
+                            guard subHandleValid else { isCheckingHandle = false; return }
+                            isCheckingHandle = true
+                            try? await Task.sleep(for: .milliseconds(350))
+                            guard !Task.isCancelled else { return }
+                            let value = subHandle.trimmingCharacters(in: .whitespaces).lowercased()
+                            let ok = await SubAccountService.isHandleAvailable(value)
+                            guard !Task.isCancelled else { return }
+                            handleTaken = !ok
+                            isCheckingHandle = false
+                        }
+                    if handleTaken {
+                        Text(L("このIDはすでに使われています。"))
+                            .font(.system(size: 13)).foregroundStyle(.red)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                     HStack(spacing: 8) {
                         Button(L("キャンセル")) { showsCreateSub = false }
                             .buttonStyle(.bordered)
@@ -215,7 +234,7 @@ struct SettingsView: View {
                         Button(isCreatingSub ? L("作成中…") : L("作成")) { Task { await createSub() } }
                             .buttonStyle(.borderedProminent)
                             .frame(maxWidth: .infinity, minHeight: 44)
-                            .disabled(isCreatingSub || subName.trimmingCharacters(in: .whitespaces).isEmpty || !subHandleValid)
+                            .disabled(isCreatingSub || subName.trimmingCharacters(in: .whitespaces).isEmpty || !subHandleValid || handleTaken || isCheckingHandle)
                     }
                 }
                 .padding(.top, 10)

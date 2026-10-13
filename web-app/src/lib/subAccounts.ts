@@ -40,3 +40,10 @@ export async function deleteSubAccount(id: string): Promise<void> {
   const { error } = await supabase.rpc("delete_sub_account", { sub_id: id });
   if (error) throw error;
 }
+
+/** ユーザーIDが未使用かを確認する。 */
+export async function isHandleAvailable(handle: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc("handle_available", { expected_user_id: "", candidate_handle: handle });
+  if (error) throw error;
+  return data !== false;
+}

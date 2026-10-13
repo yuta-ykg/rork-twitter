@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/authContext";
 import { deleteAccount, listRelationships, setRelationship } from "@/lib/relationships";
 import { useEffect, useState } from "react";
-import { createSubAccount, deleteSubAccount, MAX_SUB_ACCOUNTS, type SubAccount } from "@/lib/subAccounts";
+import { createSubAccount, deleteSubAccount, isHandleAvailable, MAX_SUB_ACCOUNTS, type SubAccount } from "@/lib/subAccounts";
 import { toast } from "sonner";
 import { Check, ChevronLeft, Plus } from "lucide-react";
 import { AppleMark, GoogleMark } from "@/components/BrandMarks";
@@ -77,6 +77,21 @@ export default function SettingsPage() {
     },
   });
   const handleValid = /^[a-z0-9_]{3,25}$/.test(subHandle.trim().toLowerCase());
+  const [debouncedHandle, setDebouncedHandle] = useState<string>("");
+  useEffect(() => {
+    const value = handleValid ? subHandle.trim().toLowerCase() : "";
+    const timer = window.setTimeout(() => setDebouncedHandle(value), 350);
+    return () => window.clearTimeout(timer);
+  }, [subHandle, handleValid]);
+  const availability = useQuery<boolean>({
+    queryKey: ["handle-available", debouncedHandle],
+    queryFn: () => isHandleAvailable(debouncedHandle),
+    enabled: debouncedHandle !== "",
+    staleTime: 10_000,
+  });
+  const currentHandle = subHandle.trim().toLowerCase();
+  const handleTaken = handleValid && debouncedHandle === currentHandle && availability.data === false;
+  const handleChecking = handleValid && (debouncedHandle !== currentHandle || availability.isFetching);
   function personaRow(id: string, label: string, sub: string, picture: string | undefined, current: boolean, onPick: () => void, onDelete?: () => void) {
     return (
       <li key={id} className="flex items-center gap-3 px-4 py-2">
@@ -187,14 +202,15 @@ export default function SettingsPage() {
                 className="grid gap-2 pt-1"
                 onSubmit={(event) => {
                   event.preventDefault();
-                  if (subName.trim() && handleValid) createSub.mutate();
+                  if (subName.trim() && handleValid && !handleTaken && !handleChecking) createSub.mutate();
                 }}
               >
                 <input value={subName} onChange={(event) => setSubName(event.target.value)} maxLength={40} placeholder={t("名前")} aria-label={t("名前")} className="h-12 rounded-xl border border-input bg-background px-4 text-[16px] outline-none focus:border-[#1D9BF0]" />
-                <input value={subHandle} onChange={(event) => setSubHandle(event.target.value)} maxLength={25} placeholder={t("ユーザーID（英数字と_、3〜25字）")} aria-label={t("ユーザーID")} autoCapitalize="none" className="h-12 rounded-xl border border-input bg-background px-4 text-[16px] outline-none focus:border-[#1D9BF0]" />
+                <input value={subHandle} onChange={(event) => setSubHandle(event.target.value)} maxLength={25} placeholder={t("ユーザーID（英数字と_、3〜25字）")} aria-label={t("ユーザーID")} aria-invalid={handleTaken} autoCapitalize="none" className={`h-12 rounded-xl border border-input bg-background px-4 text-[16px] outline-none ${handleTaken ? "!border-red-500" : "focus:border-[#1D9BF0]"}`} />
+                {handleTaken && <p role="alert" className="-mt-1 px-1 text-[13px] text-red-500">{t("このIDはすでに使われています。")}</p>}
                 <div className="grid grid-cols-2 gap-2">
                   <button type="button" onClick={() => setShowCreate(false)} className="h-11 rounded-full border border-input font-semibold">{t("キャンセル")}</button>
-                  <button type="submit" disabled={!subName.trim() || !handleValid || createSub.isPending} className="h-11 rounded-full bg-foreground font-semibold text-background disabled:opacity-40">
+                  <button type="submit" disabled={!subName.trim() || !handleValid || handleTaken || handleChecking || createSub.isPending} className="h-11 rounded-full bg-foreground font-semibold text-background disabled:opacity-40">
                     {createSub.isPending ? t("作成中…") : t("作成")}
                   </button>
                 </div>

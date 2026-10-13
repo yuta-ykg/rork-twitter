@@ -468,6 +468,10 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      handle_available: {
+        Args: { candidate_handle: string; expected_user_id: string }
+        Returns: boolean
+      }
       list_sub_accounts: {
         Args: never
         Returns: {
