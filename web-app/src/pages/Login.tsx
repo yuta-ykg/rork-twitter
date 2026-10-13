@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { AppleMark, GoogleMark } from "@/components/BrandMarks";
 import Onboarding, { ONBOARDED_KEY } from "@/components/Onboarding";
@@ -70,6 +70,11 @@ export default function LoginPage() {
             {t("Appleで続ける")}
           </span>
         </button>
+        <p className="pt-2 text-center text-[12px] leading-5 text-[#536471]">
+          {t("続けると")}
+          <Link to="/terms" className="font-semibold text-[#1D9BF0] underline-offset-2 hover:underline">{t("利用規約")}</Link>
+          {t("に同意したものとみなされます。")}
+        </p>
       </div>
     </div>
   );

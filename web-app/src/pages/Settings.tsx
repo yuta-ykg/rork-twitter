@@ -304,6 +304,12 @@ export default function SettingsPage() {
             )}
           </section>
         ) : null}
+        <section className="space-y-3 px-4 pb-6">
+          <h2 className="text-[13px] font-bold text-muted-foreground">{t("規約")}</h2>
+          <Link to="/terms" className="flex h-12 items-center justify-between rounded-full border border-input px-5 text-[16px] font-semibold active:bg-muted">
+            {t("利用規約")}
+          </Link>
+        </section>
         {enabled ? (
           <section className="space-y-3 px-4 pb-12">
             <h2 className="text-[13px] font-bold text-muted-foreground">{t("アカウント")}</h2>

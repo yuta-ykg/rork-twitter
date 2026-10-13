@@ -54,6 +54,12 @@ struct SignInView: View {
             .frame(height: 52)
             .clipShape(Capsule())
             .disabled(auth.isSigningIn)
+
+            Text(.init(L("続けると[利用規約](https://yytblue.com/terms)に同意したものとみなされます。")))
+                .font(.system(size: 12))
+                .foregroundStyle(Color.irukaSecondary)
+                .multilineTextAlignment(.center)
+                .tint(Color.irukaBlue)
         }
         .padding(.horizontal, 24)
         .padding(.bottom, 32)

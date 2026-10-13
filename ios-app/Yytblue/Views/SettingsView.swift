@@ -80,6 +80,18 @@ struct SettingsView: View {
                         }
                     }
                 }
+                section(L("規約")) {
+                    Link(destination: URL(string: "https://yytblue.com/terms")!) {
+                        HStack {
+                            Text(L("利用規約"))
+                            Spacer()
+                            Image(systemName: "arrow.up.right")
+                        }
+                        .font(.system(size: 16, weight: .semibold))
+                        .frame(minHeight: 44)
+                    }
+                    .foregroundStyle(Color.irukaInk)
+                }
                 section(L("アカウント")) {
                     Button(L("ログアウト")) { confirmsSignOut = true }
                         .font(.system(size: 16, weight: .semibold))
