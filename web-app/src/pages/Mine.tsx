@@ -87,7 +87,7 @@ export default function MinePage() {
               <span className="flex items-center gap-1"><CalendarDays className="h-4 w-4" aria-hidden />{joined(profile.created_at, language)}{t("から利用")}</span>
             ) : null}
             <span><b className="text-foreground">{mine.length}</b> {t("投稿")}</span>
-            <span><b className="text-foreground">{followInfo.data?.followingCount ?? 0}</b> {t("フォロー中")}</span>
+            <Link to="/mine/following" className="flex min-h-11 items-center gap-1 active:opacity-70"><b className="text-foreground">{followInfo.data?.followingCount ?? 0}</b> {t("フォロー中")}</Link>
             <span><b className="text-foreground">{followInfo.data?.followerCount ?? 0}</b> {t("フォロワー")}</span>
           </div>
         </section>

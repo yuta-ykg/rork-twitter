@@ -13,6 +13,7 @@ const HomePage = lazy(() => import("./pages/Home"));
 const NotificationsPage = lazy(() => import("./pages/Notifications"));
 const MessagesPage = lazy(() => import("./pages/Messages"));
 const MinePage = lazy(() => import("./pages/Mine"));
+const FollowingPage = lazy(() => import("./pages/Following"));
 const EditProfilePage = lazy(() => import("./pages/EditProfile"));
 const UserProfilePage = lazy(() => import("./pages/UserProfile"));
 const PostDetailPage = lazy(() => import("./pages/PostDetail"));
@@ -46,6 +47,7 @@ const App = () => (
           <Route path="/messages" element={<RequireAuth><MessagesPage /></RequireAuth>} />
           <Route path="/mine" element={<RequireAuth><MinePage /></RequireAuth>} />
           <Route path="/mine/edit" element={<RequireAuth><EditProfilePage /></RequireAuth>} />
+          <Route path="/mine/following" element={<RequireAuth><FollowingPage /></RequireAuth>} />
           <Route path="/u/:id" element={<RequireAuth><UserProfilePage /></RequireAuth>} />
           <Route path="/post/:id" element={<PostDetailPage />} />
           <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />

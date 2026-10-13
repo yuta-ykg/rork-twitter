@@ -177,7 +177,14 @@ struct ProfileView: View {
             .foregroundStyle(Color.irukaSecondary)
             .padding(.top, 8)
             HStack(spacing: 16) {
-                followCount(followInfo?.followingCount ?? 0, L("フォロー中"))
+                NavigationLink {
+                    FollowingListView()
+                } label: {
+                    followCount(followInfo?.followingCount ?? 0, L("フォロー中"))
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
                 followCount(followInfo?.followerCount ?? 0, L("フォロワー"))
             }
             .padding(.top, 6)
