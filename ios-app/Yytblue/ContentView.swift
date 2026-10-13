@@ -19,6 +19,11 @@ struct ContentView: View {
     @State private var homeFeed: HomeFeed = .forYou
     private var didLoad: Bool { auth.user != nil && loadedUserId == auth.user?.id }
     @AppStorage("iruka-onboarded") private var onboarded = false
+    @AppStorage("yytblue-terms-accepted-v1") private var acceptedTermsRaw = ""
+    private var acceptedTermsOwners: Set<String> {
+        get { Set(acceptedTermsRaw.split(separator: ",").map(String.init)) }
+        nonmutating set { acceptedTermsRaw = newValue.sorted().joined(separator: ",") }
+    }
 
     private enum HomeFeed: Hashable {
         case forYou, following
@@ -41,6 +46,11 @@ struct ContentView: View {
                 } else {
                     OnboardingView { onboarded = true }
                 }
+            } else if let ownerId = auth.owner?.id, !acceptedTermsOwners.contains(ownerId) {
+                TermsGateView(
+                    onAccept: { acceptedTermsOwners.insert(ownerId) },
+                    onDecline: { Task { await auth.signOut() } }
+                )
             } else {
                 mainShell
             }

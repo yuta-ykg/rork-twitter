@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { lazy, Suspense, type ReactNode } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 
+import TermsGate from "@/components/TermsGate";
 import DesktopSidebar from "@/components/DesktopSidebar";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -33,7 +34,7 @@ function RequireAuth({ children }: { children: ReactNode }) {
     return <div className="grid min-h-dvh place-items-center text-[#536471]">{t("読み込み中…")}</div>;
   }
   if (!user) return <Navigate to="/login" replace state={{ from: location.pathname + location.search + location.hash }} />;
-  return children;
+  return <TermsGate>{children}</TermsGate>;
 }
 
 const App = () => (
