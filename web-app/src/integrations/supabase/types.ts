@@ -414,6 +414,10 @@ export type Database = {
         }[]
       }
       delete_account: { Args: { expected_user_id: string }; Returns: undefined }
+      delete_post: {
+        Args: { expected_user_id: string; target_post_id: string }
+        Returns: undefined
+      }
       delete_sub_account: { Args: { sub_id: string }; Returns: undefined }
       ensure_profile: {
         Args: {

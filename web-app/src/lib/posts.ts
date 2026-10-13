@@ -235,6 +235,15 @@ export async function insertPost(body: string, author: Author, image?: File | nu
   return toPost(data[0], author.id);
 }
 
+/** 自分の投稿を削除する。返信や投票などもまとめて消える。 */
+export async function deletePost(postId: string, userId: string): Promise<void> {
+  const { error } = await supabase.rpc("delete_post", {
+    target_post_id: postId,
+    expected_user_id: userId,
+  });
+  if (error) throw error;
+}
+
 export function sortTimeline(posts: Post[]): Post[] {
   return [...posts].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }

@@ -105,6 +105,11 @@ nonisolated struct DeleteAccountParams: Encodable, Sendable {
     let expected_user_id: String
 }
 
+nonisolated struct DeletePostParams: Encodable, Sendable {
+    let target_post_id: UUID
+    let expected_user_id: String
+}
+
 nonisolated struct ListRelationshipsParams: Encodable, Sendable {
     let expected_user_id: String
 }

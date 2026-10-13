@@ -5,6 +5,7 @@ struct TweetRow: View {
     @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
     @Environment(PostStore.self) private var store
     @State private var notice: String?
+    @State private var confirmDelete = false
     let post: Post
     var quoted: Post? = nil
     var onLike: () -> Void = {}
@@ -87,6 +88,12 @@ struct TweetRow: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
+        .confirmationDialog(L("投稿を削除しますか？"), isPresented: $confirmDelete, titleVisibility: .visible) {
+            Button(L("削除する"), role: .destructive) { store.delete(post) }
+            Button(L("キャンセル"), role: .cancel) {}
+        } message: {
+            Text(L("この操作は取り消せません。"))
+        }
 
     }
 
@@ -104,6 +111,13 @@ struct TweetRow: View {
                 notice = L("コピーしました")
             } label: {
                 Label(L("リンクをコピー"), systemImage: "link")
+            }
+            if post.isMine {
+                Button(role: .destructive) {
+                    confirmDelete = true
+                } label: {
+                    Label(L("投稿を削除"), systemImage: "trash")
+                }
             }
             if let target = post.userId, !post.isMine {
                 Button {

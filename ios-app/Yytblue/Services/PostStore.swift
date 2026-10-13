@@ -138,6 +138,22 @@ final class PostStore {
         }
     }
 
+    /// 自分の投稿を削除する。先に画面から外し、失敗したら元に戻す。
+    func delete(_ post: Post) {
+        guard post.isMine, let userId = currentUserId, let index = posts.firstIndex(where: { $0.id == post.id }) else { return }
+        let removed = posts.remove(at: index)
+        Task {
+            do {
+                try await IrukaDatabase.client
+                    .rpc("delete_post", params: DeletePostParams(target_post_id: post.id, expected_user_id: userId))
+                    .execute()
+            } catch {
+                posts.insert(removed, at: min(index, posts.count))
+                composeError = "投稿を削除できませんでした。"
+            }
+        }
+    }
+
     /// 投票する。1アカウント1回で、結果はサーバーの値で置き換える。
     func vote(_ post: Post, option: Int) {
         guard let userId = currentUserId, let index = posts.firstIndex(where: { $0.id == post.id }),

@@ -1,4 +1,4 @@
-import { avatarFills, fetchPosts, setPostLike, setPostRepost, sortTimeline, type Post } from "@/lib/posts";
+import { avatarFills, deletePost, fetchPosts, setPostLike, setPostRepost, sortTimeline, type Post } from "@/lib/posts";
 import { t, useLanguage } from "@/lib/language";
 import { useAuth } from "@/hooks/authContext";
 import { fetchNotifications } from "@/lib/notifications";
@@ -7,7 +7,7 @@ import { PollView } from "@/components/PollView";
 import { toast } from "sonner";
 import { useOwnProfile } from "@/hooks/useOwnProfile";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Ban, Bell, Ellipsis, Link2, VolumeX, Heart, House, Mail, MessageCircle, Quote, Repeat2, Search, Settings, Share, SquarePen } from "lucide-react";
+import { Ban, Bell, Ellipsis, Link2, Trash2, VolumeX, Heart, House, Mail, MessageCircle, Quote, Repeat2, Search, Settings, Share, SquarePen } from "lucide-react";
 import type { ReactNode, TouchEvent } from "react";
 import { useRef, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
@@ -203,7 +203,17 @@ export function TweetRow({ post }: { post: Post }) {
   const replyCount = (timeline.data ?? []).filter((item) => item.replyTo === post.id).length;
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const [moreOpen, setMoreOpen] = useState<boolean>(false);
+  const [confirmDelete, setConfirmDelete] = useState<boolean>(false);
   const canModerate = Boolean(post.userId) && !post.isMine;
+  const remove = useMutation({
+    mutationFn: () => deletePost(post.id, user?.id ?? ""),
+    onSuccess: async () => {
+      setConfirmDelete(false);
+      toast.success(t("投稿を削除しました"));
+      await queryClient.invalidateQueries({ queryKey: ["timeline", user?.id] });
+    },
+    onError: () => toast.error(t("投稿を削除できませんでした。")),
+  });
   const postUrl = `https://yytblue.com/post/${post.id}`;
   const copyLink = async (): Promise<void> => {
     const legacyCopy = (): boolean => {
@@ -309,6 +319,17 @@ export function TweetRow({ post }: { post: Post }) {
                       <Link2 className="h-[18px] w-[18px]" aria-hidden />
                       <span>{t("リンクをコピー")}</span>
                     </button>
+                    {post.isMine ? (
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => { setMoreOpen(false); setConfirmDelete(true); }}
+                        className="flex h-11 w-full items-center gap-3 px-4 text-left text-destructive active:bg-muted"
+                      >
+                        <Trash2 className="h-[18px] w-[18px]" aria-hidden />
+                        <span>{t("投稿を削除")}</span>
+                      </button>
+                    ) : null}
                     {(canModerate ? (["mute", "block"] as const) : []).map((kind) => (
                       <button
                         key={kind}
@@ -408,6 +429,32 @@ export function TweetRow({ post }: { post: Post }) {
             <Share className="h-[15px] w-[15px]" aria-hidden />
           </button>
         </div>
+        {confirmDelete ? (
+          <div className="fixed inset-0 z-40 grid place-items-center bg-black/40 px-6" role="dialog" aria-modal="true" aria-label={t("投稿を削除しますか？")}>
+            <div className="w-full max-w-[320px] space-y-3 rounded-2xl bg-background p-5 text-foreground shadow-lg">
+              <p className="text-[17px] font-bold">{t("投稿を削除しますか？")}</p>
+              <p className="text-[14px] text-muted-foreground">{t("この操作は取り消せません。")}</p>
+              <div className="flex flex-col gap-2 pt-1">
+                <button
+                  type="button"
+                  disabled={remove.isPending}
+                  onClick={() => remove.mutate()}
+                  className="h-11 rounded-full bg-destructive text-[15px] font-bold text-destructive-foreground disabled:opacity-50"
+                >
+                  {remove.isPending ? t("削除中…") : t("削除する")}
+                </button>
+                <button
+                  type="button"
+                  disabled={remove.isPending}
+                  onClick={() => setConfirmDelete(false)}
+                  className="h-11 rounded-full border border-border text-[15px] font-bold"
+                >
+                  {t("キャンセル")}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
     </article>
   );

@@ -383,6 +383,8 @@ const english: Record<string, string> = {
   "カスタム": "Custom",
   "5分〜7日（10080分）の間で設定してください。": "Set a duration between 5 minutes and 7 days.",
   "投票を追加": "Add poll",
+  "投稿を削除しました": "Post deleted",
+  "投稿を削除できませんでした。": "Couldn't delete the post.",
   "他の人を傷つける投稿や、違法な投稿はできません。": "Posts that harm others or are illegal are not allowed.",
   "投稿やプロフィールは他のユーザーに公開されます。": "Your posts and profile are visible to other users.",
   "違反があった場合、投稿の削除やアカウントの停止を行うことがあります。": "We may remove posts or suspend accounts that violate the rules.",
