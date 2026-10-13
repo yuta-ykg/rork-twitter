@@ -55,7 +55,7 @@ struct SignInView: View {
             .clipShape(Capsule())
             .disabled(auth.isSigningIn)
 
-            Text(.init(L("続けると[利用規約](https://yytblue.com/terms)に同意したものとみなされます。")))
+            Text(.init(L("続けると[利用規約](https://yytblue.com/terms)と[プライバシーポリシー](https://yytblue.com/privacy)に同意したものとみなされます。")))
                 .font(.system(size: 12))
                 .foregroundStyle(Color.irukaSecondary)
                 .multilineTextAlignment(.center)

@@ -309,6 +309,9 @@ export default function SettingsPage() {
           <Link to="/terms" className="flex h-12 items-center justify-between rounded-full border border-input px-5 text-[16px] font-semibold active:bg-muted">
             {t("利用規約")}
           </Link>
+          <Link to="/privacy" className="flex h-12 items-center justify-between rounded-full border border-input px-5 text-[16px] font-semibold active:bg-muted">
+            {t("プライバシーポリシー")}
+          </Link>
         </section>
         {enabled ? (
           <section className="space-y-3 px-4 pb-12">

@@ -73,6 +73,8 @@ export default function LoginPage() {
         <p className="pt-2 text-center text-[12px] leading-5 text-[#536471]">
           {t("続けると")}
           <Link to="/terms" className="font-semibold text-[#1D9BF0] underline-offset-2 hover:underline">{t("利用規約")}</Link>
+          {t("と")}
+          <Link to="/privacy" className="font-semibold text-[#1D9BF0] underline-offset-2 hover:underline">{t("プライバシーポリシー")}</Link>
           {t("に同意したものとみなされます。")}
         </p>
       </div>

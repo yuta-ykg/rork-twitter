@@ -20,6 +20,7 @@ const UserProfilePage = lazy(() => import("./pages/UserProfile"));
 const PostDetailPage = lazy(() => import("./pages/PostDetail"));
 const SettingsPage = lazy(() => import("./pages/Settings"));
 const TermsPage = lazy(() => import("./pages/Terms"));
+const PrivacyPage = lazy(() => import("./pages/Privacy"));
 const SearchPage = lazy(() => import("./pages/Search"));
 
 const queryClient = new QueryClient();
@@ -57,6 +58,7 @@ const App = () => (
           <Route path="/u/:id" element={<RequireAuth><UserProfilePage /></RequireAuth>} />
           <Route path="/post/:id" element={<PostDetailPage />} />
           <Route path="/terms" element={<TermsPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />
           <Route path="/compose" element={<RequireAuth><ComposePage /></RequireAuth>} />
           <Route path="*" element={<Navigate to="/" replace />} />

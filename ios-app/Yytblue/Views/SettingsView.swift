@@ -91,6 +91,16 @@ struct SettingsView: View {
                         .frame(minHeight: 44)
                     }
                     .foregroundStyle(Color.irukaInk)
+                    Link(destination: URL(string: "https://yytblue.com/privacy")!) {
+                        HStack {
+                            Text(L("プライバシーポリシー"))
+                            Spacer()
+                            Image(systemName: "arrow.up.right")
+                        }
+                        .font(.system(size: 16, weight: .semibold))
+                        .frame(minHeight: 44)
+                    }
+                    .foregroundStyle(Color.irukaInk)
                 }
                 section(L("アカウント")) {
                     Button(L("ログアウト")) { confirmsSignOut = true }

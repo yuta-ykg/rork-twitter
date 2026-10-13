@@ -361,6 +361,8 @@ const english: Record<string, string> = {
   "まだフォロワーがいません。": "No followers yet.",
   "利用規約": "Terms of Service",
   "規約": "Legal",
+  "プライバシーポリシー": "Privacy Policy",
+  "と": " and the ",
   "続けると": "By continuing, you agree to the ",
   "に同意したものとみなされます。": ".",
   "このサブアカウントの投稿、プロフィール、いいね、ブックマーク、通知が削除されます。この操作は取り消せません。": "This sub-account's posts, profile, likes, bookmarks and notifications will be deleted. This can't be undone.",
