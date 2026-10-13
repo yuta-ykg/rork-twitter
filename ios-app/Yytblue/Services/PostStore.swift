@@ -13,6 +13,9 @@ final class PostStore {
     /// アバターがタップされたユーザーID。ContentViewがプロフィールを開く。
     var profileRequest: String?
     private var currentUserId: String?
+    /// 「取り消す」待ちの削除。数秒後にサーバーへ確定する。
+    private(set) var pendingDelete: (post: Post, index: Int)?
+    private var pendingDeleteTask: Task<Void, Never>?
 
     func setFollowing(_ id: String, _ following: Bool) {
         if following { followingIds.insert(id) } else { followingIds.remove(id) }
@@ -83,7 +86,8 @@ final class PostStore {
             guard currentUserId == userId else { return }
             followingIds = Set(followed ?? [])
             let profileById = Dictionary(uniqueKeysWithValues: profiles.map { ($0.id, $0) })
-            posts = rows.map { row in
+            let hiddenId = pendingDelete?.post.id
+            posts = rows.filter { $0.id != hiddenId }.map { row in
                 let profile = row.userId.flatMap { profileById[$0] }
                 return Post(
                     id: row.id,
@@ -140,15 +144,39 @@ final class PostStore {
 
     /// 自分の投稿を削除する。先に画面から外し、失敗したら元に戻す。
     func delete(_ post: Post) {
-        guard post.isMine, let userId = currentUserId, let index = posts.firstIndex(where: { $0.id == post.id }) else { return }
+        guard post.isMine, currentUserId != nil, let index = posts.firstIndex(where: { $0.id == post.id }) else { return }
+        commitPendingDelete()
         let removed = posts.remove(at: index)
+        pendingDelete = (removed, index)
+        pendingDeleteTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(5))
+            guard !Task.isCancelled else { return }
+            self?.commitPendingDelete()
+        }
+    }
+
+    /// 削除を取り消して投稿を元の位置に戻す。
+    func undoDelete() {
+        pendingDeleteTask?.cancel()
+        pendingDeleteTask = nil
+        guard let pending = pendingDelete else { return }
+        pendingDelete = nil
+        posts.insert(pending.post, at: min(pending.index, posts.count))
+    }
+
+    /// 猛予時間を待つことなく、保留中の削除をサーバーへ確定する。
+    func commitPendingDelete() {
+        pendingDeleteTask?.cancel()
+        pendingDeleteTask = nil
+        guard let pending = pendingDelete, let userId = currentUserId else { pendingDelete = nil; return }
+        pendingDelete = nil
         Task {
             do {
                 try await IrukaDatabase.client
-                    .rpc("delete_post", params: DeletePostParams(target_post_id: post.id, expected_user_id: userId))
+                    .rpc("delete_post", params: DeletePostParams(target_post_id: pending.post.id, expected_user_id: userId))
                     .execute()
             } catch {
-                posts.insert(removed, at: min(index, posts.count))
+                posts.insert(pending.post, at: min(pending.index, posts.count))
                 composeError = "投稿を削除できませんでした。"
             }
         }

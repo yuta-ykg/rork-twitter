@@ -132,6 +132,28 @@ struct ContentView: View {
             NavigationStack { ComposeView(quoting: quoteTarget, replying: replyTarget) }
                 .environment(store)
         }
+        .overlay(alignment: .bottom) {
+            if store.pendingDelete != nil {
+                HStack(spacing: 12) {
+                    Text(L("投稿を削除しました"))
+                        .font(.system(size: 15))
+                        .foregroundStyle(.white)
+                    Spacer(minLength: 8)
+                    Button { store.undoDelete() } label: {
+                        Text(L("取り消す"))
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundStyle(Color.irukaBlue)
+                            .frame(minWidth: 44, minHeight: 44)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .background(Color.irukaInk, in: Capsule())
+                .padding(.horizontal, 16)
+                .padding(.bottom, 72)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(.snappy, value: store.pendingDelete?.post.id)
     }
 
     private func startReply(_ post: Post) {

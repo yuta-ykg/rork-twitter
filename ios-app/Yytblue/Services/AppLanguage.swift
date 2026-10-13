@@ -282,6 +282,7 @@ private let englishMessages: [String: String] = [
     "投票を追加": "Add poll",
     "この投稿への返信・いいね・リポスト・投票も一緒に削除されます。この操作は取り消せません。": "Replies, likes, reposts and poll votes associated with this post will also be deleted. This action cannot be undone.",
     "投稿を削除しました": "Post deleted",
+    "取り消す": "Undo",
     "投稿を削除できませんでした。": "Couldn't delete the post.",
     "他の人を傷つける投稿や、違法な投稿はできません。": "Posts that harm others or are illegal are not allowed.",
     "投稿やプロフィールは他のユーザーに公開されます。": "Your posts and profile are visible to other users.",

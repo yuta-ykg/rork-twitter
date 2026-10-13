@@ -205,15 +205,38 @@ export function TweetRow({ post }: { post: Post }) {
   const [moreOpen, setMoreOpen] = useState<boolean>(false);
   const [confirmDelete, setConfirmDelete] = useState<boolean>(false);
   const canModerate = Boolean(post.userId) && !post.isMine;
-  const remove = useMutation({
-    mutationFn: () => deletePost(post.id, user?.id ?? ""),
-    onSuccess: async () => {
+  const remove = {
+    isPending: false,
+    mutate: () => {
+      const key = ["timeline", user?.id];
+      const userId = user?.id ?? "";
+      const previous = queryClient.getQueryData<Post[]>(key);
       setConfirmDelete(false);
-      toast.success(t("投稿を削除しました"));
-      await queryClient.invalidateQueries({ queryKey: ["timeline", user?.id] });
+      queryClient.setQueryData<Post[]>(key, (current) => (current ?? []).filter((item) => item.id !== post.id));
+      let undone = false;
+      const timer = window.setTimeout(() => {
+        if (undone) return;
+        deletePost(post.id, userId)
+          .then(() => queryClient.invalidateQueries({ queryKey: key }))
+          .catch(() => {
+            if (previous) queryClient.setQueryData(key, previous);
+            toast.error(t("投稿を削除できませんでした。"));
+          });
+      }, 5000);
+      toast(t("投稿を削除しました"), {
+        duration: 5000,
+        action: {
+          label: t("取り消す"),
+          onClick: () => {
+            undone = true;
+            window.clearTimeout(timer);
+            if (previous) queryClient.setQueryData(key, previous);
+            void queryClient.invalidateQueries({ queryKey: key });
+          },
+        },
+      });
     },
-    onError: () => toast.error(t("投稿を削除できませんでした。")),
-  });
+  };
   const postUrl = `https://yytblue.com/post/${post.id}`;
   const copyLink = async (): Promise<void> => {
     const legacyCopy = (): boolean => {
