@@ -462,11 +462,19 @@ export function TweetRow({ post }: { post: Post }) {
 
 /** 引用された投稿を小さなカードで見せる。 */
 export function QuoteCard({ post }: { post?: Post }) {
+  const explanation = useRef<HTMLDialogElement>(null);
   if (!post) {
     return (
-      <div className="mt-2 rounded-2xl border border-border px-3 py-3 text-[14px] text-muted-foreground">
-        {t("引用元の投稿は見つかりません")}
-      </div>
+      <>
+        <button type="button" onClick={() => explanation.current?.showModal()} className="mt-2 min-h-11 w-full rounded-2xl border border-border px-3 py-3 text-left text-[14px] text-muted-foreground">
+          {t("引用元の投稿は見つかりません")}
+        </button>
+        <dialog ref={explanation} aria-labelledby="quote-explanation-title" className="m-auto w-[calc(100%-48px)] max-w-[320px] rounded-2xl bg-background p-5 text-foreground shadow-lg backdrop:bg-black/40">
+          <h2 id="quote-explanation-title" className="text-[17px] font-bold">{t("引用元の投稿について")}</h2>
+          <p className="mt-3 text-[14px] text-muted-foreground">{t("引用元の投稿は、削除されたか、現在表示できないため見つかりません。この引用投稿の本文は引き続き表示されます。")}</p>
+          <button type="button" onClick={() => explanation.current?.close()} className="mt-4 h-11 w-full rounded-full border border-border font-bold">{t("閉じる")}</button>
+        </dialog>
+      </>
     );
   }
   return (

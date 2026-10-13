@@ -6,6 +6,7 @@ struct TweetRow: View {
     @Environment(PostStore.self) private var store
     @State private var notice: String?
     @State private var confirmDelete = false
+    @State private var showsQuoteExplanation: Bool = false
     let post: Post
     var quoted: Post? = nil
     var onLike: () -> Void = {}
@@ -88,6 +89,11 @@ struct TweetRow: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
+        .alert(L("引用元の投稿について"), isPresented: $showsQuoteExplanation) {
+            Button(L("閉じる"), role: .cancel) {}
+        } message: {
+            Text(L("引用元の投稿は、削除されたか、現在表示できないため見つかりません。この引用投稿の本文は引き続き表示されます。"))
+        }
         .confirmationDialog(L("投稿を削除しますか？"), isPresented: $confirmDelete, titleVisibility: .visible) {
             Button(L("削除する"), role: .destructive) { store.delete(post) }
             Button(L("キャンセル"), role: .cancel) {}
@@ -200,8 +206,13 @@ struct TweetRow: View {
                         .clipShape(.rect(cornerRadius: 12))
                 }
             } else {
-                Text(L("引用元の投稿は見つかりません"))
-                    .font(.system(size: 14)).foregroundStyle(Color.irukaSecondary)
+                Button { showsQuoteExplanation = true } label: {
+                    Text(L("引用元の投稿は見つかりません"))
+                        .font(.system(size: 14)).foregroundStyle(Color.irukaSecondary)
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
             }
         }
         .padding(12)

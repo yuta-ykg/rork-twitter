@@ -502,6 +502,8 @@ private let englishMessages: [String: String] = [
     "リポストを取り消す": "Undo repost",
     "引用": "Quote",
     "引用元の投稿は見つかりません": "The quoted post isn't available",
+    "引用元の投稿について": "About the quoted post",
+    "引用元の投稿は、削除されたか、現在表示できないため見つかりません。この引用投稿の本文は引き続き表示されます。": "The original post may have been deleted or is currently unavailable. The text of this quote post remains visible.",
     "プロフィールを保存しました": "Profile saved",
     "このハンドルは使われています": "That handle is taken",
     "保存できませんでした。もう一度試してください。": "Couldn't save. Please try again.",

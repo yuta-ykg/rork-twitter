@@ -384,6 +384,8 @@ const english: Record<string, string> = {
   "5分〜7日（10080分）の間で設定してください。": "Set a duration between 5 minutes and 7 days.",
   "投票を追加": "Add poll",
   "この投稿への返信・いいね・リポスト・投票も一緒に削除されます。この操作は取り消せません。": "Replies, likes, reposts and poll votes associated with this post will also be deleted. This action cannot be undone.",
+  "引用元の投稿について": "About the quoted post",
+  "引用元の投稿は、削除されたか、現在表示できないため見つかりません。この引用投稿の本文は引き続き表示されます。": "The original post may have been deleted or is currently unavailable. The text of this quote post remains visible.",
   "投稿を削除しました": "Post deleted",
   "投稿を削除できませんでした。": "Couldn't delete the post.",
   "他の人を傷つける投稿や、違法な投稿はできません。": "Posts that harm others or are illegal are not allowed.",
