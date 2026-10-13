@@ -99,8 +99,22 @@ struct UserProfileView: View {
                     .padding(.top, 8)
             }
             HStack(spacing: 16) {
-                countLabel(info?.followingCount ?? 0, L("フォロー中"))
-                countLabel(info?.followerCount ?? 0, L("フォロワー"))
+                NavigationLink {
+                    FollowListView(userId: userId, kind: "following")
+                } label: {
+                    countLabel(info?.followingCount ?? 0, L("フォロー中"))
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                NavigationLink {
+                    FollowListView(userId: userId, kind: "followers")
+                } label: {
+                    countLabel(info?.followerCount ?? 0, L("フォロワー"))
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
             }
             .padding(.top, 8)
         }

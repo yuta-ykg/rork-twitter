@@ -360,6 +360,12 @@ export type Database = {
           is_following: boolean
         }[]
       }
+      get_follow_list: {
+        Args: { list_kind: string; target_user_id: string }
+        Returns: {
+          user_id: string
+        }[]
+      }
       get_following_ids: {
         Args: { expected_user_id: string }
         Returns: {

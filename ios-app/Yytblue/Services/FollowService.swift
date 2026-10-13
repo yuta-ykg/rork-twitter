@@ -37,6 +37,16 @@ nonisolated struct FolloweeRow: Decodable, Sendable {
     enum CodingKeys: String, CodingKey { case followeeId = "followee_id" }
 }
 
+nonisolated struct FollowListParams: Encodable, Sendable {
+    let target_user_id: String
+    let list_kind: String
+}
+
+nonisolated struct FollowListRow: Decodable, Sendable {
+    let userId: String
+    enum CodingKeys: String, CodingKey { case userId = "user_id" }
+}
+
 @MainActor
 enum FollowService {
     static func setFollow(targetId: String, active: Bool, userId: String) async throws {
@@ -59,5 +69,14 @@ enum FollowService {
             .execute()
             .value
         return rows.map(\.followeeId)
+    }
+
+    /// 指定ユーザーのフォロー中（"following"）／フォロワー（"followers"）のID。
+    static func list(targetId: String, kind: String) async throws -> [String] {
+        let rows: [FollowListRow] = try await IrukaDatabase.client
+            .rpc("get_follow_list", params: FollowListParams(target_user_id: targetId, list_kind: kind))
+            .execute()
+            .value
+        return rows.map(\.userId)
     }
 }

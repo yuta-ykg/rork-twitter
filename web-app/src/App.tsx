@@ -47,7 +47,10 @@ const App = () => (
           <Route path="/messages" element={<RequireAuth><MessagesPage /></RequireAuth>} />
           <Route path="/mine" element={<RequireAuth><MinePage /></RequireAuth>} />
           <Route path="/mine/edit" element={<RequireAuth><EditProfilePage /></RequireAuth>} />
-          <Route path="/mine/following" element={<RequireAuth><FollowingPage /></RequireAuth>} />
+          <Route path="/mine/following" element={<RequireAuth><FollowingPage kind="following" /></RequireAuth>} />
+          <Route path="/mine/followers" element={<RequireAuth><FollowingPage kind="followers" /></RequireAuth>} />
+          <Route path="/u/:id/following" element={<RequireAuth><FollowingPage kind="following" /></RequireAuth>} />
+          <Route path="/u/:id/followers" element={<RequireAuth><FollowingPage kind="followers" /></RequireAuth>} />
           <Route path="/u/:id" element={<RequireAuth><UserProfilePage /></RequireAuth>} />
           <Route path="/post/:id" element={<PostDetailPage />} />
           <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />

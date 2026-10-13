@@ -1,8 +1,10 @@
 import SwiftUI
 
 /// フォロー中のユーザー一覧。名前・ユーザーIDで絞り込める。
-struct FollowingListView: View {
-    @Environment(AuthManager.self) private var auth
+struct FollowListView: View {
+    let userId: String
+    let kind: String
+
     @Environment(PostStore.self) private var store
     @State private var profiles: [IrukaProfile] = []
     @State private var isLoading = true
@@ -39,18 +41,17 @@ struct FollowingListView: View {
             if isLoading {
                 ProgressView()
             } else if filtered.isEmpty {
-                Text(term.trimmingCharacters(in: .whitespaces).isEmpty ? L("まだ誰もフォローしていません。") : L("該当するユーザーがいません。"))
+                Text(term.trimmingCharacters(in: .whitespaces).isEmpty ? (kind == "followers" ? L("まだフォロワーがいません。") : L("まだ誰もフォローしていません。")) : L("該当するユーザーがいません。"))
                     .font(.system(size: 14)).foregroundStyle(Color.irukaSecondary)
             }
         }
         .searchable(text: $term, placement: .navigationBarDrawer(displayMode: .always), prompt: L("名前やIDで絞り込む"))
         .textInputAutocapitalization(.never)
         .autocorrectionDisabled()
-        .navigationTitle(L("フォロー中"))
+        .navigationTitle(kind == "followers" ? L("フォロワー") : L("フォロー中"))
         .navigationBarTitleDisplayMode(.inline)
         .task {
-            guard let id = auth.user?.id else { return }
-            let ids = (try? await FollowService.followingIds(userId: id)) ?? []
+            let ids = (try? await FollowService.list(targetId: userId, kind: kind)) ?? []
             profiles = ((try? await ProfileService.fetch(ids: ids)) ?? []).sorted { $0.name < $1.name }
             isLoading = false
         }

@@ -83,8 +83,8 @@ export default function UserProfilePage() {
             ) : null}
           </div>
           <div className="mt-2 flex items-center gap-4 text-[14px] text-muted-foreground">
-            <span><b className="text-foreground">{info.data?.followingCount ?? 0}</b> {t("フォロー中")}</span>
-            <span><b className="text-foreground">{info.data?.followerCount ?? 0}</b> {t("フォロワー")}</span>
+            <Link to={`/u/${id}/following`} className="flex min-h-11 items-center gap-1 active:opacity-70"><b className="text-foreground">{info.data?.followingCount ?? 0}</b> {t("フォロー中")}</Link>
+            <Link to={`/u/${id}/followers`} className="flex min-h-11 items-center gap-1 active:opacity-70"><b className="text-foreground">{info.data?.followerCount ?? 0}</b> {t("フォロワー")}</Link>
           </div>
         </section>
         <div className="border-t border-border">

@@ -88,7 +88,7 @@ export default function MinePage() {
             ) : null}
             <span><b className="text-foreground">{mine.length}</b> {t("投稿")}</span>
             <Link to="/mine/following" className="flex min-h-11 items-center gap-1 active:opacity-70"><b className="text-foreground">{followInfo.data?.followingCount ?? 0}</b> {t("フォロー中")}</Link>
-            <span><b className="text-foreground">{followInfo.data?.followerCount ?? 0}</b> {t("フォロワー")}</span>
+            <Link to="/mine/followers" className="flex min-h-11 items-center gap-1 active:opacity-70"><b className="text-foreground">{followInfo.data?.followerCount ?? 0}</b> {t("フォロワー")}</Link>
           </div>
         </section>
         <div className="relative grid grid-cols-2 border-b border-t border-border" role="tablist">

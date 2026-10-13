@@ -32,3 +32,10 @@ export async function fetchFollowingIds(userId: string): Promise<string[]> {
   if (error) throw error;
   return (data ?? []).map((row) => row.followee_id);
 }
+
+/** 指定ユーザーのフォロー中／フォロワーのユーザーID。 */
+export async function fetchFollowList(targetId: string, kind: "following" | "followers"): Promise<string[]> {
+  const { data, error } = await supabase.rpc("get_follow_list", { target_user_id: targetId, list_kind: kind });
+  if (error) throw error;
+  return (data ?? []).map((row) => row.user_id);
+}

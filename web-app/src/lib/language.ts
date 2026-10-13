@@ -358,6 +358,7 @@ const english: Record<string, string> = {
   "クリア": "Clear",
   "該当するユーザーがいません。": "No matching users.",
   "まだ誰もフォローしていません。": "You aren't following anyone yet.",
+  "まだフォロワーがいません。": "No followers yet.",
   "このサブアカウントの投稿、プロフィール、いいね、ブックマーク、通知が削除されます。この操作は取り消せません。": "This sub-account's posts, profile, likes, bookmarks and notifications will be deleted. This can't be undone.",
   "サブアカウントは投稿・フォロー・通知・いいねがすべて別になり、他のユーザーには別人として表示されます。": "Each sub-account has its own posts, follows, notifications and likes, and appears as a different person to others.",
   "別のGoogle／Appleアカウントでログインすると、新しいアカウントとして追加されます。": "Sign in with a different Google or Apple account to add it as a new account.",

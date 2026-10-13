@@ -1,21 +1,27 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, Search, X } from "lucide-react";
 import { useAuth } from "@/hooks/authContext";
-import { fetchFollowingIds } from "@/lib/follows";
+import { fetchFollowList } from "@/lib/follows";
 import { fetchProfiles, type Profile } from "@/lib/profiles";
 import { Avatar } from "@/components/TweetFeed";
 import { t } from "@/lib/language";
 
 /** フォロー中のユーザー一覧。名前・ユーザーIDで絞り込める。 */
-export default function FollowingPage() {
+export default function FollowingPage({ kind }: { kind: "following" | "followers" }) {
   const { user } = useAuth();
+  const params = useParams<{ id: string }>();
+  const targetId = params.id ?? user?.id ?? "";
+  const back = params.id ? `/u/${params.id}` : "/mine";
   const [term, setTerm] = useState<string>("");
   const list = useQuery<Profile[]>({
-    queryKey: ["following-profiles", user?.id],
-    enabled: !!user?.id,
-    queryFn: async () => fetchProfiles(await fetchFollowingIds(user?.id ?? "")),
+    queryKey: ["follow-list", kind, targetId],
+    enabled: !!targetId,
+    queryFn: async () => {
+      const found = await fetchProfiles(await fetchFollowList(targetId, kind));
+      return found;
+    },
   });
   const filtered = useMemo<Profile[]>(() => {
     const q = term.trim().replace(/^@/, "").toLowerCase();
@@ -29,8 +35,8 @@ export default function FollowingPage() {
       <div className="mx-auto min-h-dvh w-full max-w-[480px] bg-background">
         <header className="sticky top-0 z-10 border-b border-border bg-background px-2 pb-2">
           <div className="grid h-12 grid-cols-[44px_1fr_44px] items-center">
-            <Link to="/mine" className="grid h-11 w-11 place-items-center" aria-label={t("戻る")}><ChevronLeft className="h-6 w-6" /></Link>
-            <h1 className="text-center text-[17px] font-bold">{t("フォロー中")}</h1>
+            <Link to={back} className="grid h-11 w-11 place-items-center" aria-label={t("戻る")}><ChevronLeft className="h-6 w-6" /></Link>
+            <h1 className="text-center text-[17px] font-bold">{kind === "followers" ? t("フォロワー") : t("フォロー中")}</h1>
             <span />
           </div>
           <div className="relative mx-2">
@@ -53,7 +59,7 @@ export default function FollowingPage() {
         {list.isLoading ? (
           <p className="p-8 text-center text-sm text-muted-foreground">{t("読み込み中…")}</p>
         ) : filtered.length === 0 ? (
-          <p className="p-8 text-center text-sm text-muted-foreground">{term.trim() ? t("該当するユーザーがいません。") : t("まだ誰もフォローしていません。")}</p>
+          <p className="p-8 text-center text-sm text-muted-foreground">{term.trim() ? t("該当するユーザーがいません。") : kind === "followers" ? t("まだフォロワーがいません。") : t("まだ誰もフォローしていません。")}</p>
         ) : (
           <ul>
             {filtered.map((p) => (
