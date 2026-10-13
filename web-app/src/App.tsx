@@ -45,7 +45,7 @@ const App = () => (
           <Route path="/messages" element={<RequireAuth><MessagesPage /></RequireAuth>} />
           <Route path="/mine" element={<RequireAuth><MinePage /></RequireAuth>} />
           <Route path="/mine/edit" element={<RequireAuth><EditProfilePage /></RequireAuth>} />
-          <Route path="/post/:id" element={<RequireAuth><PostDetailPage /></RequireAuth>} />
+          <Route path="/post/:id" element={<PostDetailPage />} />
           <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />
           <Route path="/compose" element={<RequireAuth><ComposePage /></RequireAuth>} />
           <Route path="*" element={<Navigate to="/" replace />} />

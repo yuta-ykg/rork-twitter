@@ -360,6 +360,29 @@ export type Database = {
           post_count: number
         }[]
       }
+      get_shared_post: {
+        Args: { target_post_id: string }
+        Returns: {
+          author_name: string
+          avatar_index: number
+          body: string
+          created_at: string
+          handle: string
+          id: string
+          image_url: string | null
+          initial: string
+          is_mine: boolean
+          quote_of: string | null
+          reply_to: string | null
+          user_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "posts"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_visible_posts: {
         Args: { expected_user_id?: string }
         Returns: {

@@ -95,6 +95,41 @@ function blobToDataUrl(blob: Blob): Promise<string> {
   });
 }
 
+export type SharedPost = { post: Post; parent: Post | null; quoted: Post | null; replies: Post[] };
+
+/** 共有リンク用。ログイン不要で、投稿・返信先・引用元・返信を読むだけ。 */
+export async function fetchSharedPost(postId: string): Promise<SharedPost | null> {
+  const { data, error } = await supabase.rpc("get_shared_post", { target_post_id: postId });
+  if (error) throw error;
+  const posts = (data ?? []).map((row) => toPost(row, null));
+  const target = posts.find((item) => item.id === postId);
+  if (!target) return null;
+  const profiles = await fetchProfiles(posts.flatMap((post) => post.userId ? [post.userId] : [])).catch((): Profile[] => []);
+  const profileById = new Map<string, Profile>(profiles.map((profile) => [profile.id, profile]));
+  const likes = await supabase.rpc("get_post_likes", { post_ids: posts.map((post) => post.id) });
+  const likeById = new Map<string, number>((likes.data ?? []).map((row) => [row.post_id, Number(row.like_count)]));
+  const filled = posts.map((post): Post => {
+    const profile = post.userId ? profileById.get(post.userId) : undefined;
+    const name = profile?.name ?? post.authorName;
+    return {
+      ...post,
+      likeCount: likeById.get(post.id) ?? 0,
+      authorName: name,
+      handle: profile?.handle ? `@${profile.handle}` : post.handle,
+      initial: Array.from(name)[0] ?? post.initial,
+      avatarUrl: profile?.avatar_url ?? null,
+    };
+  });
+  const byId = new Map<string, Post>(filled.map((post) => [post.id, post]));
+  const post = byId.get(postId) ?? target;
+  return {
+    post,
+    parent: post.replyTo ? byId.get(post.replyTo) ?? null : null,
+    quoted: post.quoteOf ? byId.get(post.quoteOf) ?? null : null,
+    replies: filled.filter((item) => item.replyTo === postId),
+  };
+}
+
 /** ログイン中のユーザーに見える70字投稿を新しい順で返す。 */
 export async function fetchPosts(userId?: string | null): Promise<Post[]> {
   const { data, error } = await supabase.rpc("get_visible_posts", { expected_user_id: userId ?? undefined });

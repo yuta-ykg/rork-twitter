@@ -2,9 +2,21 @@ import { Link, useParams } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 import { TweetRow, useTimeline } from "@/components/TweetFeed";
 import { t, useLanguage } from "@/lib/language";
+import { SharedPostView } from "@/components/SharedPostView";
+import { useAuth } from "@/hooks/authContext";
 import { sortTimeline } from "@/lib/posts";
 
 export default function PostDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const { user, isLoading } = useAuth();
+  if (isLoading) {
+    return <div className="grid min-h-dvh place-items-center text-[#536471]">読み込み中…</div>;
+  }
+  if (!user) return <SharedPostView postId={id ?? ""} />;
+  return <MemberPostDetail />;
+}
+
+function MemberPostDetail() {
   useLanguage();
   const { id } = useParams<{ id: string }>();
   const timeline = useTimeline();
