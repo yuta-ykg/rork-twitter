@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { lazy, Suspense, type ReactNode } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 
+import DesktopSidebar from "@/components/DesktopSidebar";
 import { Toaster } from "@/components/ui/sonner";
 
 const LoginPage = lazy(() => import("./pages/Login"));
@@ -37,6 +38,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <Toaster />
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <DesktopSidebar />
       <Suspense fallback={<div className="grid min-h-dvh place-items-center text-[#536471]">{t("読み込み中…")}</div>}>
         <Routes>
           <Route path="/auth/callback" element={<AuthCallback />} />

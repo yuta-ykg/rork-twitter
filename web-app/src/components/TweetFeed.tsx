@@ -114,12 +114,12 @@ export function TweetShell({ title, tab, showCompose = false, onRefresh, childre
           <Link
             to="/compose"
             aria-label={t("投稿する")}
-            className="fixed bottom-[76px] right-[max(16px,calc(50vw-224px))] grid h-14 w-14 place-items-center rounded-full bg-[#1D9BF0] text-white shadow-[0_4px_12px_rgba(29,155,240,0.35)] transition active:scale-95"
+            className="fixed bottom-[76px] lg:hidden right-[max(16px,calc(50vw-224px))] grid h-14 w-14 place-items-center rounded-full bg-[#1D9BF0] text-white shadow-[0_4px_12px_rgba(29,155,240,0.35)] transition active:scale-95"
           >
             <SquarePen className="h-[22px] w-[22px]" />
           </Link>
         ) : null}
-        <nav className="sticky bottom-0 z-10 border-t border-border bg-background pb-[env(safe-area-inset-bottom)]" aria-label={t("メインナビゲーション")}>
+        <nav className="sticky bottom-0 z-10 border-t lg:hidden border-border bg-background pb-[env(safe-area-inset-bottom)]" aria-label={t("メインナビゲーション")}>
           <div className="grid grid-cols-4">
             {tabs.map((item) => {
               const Icon = item.icon;
