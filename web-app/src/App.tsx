@@ -21,6 +21,7 @@ const UserProfilePage = lazy(() => import("./pages/UserProfile"));
 const PostDetailPage = lazy(() => import("./pages/PostDetail"));
 const PlansPage = lazy(() => import("./pages/Plans"));
 const SettingsPage = lazy(() => import("./pages/Settings"));
+const CommercePage = lazy(() => import("./pages/Commerce"));
 const TermsPage = lazy(() => import("./pages/Terms"));
 const PrivacyPage = lazy(() => import("./pages/Privacy"));
 const SearchPage = lazy(() => import("./pages/Search"));
@@ -59,6 +60,7 @@ const App = () => (
           <Route path="/u/:id/followers" element={<RequireAuth><FollowingPage kind="followers" /></RequireAuth>} />
           <Route path="/u/:id" element={<RequireAuth><UserProfilePage /></RequireAuth>} />
           <Route path="/post/:id" element={<PostDetailPage />} />
+          <Route path="/commerce" element={<CommercePage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/plans" element={<RequireAuth><PlansPage /></RequireAuth>} />

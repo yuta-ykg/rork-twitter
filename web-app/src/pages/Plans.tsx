@@ -33,7 +33,7 @@ export default function PlansPage() {
         </div>
         <p className="text-sm text-muted-foreground">{t("初回割引は対象者のみ。月額・年額は割引期間後に通常料金で自動更新します。永久は買い切りです。")}</p>
         <p className="text-sm text-muted-foreground">{t("契約情報の接続前のため、現在のプランは表示していません。")}</p>
-        <div className="flex gap-5"><Link to="/terms" className="flex min-h-11 items-center text-sm text-[#1D9BF0]">{t("利用規約")}</Link><Link to="/privacy" className="flex min-h-11 items-center text-sm text-[#1D9BF0]">{t("プライバシーポリシー")}</Link></div>
+        <div className="flex flex-wrap gap-x-5 gap-y-1"><Link to="/commerce" className="flex min-h-11 items-center text-sm text-[#1D9BF0]">{t("特定商取引法に基づく表記")}</Link><Link to="/terms" className="flex min-h-11 items-center text-sm text-[#1D9BF0]">{t("利用規約")}</Link><Link to="/privacy" className="flex min-h-11 items-center text-sm text-[#1D9BF0]">{t("プライバシーポリシー")}</Link></div>
       </div>
     </main>
   );

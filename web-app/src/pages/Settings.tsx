@@ -307,6 +307,7 @@ export default function SettingsPage() {
         ) : null}
         <section className="space-y-3 px-4 pb-6">
           <h2 className="text-[13px] font-bold text-muted-foreground">{t("規約")}</h2>
+          <Link to="/commerce" className="flex min-h-12 items-center rounded-full border border-input px-5 text-[16px] font-semibold active:bg-muted">{t("特定商取引法に基づく表記")}</Link>
           <Link to="/terms" className="flex h-12 items-center justify-between rounded-full border border-input px-5 text-[16px] font-semibold active:bg-muted">
             {t("利用規約")}
           </Link>

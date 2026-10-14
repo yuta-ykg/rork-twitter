@@ -3,6 +3,7 @@ import { useLayoutEffect, useSyncExternalStore } from "react";
 export type Language = "ja" | "en" | "ko" | "zh-CN" | "zh-TW";
 const key = "iruka-language";
 const english: Record<string, string> = {
+  "特定商取引法に基づく表記": "Specified Commercial Transactions Act disclosure",
   "プラン・購入": "Plans & purchases",
   "購入対象": "Purchasing account",
   "決済は準備中です。現在は購入できません。": "Payments are being set up. Purchases are not available yet.",
