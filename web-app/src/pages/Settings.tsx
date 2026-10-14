@@ -164,6 +164,7 @@ export default function SettingsPage() {
           <h1 className="text-center text-[17px] font-bold">{t("設定")}</h1>
           <span />
         </header>
+        <Link to="/plans" className="mx-4 mt-6 flex min-h-11 items-center justify-between rounded-xl border border-border px-4 py-3 font-bold text-[#1D9BF0]">{t("プラン・購入")}<span aria-hidden>→</span></Link>
         <section className="space-y-2 px-4 pt-6">
           <h2 className="text-[13px] font-bold text-muted-foreground">{t("テーマ")}</h2>
           <Segment<ThemeMode>

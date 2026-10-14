@@ -3,6 +3,18 @@ import { useLayoutEffect, useSyncExternalStore } from "react";
 export type Language = "ja" | "en" | "ko" | "zh-CN" | "zh-TW";
 const key = "iruka-language";
 const english: Record<string, string> = {
+  "プラン・購入": "Plans & purchases",
+  "購入対象": "Purchasing account",
+  "決済は準備中です。現在は購入できません。": "Payments are being set up. Purchases are not available yet.",
+  "無料プラン": "Free plan",
+  "投稿文字数上限": "Post character limit",
+  "月額": "Monthly",
+  "年額": "Yearly",
+  "永久": "Lifetime",
+  "初月": "First month",
+  "初年度": "First year",
+  "初回割引は対象者のみ。月額・年額は割引期間後に通常料金で自動更新します。永久は買い切りです。": "Introductory discounts are for eligible customers only. Monthly and annual plans renew automatically at the regular price after the introductory period. Lifetime is a one-time purchase.",
+  "契約情報の接続前のため、現在のプランは表示していません。": "Your current plan is not shown because subscription data is not connected yet.",
   "画像を追加": "Add image",
   "画像を外す": "Remove image",
   "選んだ画像": "Selected image",
