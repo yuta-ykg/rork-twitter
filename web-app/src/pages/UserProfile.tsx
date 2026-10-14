@@ -71,6 +71,7 @@ export default function UserProfilePage() {
               {following ? t("フォロー中") : info.data?.followsYou ? t("フォローバック") : t("フォロー")}
             </button>
           </div>
+          {user?.id && <Link to={`/messages?to=${encodeURIComponent(id)}`} className="mt-3 inline-flex min-h-11 items-center rounded-full border border-input px-4 font-bold">{t("メッセージ")}</Link>}
           <h2 className="mt-3 text-[20px] font-extrabold leading-6">{name}</h2>
           <p className="flex items-center gap-2 text-[15px] text-muted-foreground">
             <span>{handle}</span>

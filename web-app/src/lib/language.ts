@@ -3,6 +3,15 @@ import { useLayoutEffect, useSyncExternalStore } from "react";
 export type Language = "ja" | "en" | "ko" | "zh-CN" | "zh-TW";
 const key = "iruka-language";
 const english: Record<string, string> = {
+  "DMを処理できませんでした。受信設定や接続を確認してください。": "Unable to process the message. Check receiving settings and your connection.",
+  "DMの受信範囲": "Who can message you",
+  "自分がフォローしている相手": "People you follow",
+  "相互フォロー": "Mutual followers",
+  "受信しない": "Nobody",
+  "相手のプロフィールからメッセージを開始できます。": "Start a conversation from a person's profile.",
+  "既読": "Read",
+  "再送": "Retry",
+  "送信": "Send",
   "特定商取引法に基づく表記": "Specified Commercial Transactions Act disclosure",
   "プラン・購入": "Plans & purchases",
   "購入対象": "Purchasing account",

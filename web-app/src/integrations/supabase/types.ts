@@ -18,6 +18,71 @@ export type Database = {
   }
   public: {
     Tables: {
+      dm_messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          read_at: string | null
+          recipient_id: string
+          sender_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id: string
+          read_at?: string | null
+          recipient_id: string
+          sender_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          recipient_id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dm_messages_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dm_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dm_settings: {
+        Row: {
+          receive_mode: string
+          user_id: string
+        }
+        Insert: {
+          receive_mode?: string
+          user_id: string
+        }
+        Update: {
+          receive_mode?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dm_settings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_state: {
         Row: {
           last_read_at: string
@@ -454,6 +519,71 @@ export type Database = {
         Returns: undefined
       }
       delete_sub_account: { Args: { sub_id: string }; Returns: undefined }
+      dm_actor: { Args: { expected_user_id: string }; Returns: string }
+      dm_inbox: {
+        Args: { expected_user_id: string }
+        Returns: {
+          body: string
+          created_at: string
+          peer_id: string
+          unread_count: number
+        }[]
+      }
+      dm_mark_read: {
+        Args: {
+          expected_user_id: string
+          target_id: string
+          through_time: string
+        }
+        Returns: undefined
+      }
+      dm_read: {
+        Args: {
+          before_time?: string
+          expected_user_id: string
+          target_id: string
+        }
+        Returns: {
+          body: string
+          created_at: string
+          id: string
+          read_at: string | null
+          recipient_id: string
+          sender_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "dm_messages"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      dm_receive_mode: {
+        Args: { expected_user_id: string; new_mode?: string }
+        Returns: string
+      }
+      dm_send: {
+        Args: {
+          expected_user_id: string
+          message_body: string
+          message_id: string
+          target_id: string
+        }
+        Returns: {
+          body: string
+          created_at: string
+          id: string
+          read_at: string | null
+          recipient_id: string
+          sender_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "dm_messages"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       edit_post: {
         Args: {
           expected_user_id: string
