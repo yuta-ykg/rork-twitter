@@ -1,0 +1,40 @@
+/* Scale typography, not the viewport, icons, spacing or browser zoom. */
+html[data-text-size]:not([data-text-size="standard"]) body {
+  font-size: calc(1rem * var(--text-scale));
+}
+html[data-text-size]:not([data-text-size="standard"]) :is(.text-xs, .text-sm, .text-base, .text-lg, .text-xl, .text-2xl, .text-3xl, .text-4xl, [class~="text-[10px]"], [class~="text-[11px]"], [class~="text-[12px]"], [class~="text-[13px]"], [class~="text-[14px]"], [class~="text-[15px]"], [class~="text-[16px]"], [class~="text-[17px]"], [class~="text-[18px]"], [class~="text-[20px]"], [class~="text-[22px]"], [class~="text-[24px]"], [class~="text-[28px]"], [class~="text-[30px]"], [class~="text-[32px]"], [class~="text-[36px]"], [class~="text-[40px]"]) {
+  font-size: calc(var(--readable-size, 1rem) * var(--text-scale));
+  line-height: 1.5;
+}
+.text-xs { --readable-size: 0.75rem; }
+.text-sm { --readable-size: 0.875rem; }
+.text-base { --readable-size: 1rem; }
+.text-lg { --readable-size: 1.125rem; }
+.text-xl { --readable-size: 1.25rem; }
+.text-2xl { --readable-size: 1.5rem; }
+.text-3xl { --readable-size: 1.875rem; }
+.text-4xl { --readable-size: 2.25rem; }
+[class~="text-[10px]"] { --readable-size: 10px; }
+[class~="text-[11px]"] { --readable-size: 11px; }
+[class~="text-[12px]"] { --readable-size: 12px; }
+[class~="text-[13px]"] { --readable-size: 13px; }
+[class~="text-[14px]"] { --readable-size: 14px; }
+[class~="text-[15px]"] { --readable-size: 15px; }
+[class~="text-[16px]"] { --readable-size: 16px; }
+[class~="text-[17px]"] { --readable-size: 17px; }
+[class~="text-[18px]"] { --readable-size: 18px; }
+[class~="text-[20px]"] { --readable-size: 20px; }
+[class~="text-[22px]"] { --readable-size: 22px; }
+[class~="text-[24px]"] { --readable-size: 24px; }
+[class~="text-[28px]"] { --readable-size: 28px; }
+[class~="text-[30px]"] { --readable-size: 30px; }
+[class~="text-[32px]"] { --readable-size: 32px; }
+[class~="text-[36px]"] { --readable-size: 36px; }
+[class~="text-[40px]"] { --readable-size: 40px; }
+/* Let controls grow vertically when their labels wrap. */
+html[data-text-size]:not([data-text-size="standard"]) :is(button, a, input, select) {
+  min-height: 44px;
+}
+html[data-text-size]:not([data-text-size="standard"]) button {
+  height: auto;
+}

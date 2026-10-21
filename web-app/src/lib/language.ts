@@ -3,6 +3,12 @@ import { useLayoutEffect, useSyncExternalStore } from "react";
 export type Language = "ja" | "en" | "ko" | "zh-CN" | "zh-TW";
 const key = "iruka-language";
 const english: Record<string, string> = {
+  "文字サイズ": "Text size",
+  "標準": "Default",
+  "大": "Large",
+  "特大": "Extra large",
+  "この大きさで投稿やメニューを表示します。": "Posts and menus will appear at this size.",
+  "文字サイズはこのブラウザに保存されます。": "Your text size is saved in this browser.",
   "現在のプラン": "Current plan",
   "契約情報を取得できませんでした。": "Unable to load your subscription. Please try again.",
   "購入はWebのStripe決済のみです。決済の準備完了まで購入できません。": "Purchases will be available through Stripe on the web only. Checkout is not available until setup is complete.",

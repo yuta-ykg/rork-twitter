@@ -9,6 +9,7 @@ import { Check, ChevronLeft, Plus } from "lucide-react";
 import { AppleMark, GoogleMark } from "@/components/BrandMarks";
 import { t, useLanguage, type Language } from "@/lib/language";
 import { useTheme, type ThemeMode } from "@/lib/theme";
+import { useTextSize, type TextSize } from "@/lib/textSize";
 
 function Segment<T extends string>({ value, options, onChange }: {
   value: T;
@@ -36,6 +37,7 @@ function Segment<T extends string>({ value, options, onChange }: {
 export default function SettingsPage() {
   const { language, setLanguage } = useLanguage();
   const { theme, setTheme } = useTheme();
+  const { textSize, setTextSize } = useTextSize();
   const { user, owner, signOut, accounts, switchAccount, removeAccount: forgetAccount, signIn, isSigningIn, subAccounts, switchPersona, reloadSubAccounts } = useAuth();
   const onSub = Boolean(owner && user && owner.id !== user.id);
   const [showCreate, setShowCreate] = useState<boolean>(false);
@@ -177,6 +179,16 @@ export default function SettingsPage() {
             ]}
           />
           <p className="text-[13px] text-muted-foreground">{t("システムを選ぶと端末の外観設定に合わせて切り替わります。")}</p>
+        </section>
+        <section className="space-y-2 px-4 pt-8" aria-label={t("文字サイズ")}>
+          <h2 className="text-[13px] font-bold text-muted-foreground">{t("文字サイズ")}</h2>
+          <Segment<TextSize> value={textSize} onChange={setTextSize} options={[
+            { id: "standard", label: t("標準") },
+            { id: "large", label: t("大") },
+            { id: "extra-large", label: t("特大") },
+          ]} />
+          <p className="rounded-xl bg-muted p-4 text-[15px] leading-relaxed" aria-live="polite">{t("この大きさで投稿やメニューを表示します。")}</p>
+          <p className="text-[13px] text-muted-foreground">{t("文字サイズはこのブラウザに保存されます。")}</p>
         </section>
         <section className="space-y-2 px-4 pt-8">
           <h2 className="text-[13px] font-bold text-muted-foreground">{t("言語")}</h2>
