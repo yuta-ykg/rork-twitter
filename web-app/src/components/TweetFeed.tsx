@@ -325,7 +325,7 @@ export function TweetRow({ post }: { post: Post }) {
     },
   });
   return (
-    <article className="flex gap-2.5 px-4 py-3" aria-label={`${post.authorName} ${post.handle}. ${post.body}`}>
+    <article className={`flex gap-2.5 px-4 py-3 transition-colors duration-200 motion-reduce:transition-none ${isSpeaking ? "bg-[#1D9BF0]/10" : ""}`} aria-label={`${post.authorName} ${post.handle}. ${post.body}`}>
       <Link to={post.isMine ? "/mine" : post.userId ? `/u/${post.userId}` : "#"} className="h-fit shrink-0" aria-label={post.authorName}>
         <Avatar initial={post.initial} index={post.avatarIndex} url={post.avatarUrl} size={40} />
       </Link>
