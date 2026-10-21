@@ -18,6 +18,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      billing_accounts: {
+        Row: {
+          cancel_at_period_end: boolean
+          introductory_discount_used: boolean
+          paid_through: string | null
+          plan: string
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          term: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean
+          introductory_discount_used?: boolean
+          paid_through?: string | null
+          plan?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          term?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean
+          introductory_discount_used?: boolean
+          paid_through?: string | null
+          plan?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          term?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_accounts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dm_messages: {
         Row: {
           body: string
@@ -620,6 +667,17 @@ export type Database = {
           profile_name: string
         }
         Returns: undefined
+      }
+      get_account_plan: {
+        Args: { expected_user_id: string }
+        Returns: {
+          cancel_at_period_end: boolean
+          character_limit: number
+          paid_through: string
+          plan: string
+          status: string
+          term: string
+        }[]
       }
       get_follow_info: {
         Args: { expected_user_id: string; target_user_id: string }

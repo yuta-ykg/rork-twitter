@@ -53,6 +53,10 @@ func formatDate(_ date: Date, includeTime: Bool = true) -> String {
 }
 
 private let englishMessages: [String: String] = [
+    "現在のプラン": "Current plan",
+    "契約情報を取得できませんでした。": "Unable to load your subscription. Please try again.",
+    "無料プラン": "Free plan",
+    "投稿文字数上限": "Post character limit",
     "スネーク": "Snake",
     "エサを集めて長くなり、壁や自分の体を避けましょう。": "Collect food to grow longer while avoiding walls and your own body.",
 

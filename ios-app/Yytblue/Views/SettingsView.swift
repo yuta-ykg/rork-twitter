@@ -45,6 +45,11 @@ struct SettingsView: View {
                     }
                     .pickerStyle(.segmented)
                 }
+                if let userId = auth.user?.id {
+                    section(L("現在のプラン")) {
+                        AccountPlanStatusView(userId: userId).id(userId)
+                    }
+                }
                 section(L("サブアカウント")) { subAccountsSection }
                 section(L("アカウントの切り替え")) { accountSwitcher }
                 do {

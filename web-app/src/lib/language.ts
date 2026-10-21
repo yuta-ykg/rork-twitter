@@ -3,6 +3,9 @@ import { useLayoutEffect, useSyncExternalStore } from "react";
 export type Language = "ja" | "en" | "ko" | "zh-CN" | "zh-TW";
 const key = "iruka-language";
 const english: Record<string, string> = {
+  "現在のプラン": "Current plan",
+  "契約情報を取得できませんでした。": "Unable to load your subscription. Please try again.",
+  "購入はWebのStripe決済のみです。決済の準備完了まで購入できません。": "Purchases will be available through Stripe on the web only. Checkout is not available until setup is complete.",
   "DMを処理できませんでした。受信設定や接続を確認してください。": "Unable to process the message. Check receiving settings and your connection.",
   "DMの受信範囲": "Who can message you",
   "自分がフォローしている相手": "People you follow",
