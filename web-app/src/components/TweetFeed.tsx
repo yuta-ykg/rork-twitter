@@ -1,3 +1,4 @@
+import { usePostSpeech, togglePostSpeech, stopPostSpeech } from "@/lib/postSpeech";
 import { avatarFills, deletePost, fetchPosts, setPostLike, setPostRepost, sortTimeline, updatePostBody, type Post } from "@/lib/posts";
 import { t, useLanguage } from "@/lib/language";
 import { useAuth } from "@/hooks/authContext";
@@ -8,9 +9,9 @@ import { PollView } from "@/components/PollView";
 import { toast } from "sonner";
 import { useOwnProfile } from "@/hooks/useOwnProfile";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Ban, Bell, Ellipsis, Link2, Pencil, Trash2, VolumeX, Heart, House, Mail, MessageCircle, Quote, Repeat2, Search, Settings, Share, SquarePen } from "lucide-react";
+import { Volume2, CircleStop, Ban, Bell, Ellipsis, Link2, Pencil, Trash2, VolumeX, Heart, House, Mail, MessageCircle, Quote, Repeat2, Search, Settings, Share, SquarePen } from "lucide-react";
 import type { ReactNode, TouchEvent } from "react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 
 export function useTimeline() {
@@ -172,6 +173,11 @@ export function TweetList({ posts, empty, searching = false }: { posts: Post[]; 
 }
 
 export function TweetRow({ post }: { post: Post }) {
+  const speakingId = usePostSpeech();
+  const isSpeaking = speakingId === post.id;
+  const speakingRef = useRef(isSpeaking);
+  speakingRef.current = isSpeaking;
+  useEffect(() => () => { if (speakingRef.current) stopPostSpeech(); }, []);
   const { language } = useLanguage();
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -324,6 +330,7 @@ export function TweetRow({ post }: { post: Post }) {
         <Avatar initial={post.initial} index={post.avatarIndex} url={post.avatarUrl} size={40} />
       </Link>
       <div className="min-w-0 flex-1">
+        {isSpeaking ? <button type="button" onClick={stopPostSpeech} className="flex min-h-11 items-center gap-2 text-sm text-[#1D9BF0]"><CircleStop className="h-4 w-4" aria-hidden />{t("読み上げを停止")}</button> : null}
         <div className="flex items-baseline gap-1 text-[15px]">
           <Link to={post.isMine ? "/mine" : post.userId ? `/u/${post.userId}` : "#"} className="flex min-w-0 items-baseline gap-1">
             <span className="truncate font-bold">{post.authorName}</span>
@@ -347,6 +354,10 @@ export function TweetRow({ post }: { post: Post }) {
                 <>
                   <button type="button" aria-label={t("閉じる")} className="fixed inset-0 z-20 cursor-default" onClick={() => setMoreOpen(false)} />
                   <div role="menu" className="absolute right-0 top-9 z-30 w-56 overflow-hidden rounded-2xl border border-border bg-background py-1 text-[15px] font-bold text-foreground shadow-[0_4px_20px_rgba(0,0,0,0.15)]">
+                    <button type="button" role="menuitem" onClick={() => { setMoreOpen(false); togglePostSpeech(post.id, post.body, language); }} className="flex min-h-11 w-full items-center gap-3 px-4 py-2 text-left active:bg-muted">
+                      {isSpeaking ? <CircleStop className="h-[18px] w-[18px]" aria-hidden /> : <Volume2 className="h-[18px] w-[18px]" aria-hidden />}
+                      <span>{t(isSpeaking ? "読み上げを停止" : "投稿を読み上げ")}</span>
+                    </button>
                     <button type="button" role="menuitem" onClick={() => { setMoreOpen(false); void sharePost(); }} className="flex h-11 w-full items-center gap-3 px-4 text-left active:bg-muted">
                       <Share className="h-[18px] w-[18px]" aria-hidden />
                       <span>{t("共有")}</span>

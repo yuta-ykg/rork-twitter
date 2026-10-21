@@ -53,6 +53,8 @@ func formatDate(_ date: Date, includeTime: Bool = true) -> String {
 }
 
 private let englishMessages: [String: String] = [
+    "投稿を読み上げ": "Read post aloud",
+    "読み上げを停止": "Stop reading",
     "文字サイズ": "Text size",
     "標準": "Default",
     "大": "Large",

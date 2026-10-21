@@ -9,6 +9,7 @@ import SwiftUI
 
 @main
 struct YytblueApp: App {
+    @Environment(\.scenePhase) private var scenePhase
     @State private var authManager = AuthManager()
     @AppStorage("iruka-theme") private var theme = "system"
 
@@ -27,6 +28,9 @@ struct YytblueApp: App {
                 .environment(authManager)
                 .modifier(AppLanguageModifier())
                 .preferredColorScheme(scheme)
+                .onChange(of: scenePhase) { _, phase in
+                    if phase != .active { PostSpeech.shared.stop() }
+                }
         }
     }
 }
