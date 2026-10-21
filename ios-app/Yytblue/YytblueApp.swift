@@ -23,6 +23,7 @@ struct YytblueApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .appTextFont(size: 17)
                 .environment(authManager)
                 .modifier(AppLanguageModifier())
                 .preferredColorScheme(scheme)

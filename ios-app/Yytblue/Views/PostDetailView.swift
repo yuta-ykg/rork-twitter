@@ -25,7 +25,7 @@ struct PostDetailView: View {
                         ForEach(replies) { reply in row(reply) }
                         if replies.isEmpty {
                             Text(L("まだ返信がありません"))
-                                .font(.system(size: 15))
+                                .appTextFont(size: 15)
                                 .foregroundStyle(Color.irukaSecondary)
                                 .padding(.top, 40)
                         }
@@ -40,7 +40,7 @@ struct PostDetailView: View {
             if let post {
                 Button { onReply(post) } label: {
                     Text(L("返信を投稿"))
-                        .font(.system(size: 15))
+                        .appTextFont(size: 15)
                         .foregroundStyle(Color.irukaSecondary)
                         .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
                         .padding(.horizontal, 16)

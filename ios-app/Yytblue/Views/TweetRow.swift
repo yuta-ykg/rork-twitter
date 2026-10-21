@@ -32,18 +32,18 @@ struct TweetRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
                     Text(post.authorName)
-                        .font(.system(size: 15, weight: .bold))
+                        .appTextFont(size: 15, weight: .bold)
                         .foregroundStyle(Color.irukaInk)
                         .lineLimit(1)
                     Text(post.handle)
-                        .font(.system(size: 15))
+                        .appTextFont(size: 15)
                         .foregroundStyle(Color.irukaSecondary)
                         .lineLimit(1)
                     Text("·")
-                        .font(.system(size: 15))
+                        .appTextFont(size: 15)
                         .foregroundStyle(Color.irukaSecondary)
                     Text(TweetAge.label(for: post.createdAt, language: language))
-                        .font(.system(size: 15))
+                        .appTextFont(size: 15)
                         .foregroundStyle(Color.irukaSecondary)
                         .lineLimit(1)
                     Spacer(minLength: 4)
@@ -51,7 +51,7 @@ struct TweetRow: View {
                 }
                 if post.replyTo != nil {
                     Text("\(L("返信先")) \(replyParent?.handle ?? L("投稿"))")
-                        .font(.system(size: 13))
+                        .appTextFont(size: 13)
                         .foregroundStyle(Color.irukaSecondary)
                 }
                 if editing {
@@ -59,7 +59,7 @@ struct TweetRow: View {
                 } else {
                     Button { onOpen?() } label: {
                         tweetBody
-                            .font(.system(size: 15))
+                            .appTextFont(size: 15)
                             .multilineTextAlignment(.leading)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .fixedSize(horizontal: false, vertical: true)
@@ -154,7 +154,7 @@ struct TweetRow: View {
             }
         } label: {
             Image(systemName: "ellipsis")
-                .font(.system(size: 16, weight: .semibold))
+                .appTextFont(size: 16, weight: .semibold)
                 .foregroundStyle(Color.irukaSecondary)
                 .frame(width: 44, height: 28, alignment: .trailing)
                 .contentShape(Rectangle())
@@ -168,7 +168,7 @@ struct TweetRow: View {
         let canSave = count >= 1 && count <= 70
         return VStack(alignment: .leading, spacing: 8) {
             TextField(L("投稿本文"), text: $draft, axis: .vertical)
-                .font(.system(size: 15))
+                .appTextFont(size: 15)
                 .lineLimit(1...4)
                 .padding(12)
                 .background(Color.irukaBackground)
@@ -176,7 +176,7 @@ struct TweetRow: View {
                 .overlay { RoundedRectangle(cornerRadius: 16).stroke(Color.irukaHairline, lineWidth: 1) }
             HStack(spacing: 8) {
                 Text("\(count) / 70")
-                    .font(.system(size: 13))
+                    .appTextFont(size: 13)
                     .monospacedDigit()
                     .foregroundStyle(count > 70 ? Color.red : count >= 60 ? Color.orange : Color.irukaSecondary)
                     .accessibilityLabel("\(count) / 70")
@@ -185,7 +185,7 @@ struct TweetRow: View {
                     editing = false
                     draft = ""
                 }
-                .font(.system(size: 14, weight: .bold))
+                .appTextFont(size: 14, weight: .bold)
                 .foregroundStyle(Color.irukaInk)
                 .frame(minHeight: 44)
                 .padding(.horizontal, 8)
@@ -194,7 +194,7 @@ struct TweetRow: View {
                     editing = false
                     draft = ""
                 }
-                .font(.system(size: 14, weight: .bold))
+                .appTextFont(size: 14, weight: .bold)
                 .foregroundStyle(canSave ? Color.irukaBlue : Color.irukaSecondary)
                 .frame(minHeight: 44)
                 .padding(.horizontal, 8)
@@ -226,8 +226,8 @@ struct TweetRow: View {
         HStack(spacing: 0) {
             Button(action: onReply) {
                 HStack(spacing: 4) {
-                    Image(systemName: "bubble.left").font(.system(size: 15))
-                    if replyCount > 0 { Text("\(replyCount)").font(.system(size: 13)).monospacedDigit() }
+                    Image(systemName: "bubble.left").appTextFont(size: 15)
+                    if replyCount > 0 { Text("\(replyCount)").appTextFont(size: 13).monospacedDigit() }
                 }
                 .foregroundStyle(Color.irukaSecondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -247,10 +247,10 @@ struct TweetRow: View {
             if let quoted {
                 HStack(spacing: 6) {
                     AvatarView(initial: quoted.initial, index: quoted.avatarIndex, url: quoted.avatarUrl, size: 18)
-                    Text(quoted.authorName).font(.system(size: 14, weight: .bold)).foregroundStyle(Color.irukaInk).lineLimit(1)
-                    Text(quoted.handle).font(.system(size: 14)).foregroundStyle(Color.irukaSecondary).lineLimit(1)
+                    Text(quoted.authorName).appTextFont(size: 14, weight: .bold).foregroundStyle(Color.irukaInk).lineLimit(1)
+                    Text(quoted.handle).appTextFont(size: 14).foregroundStyle(Color.irukaSecondary).lineLimit(1)
                 }
-                Text(quoted.body).font(.system(size: 14)).foregroundStyle(Color.irukaInk)
+                Text(quoted.body).appTextFont(size: 14).foregroundStyle(Color.irukaInk)
                     .fixedSize(horizontal: false, vertical: true)
                 if let urlString = quoted.imageUrl, let url = URL(string: urlString) {
                     Color(.secondarySystemBackground)
@@ -264,7 +264,7 @@ struct TweetRow: View {
             } else {
                 Button { showsQuoteExplanation = true } label: {
                     Text(L("引用元の投稿は見つかりません"))
-                        .font(.system(size: 14)).foregroundStyle(Color.irukaSecondary)
+                        .appTextFont(size: 14).foregroundStyle(Color.irukaSecondary)
                         .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                         .contentShape(Rectangle())
                 }
@@ -293,9 +293,9 @@ struct TweetRow: View {
         } label: {
             HStack(spacing: 4) {
                 Image(systemName: "arrow.2.squarepath")
-                    .font(.system(size: 15, weight: reposted ? .bold : .regular))
+                    .appTextFont(size: 15, weight: reposted ? .bold : .regular)
                 if count > 0 {
-                    Text("\(count)").font(.system(size: 13)).monospacedDigit()
+                    Text("\(count)").appTextFont(size: 13).monospacedDigit()
                 }
             }
             .foregroundStyle(reposted ? Color(red: 0, green: 0.729, blue: 0.486) : Color.irukaSecondary)
@@ -315,11 +315,11 @@ struct TweetRow: View {
         } label: {
             HStack(spacing: 4) {
                 Image(systemName: liked ? "heart.fill" : "heart")
-                    .font(.system(size: 15))
+                    .appTextFont(size: 15)
                     .symbolEffect(.bounce, value: liked)
                 if count > 0 {
                     Text("\(count)")
-                        .font(.system(size: 13))
+                        .appTextFont(size: 13)
                         .monospacedDigit()
                 }
             }
@@ -334,7 +334,7 @@ struct TweetRow: View {
 
     private func actionIcon(_ symbol: String) -> some View {
         Image(systemName: symbol)
-            .font(.system(size: 15, weight: .regular))
+            .appTextFont(size: 15, weight: .regular)
             .foregroundStyle(Color.irukaSecondary)
             .frame(maxWidth: .infinity, alignment: .leading)
             .frame(minHeight: 22)

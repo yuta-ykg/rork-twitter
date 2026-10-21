@@ -4,6 +4,7 @@ import SwiftUI
 struct SettingsView: View {
     @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
     @AppStorage("iruka-theme") private var theme = "system"
+    @AppStorage("iruka-text-size") private var textSize = AppTextSize.standard.rawValue
     @Environment(PostStore.self) private var store
     @Environment(AuthManager.self) private var auth
     @State private var relations: [RelationshipRow] = []
@@ -35,7 +36,25 @@ struct SettingsView: View {
                     }
                     .pickerStyle(.segmented)
                     Text(L("システムを選ぶと端末の外観設定に合わせて切り替わります。"))
-                        .font(.system(size: 13))
+                        .appTextFont(size: 13)
+                        .foregroundStyle(Color.irukaSecondary)
+                }
+                section(L("文字サイズ")) {
+                    Picker(L("文字サイズ"), selection: $textSize) {
+                        ForEach(AppTextSize.allCases) { size in
+                            Text(L(size.label)).tag(size.rawValue)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(minHeight: 44)
+                    Text(L("この大きさで投稿やメニューを表示します。"))
+                        .appTextFont(size: 15)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.irukaField, in: RoundedRectangle(cornerRadius: 12))
+                    Text(L("文字サイズはこの端末に保存されます。"))
+                        .appTextFont(size: 13)
                         .foregroundStyle(Color.irukaSecondary)
                 }
                 section(L("言語")) {
@@ -56,16 +75,16 @@ struct SettingsView: View {
                     section(L("ミュート・ブロック中のアカウント")) {
                         if relations.isEmpty {
                             Text(L("まだありません"))
-                                .font(.system(size: 14))
+                                .appTextFont(size: 14)
                                 .foregroundStyle(Color.irukaSecondary)
                         } else {
                             VStack(spacing: 0) {
                                 ForEach(relations) { r in
                                     HStack {
                                         VStack(alignment: .leading, spacing: 2) {
-                                            Text(r.targetName).font(.system(size: 15, weight: .bold)).foregroundStyle(Color.irukaInk).lineLimit(1)
+                                            Text(r.targetName).appTextFont(size: 15, weight: .bold).foregroundStyle(Color.irukaInk).lineLimit(1)
                                             Text((r.targetHandle.map { "@\($0) · " } ?? "") + L(r.kind == "block" ? "ブロック" : "ミュート"))
-                                                .font(.system(size: 13)).foregroundStyle(Color.irukaSecondary).lineLimit(1)
+                                                .appTextFont(size: 13).foregroundStyle(Color.irukaSecondary).lineLimit(1)
                                         }
                                         Spacer()
                                         Button(L("解除")) {
@@ -74,7 +93,7 @@ struct SettingsView: View {
                                                 relations = await store.relationships()
                                             }
                                         }
-                                        .font(.system(size: 14, weight: .bold))
+                                        .appTextFont(size: 14, weight: .bold)
                                         .buttonStyle(.bordered)
                                         .frame(minHeight: 44)
                                     }
@@ -92,7 +111,7 @@ struct SettingsView: View {
                             Spacer()
                             Image(systemName: "arrow.up.right")
                         }
-                        .font(.system(size: 16, weight: .semibold))
+                        .appTextFont(size: 16, weight: .semibold)
                         .frame(minHeight: 44)
                     }
                     .foregroundStyle(Color.irukaInk)
@@ -102,20 +121,20 @@ struct SettingsView: View {
                             Spacer()
                             Image(systemName: "arrow.up.right")
                         }
-                        .font(.system(size: 16, weight: .semibold))
+                        .appTextFont(size: 16, weight: .semibold)
                         .frame(minHeight: 44)
                     }
                     .foregroundStyle(Color.irukaInk)
                 }
                 section(L("アカウント")) {
                     Button(L("ログアウト")) { confirmsSignOut = true }
-                        .font(.system(size: 16, weight: .semibold))
+                        .appTextFont(size: 16, weight: .semibold)
                         .frame(maxWidth: .infinity, minHeight: 48)
                         .buttonStyle(.bordered)
                     if auth.isMainPersona {
                     Button(role: .destructive) { confirmsDelete = true } label: {
                         Text(isDeleting ? L("削除中…") : L("アカウントを削除"))
-                            .font(.system(size: 16, weight: .semibold))
+                            .appTextFont(size: 16, weight: .semibold)
                             .frame(maxWidth: .infinity, minHeight: 48)
                     }
                     .buttonStyle(.bordered)
@@ -191,8 +210,8 @@ struct SettingsView: View {
                 HStack(spacing: 12) {
                     AvatarView(initial: String(title.prefix(1)), index: 0, url: picture, size: 36)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(title).font(.system(size: 15, weight: .bold)).foregroundStyle(Color.irukaInk).lineLimit(1)
-                        Text(subtitle).font(.system(size: 13)).foregroundStyle(Color.irukaSecondary).lineLimit(1)
+                        Text(title).appTextFont(size: 15, weight: .bold).foregroundStyle(Color.irukaInk).lineLimit(1)
+                        Text(subtitle).appTextFont(size: 13).foregroundStyle(Color.irukaSecondary).lineLimit(1)
                     }
                     Spacer(minLength: 0)
                     if current {
@@ -206,7 +225,7 @@ struct SettingsView: View {
             .disabled(current)
             if let delete {
                 Button(L("削除"), action: delete)
-                    .font(.system(size: 13, weight: .bold))
+                    .appTextFont(size: 13, weight: .bold)
                     .buttonStyle(.bordered)
                     .frame(minHeight: 44)
             }
@@ -253,12 +272,12 @@ struct SettingsView: View {
                         }
                     if handleTaken {
                         Text(L("このIDはすでに使われています。"))
-                            .font(.system(size: 13)).foregroundStyle(.red)
+                            .appTextFont(size: 13).foregroundStyle(.red)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     if handleVerified && !handleTaken && !isCheckingHandle && subHandleValid {
                         Text(L("このIDは使えます。"))
-                            .font(.system(size: 13)).foregroundStyle(.green)
+                            .appTextFont(size: 13).foregroundStyle(.green)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     HStack(spacing: 8) {
@@ -275,17 +294,17 @@ struct SettingsView: View {
             } else if auth.subAccounts.count < SubAccountService.maxCount {
                 Button { showsCreateSub = true } label: {
                     Label(L("サブアカウントを作成"), systemImage: "plus")
-                        .font(.system(size: 16, weight: .semibold))
+                        .appTextFont(size: 16, weight: .semibold)
                         .frame(maxWidth: .infinity, minHeight: 48)
                 }
                 .buttonStyle(.bordered)
                 .padding(.top, 10)
             } else {
                 Text(L("サブアカウントは最大5つまでです。"))
-                    .font(.system(size: 13)).foregroundStyle(Color.irukaSecondary).padding(.top, 8)
+                    .appTextFont(size: 13).foregroundStyle(Color.irukaSecondary).padding(.top, 8)
             }
             Text(L("サブアカウントは投稿・フォロー・通知・いいねがすべて別になり、他のユーザーには別人として表示されます。"))
-                .font(.system(size: 13)).foregroundStyle(Color.irukaSecondary).padding(.top, 8)
+                .appTextFont(size: 13).foregroundStyle(Color.irukaSecondary).padding(.top, 8)
         }
     }
 
@@ -330,8 +349,8 @@ struct SettingsView: View {
                         HStack(spacing: 12) {
                             AvatarView(initial: account.initial, index: 0, url: account.picture, size: 36)
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(account.displayName).font(.system(size: 15, weight: .bold)).foregroundStyle(Color.irukaInk).lineLimit(1)
-                                Text(account.email).font(.system(size: 13)).foregroundStyle(Color.irukaSecondary).lineLimit(1)
+                                Text(account.displayName).appTextFont(size: 15, weight: .bold).foregroundStyle(Color.irukaInk).lineLimit(1)
+                                Text(account.email).appTextFont(size: 13).foregroundStyle(Color.irukaSecondary).lineLimit(1)
                             }
                             Spacer(minLength: 0)
                             if current {
@@ -346,7 +365,7 @@ struct SettingsView: View {
                     .buttonStyle(.plain)
                     if !current {
                         Button(L("外す")) { auth.removeAccount(id: account.id) }
-                            .font(.system(size: 13, weight: .bold))
+                            .appTextFont(size: 13, weight: .bold)
                             .buttonStyle(.bordered)
                             .frame(minHeight: 44)
                     }
@@ -356,7 +375,7 @@ struct SettingsView: View {
             }
             Button { showsAddAccount = true } label: {
                 Label(L("アカウントを追加"), systemImage: "plus")
-                    .font(.system(size: 16, weight: .semibold))
+                    .appTextFont(size: 16, weight: .semibold)
                     .frame(maxWidth: .infinity, minHeight: 48)
             }
             .buttonStyle(.bordered)
@@ -366,7 +385,7 @@ struct SettingsView: View {
 
     private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(title).font(.system(size: 13, weight: .bold)).foregroundStyle(Color.irukaSecondary)
+            Text(title).appTextFont(size: 13, weight: .bold).foregroundStyle(Color.irukaSecondary)
             content()
         }
     }

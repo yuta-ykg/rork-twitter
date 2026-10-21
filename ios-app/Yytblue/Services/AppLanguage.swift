@@ -53,6 +53,12 @@ func formatDate(_ date: Date, includeTime: Bool = true) -> String {
 }
 
 private let englishMessages: [String: String] = [
+    "文字サイズ": "Text size",
+    "標準": "Default",
+    "大": "Large",
+    "特大": "Extra large",
+    "この大きさで投稿やメニューを表示します。": "Posts and menus will appear at this size.",
+    "文字サイズはこの端末に保存されます。": "Your text size is saved on this device.",
     "現在のプラン": "Current plan",
     "契約情報を取得できませんでした。": "Unable to load your subscription. Please try again.",
     "無料プラン": "Free plan",

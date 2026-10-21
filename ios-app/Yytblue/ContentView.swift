@@ -136,12 +136,12 @@ struct ContentView: View {
             if store.pendingDelete != nil {
                 HStack(spacing: 12) {
                     Text(L("投稿を削除しました"))
-                        .font(.system(size: 15))
+                        .appTextFont(size: 15)
                         .foregroundStyle(.white)
                     Spacer(minLength: 8)
                     Button { store.undoDelete() } label: {
                         Text(L("取り消す"))
-                            .font(.system(size: 15, weight: .bold))
+                            .appTextFont(size: 15, weight: .bold)
                             .foregroundStyle(Color.irukaBlue)
                             .frame(minWidth: 44, minHeight: 44)
                     }
@@ -169,7 +169,7 @@ struct ContentView: View {
     private var header: some View {
         ZStack {
             Text(headerTitle)
-                .font(.system(size: 17, weight: .bold))
+                .appTextFont(size: 17, weight: .bold)
                 .foregroundStyle(Color.irukaInk)
             HStack {
                 Button {
@@ -190,7 +190,7 @@ struct ContentView: View {
                     showsSettings = true
                 } label: {
                     Image(systemName: "gearshape")
-                        .font(.system(size: 18))
+                        .appTextFont(size: 18)
                         .foregroundStyle(Color.irukaSecondary)
                         .frame(width: 44, height: 44)
                 }
@@ -251,7 +251,7 @@ struct ContentView: View {
             homeFeed = feed
         } label: {
             Text(title)
-                .font(.system(size: 15, weight: homeFeed == feed ? .bold : .regular))
+                .appTextFont(size: 15, weight: homeFeed == feed ? .bold : .regular)
                 .foregroundStyle(homeFeed == feed ? Color.irukaInk : Color.irukaSecondary)
                 .frame(maxWidth: .infinity, minHeight: 48)
                 .overlay(alignment: .bottom) {
@@ -310,7 +310,7 @@ struct ContentView: View {
 
     private func quietNote(_ message: String) -> some View {
         Text(message)
-            .font(.system(size: 15))
+            .appTextFont(size: 15)
             .foregroundStyle(Color.irukaSecondary)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.irukaBackground)
@@ -321,7 +321,7 @@ struct ContentView: View {
             showsComposer = true
         } label: {
             Image(systemName: "square.and.pencil")
-                .font(.system(size: 22, weight: .semibold))
+                .appTextFont(size: 22, weight: .semibold)
                 .foregroundStyle(.white)
                 .frame(width: 56, height: 56)
                 .background(Color.irukaBlue, in: Circle())
@@ -351,7 +351,7 @@ struct ContentView: View {
             selectedTab = tab
         } label: {
             Image(systemName: symbol)
-                .font(.system(size: 22, weight: selectedTab == tab ? .semibold : .regular))
+                .appTextFont(size: 22, weight: selectedTab == tab ? .semibold : .regular)
                 .foregroundStyle(selectedTab == tab ? Color.irukaBlue : Color.irukaSecondary)
                 .overlay(alignment: .topTrailing) {
                     if showsDot {

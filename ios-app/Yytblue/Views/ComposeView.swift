@@ -45,10 +45,10 @@ struct ComposeView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: 6) {
                         AvatarView(initial: replying.initial, index: replying.avatarIndex, url: replying.avatarUrl, size: 22)
-                        Text(replying.authorName).font(.system(size: 14, weight: .bold)).foregroundStyle(Color.irukaInk).lineLimit(1)
-                        Text(replying.handle).font(.system(size: 14)).foregroundStyle(Color.irukaSecondary).lineLimit(1)
+                        Text(replying.authorName).appTextFont(size: 14, weight: .bold).foregroundStyle(Color.irukaInk).lineLimit(1)
+                        Text(replying.handle).appTextFont(size: 14).foregroundStyle(Color.irukaSecondary).lineLimit(1)
                     }
-                    Text(replying.body).font(.system(size: 15)).foregroundStyle(Color.irukaInk)
+                    Text(replying.body).appTextFont(size: 15).foregroundStyle(Color.irukaInk)
                         .fixedSize(horizontal: false, vertical: true)
                     if let urlString = replying.imageUrl, let url = URL(string: urlString) {
                         Color(.secondarySystemBackground)
@@ -60,7 +60,7 @@ struct ComposeView: View {
                             .clipShape(.rect(cornerRadius: 12))
                     }
                     Text("\(L("返信先")) \(replying.handle)")
-                        .font(.system(size: 14)).foregroundStyle(Color.irukaSecondary)
+                        .appTextFont(size: 14).foregroundStyle(Color.irukaSecondary)
                         .padding(.top, 2)
                 }
                 .padding(12)
@@ -73,13 +73,13 @@ struct ComposeView: View {
                 ZStack(alignment: .topLeading) {
                     if draft.isEmpty {
                         Text(L(replying == nil ? "今の気持ちを、70字まで。" : "返信を投稿"))
-                            .font(.system(size: 18))
+                            .appTextFont(size: 18)
                             .foregroundStyle(Color.irukaSecondary)
                             .padding(.top, 8)
                             .allowsHitTesting(false)
                     }
                     TextEditor(text: $draft)
-                        .font(.system(size: 18))
+                        .appTextFont(size: 18)
                         .foregroundStyle(Color.irukaInk)
                         .scrollContentBackground(.hidden)
                         .focused($isFocused)
@@ -117,10 +117,10 @@ struct ComposeView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 6) {
                         AvatarView(initial: quoting.initial, index: quoting.avatarIndex, url: quoting.avatarUrl, size: 18)
-                        Text(quoting.authorName).font(.system(size: 14, weight: .bold)).foregroundStyle(Color.irukaInk).lineLimit(1)
-                        Text(quoting.handle).font(.system(size: 14)).foregroundStyle(Color.irukaSecondary).lineLimit(1)
+                        Text(quoting.authorName).appTextFont(size: 14, weight: .bold).foregroundStyle(Color.irukaInk).lineLimit(1)
+                        Text(quoting.handle).appTextFont(size: 14).foregroundStyle(Color.irukaSecondary).lineLimit(1)
                     }
-                    Text(quoting.body).font(.system(size: 14)).foregroundStyle(Color.irukaInk)
+                    Text(quoting.body).appTextFont(size: 14).foregroundStyle(Color.irukaInk)
                 }
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -169,7 +169,7 @@ struct ComposeView: View {
             ToolbarItem(placement: .confirmationAction) {
                 Button(action: submit) {
                     Text(L(replying == nil ? "投稿する" : "返信する"))
-                        .font(.system(size: 15, weight: .bold))
+                        .appTextFont(size: 15, weight: .bold)
                         .foregroundStyle(.white)
                         .padding(.horizontal, 14)
                         .frame(minHeight: 32)
@@ -212,7 +212,7 @@ struct ComposeView: View {
                             pollOptions.remove(at: index)
                         } label: {
                             Image(systemName: "xmark")
-                                .font(.system(size: 14, weight: .bold))
+                                .appTextFont(size: 14, weight: .bold)
                                 .foregroundStyle(Color.irukaSecondary)
                                 .frame(width: 44, height: 44)
                         }
@@ -225,14 +225,14 @@ struct ComposeView: View {
                     pollOptions.append("")
                 } label: {
                     Label(L("選択肢を追加"), systemImage: "plus")
-                        .font(.system(size: 15, weight: .bold))
+                        .appTextFont(size: 15, weight: .bold)
                         .foregroundStyle(Color.irukaBlue)
                         .frame(minHeight: 44)
                 }
             }
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 4) {
-                    Text(L("期間")).font(.system(size: 14)).foregroundStyle(Color.irukaSecondary)
+                    Text(L("期間")).appTextFont(size: 14).foregroundStyle(Color.irukaSecondary)
                     ForEach(durations, id: \.minutes) { item in
                         let selected = !customDuration && pollMinutes == item.minutes
                         Button {
@@ -292,7 +292,7 @@ struct ComposeView: View {
             ))
             .keyboardType(.numberPad)
             .multilineTextAlignment(.center)
-            .font(.system(size: 15))
+            .appTextFont(size: 15)
             .frame(maxWidth: .infinity, minHeight: 44)
             .overlay { RoundedRectangle(cornerRadius: 10).stroke(Color.irukaHairline, lineWidth: 1) }
             .accessibilityLabel(unit)
