@@ -3,6 +3,10 @@ import { useLayoutEffect, useSyncExternalStore } from "react";
 export type Language = "ja" | "en" | "ko" | "zh-CN" | "zh-TW";
 const key = "iruka-language";
 const english: Record<string, string> = {
+  "読み上げ速度": "Reading speed",
+  "遅い": "Slow",
+  "速い": "Fast",
+  "読み上げ速度はこのブラウザに保存され、次の読み上げから適用されます。": "Your reading speed is saved in this browser and applies the next time you read a post aloud.",
   "文字サイズ": "Text size",
   "標準": "Default",
   "大": "Large",

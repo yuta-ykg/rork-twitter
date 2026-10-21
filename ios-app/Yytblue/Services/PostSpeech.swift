@@ -1,6 +1,25 @@
 import AVFoundation
 import SwiftUI
 
+enum PostSpeechSpeed: String, CaseIterable, Identifiable {
+    case slow, standard, fast
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .slow: "遅い"
+        case .standard: "標準"
+        case .fast: "速い"
+        }
+    }
+    var rate: Float {
+        switch self {
+        case .slow: AVSpeechUtteranceDefaultSpeechRate * 0.75
+        case .standard: AVSpeechUtteranceDefaultSpeechRate
+        case .fast: AVSpeechUtteranceDefaultSpeechRate * 1.25
+        }
+    }
+}
+
 /// One synthesizer for the whole app so posts never speak over one another.
 @Observable
 final class PostSpeech: NSObject, AVSpeechSynthesizerDelegate {
@@ -22,7 +41,8 @@ final class PostSpeech: NSObject, AVSpeechSynthesizerDelegate {
         let containsJapanese = body.range(of: "[ぁ-んァ-ヶ一-龠]", options: .regularExpression) != nil
         let locale = containsJapanese ? "ja-JP" : (["ja": "ja-JP", "en": "en-US", "ko": "ko-KR", "zh": "zh-CN"][language] ?? language)
         utterance.voice = AVSpeechSynthesisVoice(language: locale)
-        utterance.rate = AVSpeechUtteranceDefaultSpeechRate
+        let speed = PostSpeechSpeed(rawValue: UserDefaults.standard.string(forKey: "iruka-speech-speed") ?? "") ?? .standard
+        utterance.rate = speed.rate
         current = utterance
         activeId = id
         synthesizer.speak(utterance)

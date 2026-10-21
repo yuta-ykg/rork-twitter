@@ -5,6 +5,7 @@ struct SettingsView: View {
     @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
     @AppStorage("iruka-theme") private var theme = "system"
     @AppStorage("iruka-text-size") private var textSize = AppTextSize.standard.rawValue
+    @AppStorage("iruka-speech-speed") private var speechSpeed = PostSpeechSpeed.standard.rawValue
     @Environment(PostStore.self) private var store
     @Environment(AuthManager.self) private var auth
     @State private var relations: [RelationshipRow] = []
@@ -54,6 +55,18 @@ struct SettingsView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(Color.irukaField, in: RoundedRectangle(cornerRadius: 12))
                     Text(L("文字サイズはこの端末に保存されます。"))
+                        .appTextFont(size: 13)
+                        .foregroundStyle(Color.irukaSecondary)
+                }
+                section(L("読み上げ速度")) {
+                    Picker(L("読み上げ速度"), selection: $speechSpeed) {
+                        ForEach(PostSpeechSpeed.allCases) { speed in
+                            Text(L(speed.label)).tag(speed.rawValue)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(minHeight: 44)
+                    Text(L("読み上げ速度はこの端末に保存され、次の読み上げから適用されます。"))
                         .appTextFont(size: 13)
                         .foregroundStyle(Color.irukaSecondary)
                 }

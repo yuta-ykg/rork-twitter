@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
 import { toast } from "sonner";
 import { t } from "@/lib/language";
+import { speechRate } from "@/lib/speechSpeed";
 
 const listeners = new Set<() => void>();
 let activeId: string | null = null;
@@ -22,7 +23,7 @@ export function togglePostSpeech(id: string, body: string, language: string) {
   if (!body.trim()) return;
   const utterance = new SpeechSynthesisUtterance(body);
   utterance.lang = /[ぁ-んァ-ヶ一-龠]/u.test(body) ? "ja-JP" : ({ ja: "ja-JP", en: "en-US", ko: "ko-KR", zh: "zh-CN" }[language] ?? language);
-  utterance.rate = 1;
+  utterance.rate = speechRate();
   current = utterance;
   utterance.onend = () => { if (current === utterance) { current = null; publish(null); } };
   utterance.onerror = (event) => {

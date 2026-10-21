@@ -53,6 +53,10 @@ func formatDate(_ date: Date, includeTime: Bool = true) -> String {
 }
 
 private let englishMessages: [String: String] = [
+    "読み上げ速度": "Reading speed",
+    "遅い": "Slow",
+    "速い": "Fast",
+    "読み上げ速度はこの端末に保存され、次の読み上げから適用されます。": "Your reading speed is saved on this device and applies the next time you read a post aloud.",
     "投稿を読み上げ": "Read post aloud",
     "読み上げを停止": "Stop reading",
     "文字サイズ": "Text size",
