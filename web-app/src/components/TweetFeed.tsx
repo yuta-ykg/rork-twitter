@@ -338,6 +338,12 @@ export function TweetRow({ post }: { post: Post }) {
           </Link>
           <span className="text-muted-foreground">·</span>
           <span className="shrink-0 text-muted-foreground">{tweetAge(post.createdAt, language)}</span>
+          {isSpeaking ? (
+            <span role="status" className="inline-flex shrink-0 self-center text-[#1D9BF0]" title={t("読み上げ中")}>
+              <Volume2 className="h-4 w-4" aria-hidden />
+              <span className="sr-only">{t("読み上げ中")}</span>
+            </span>
+          ) : null}
           {(
             <div className="relative ml-auto">
               <button

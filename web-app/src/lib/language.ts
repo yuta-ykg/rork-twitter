@@ -3,6 +3,7 @@ import { useLayoutEffect, useSyncExternalStore } from "react";
 export type Language = "ja" | "en" | "ko" | "zh-CN" | "zh-TW";
 const key = "iruka-language";
 const english: Record<string, string> = {
+  "読み上げ中": "Reading aloud",
   "読み上げ速度": "Reading speed",
   "遅い": "Slow",
   "速い": "Fast",
