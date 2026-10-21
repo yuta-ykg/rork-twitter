@@ -47,6 +47,13 @@ struct TweetRow: View {
                         .appTextFont(size: 15)
                         .foregroundStyle(Color.irukaSecondary)
                         .lineLimit(1)
+                    if speech.activeId == post.id {
+                        Image(systemName: "speaker.wave.2.fill")
+                            .font(.system(size: 16))
+                            .foregroundStyle(Color.irukaBlue)
+                            .fixedSize()
+                            .accessibilityLabel(L("読み上げ中"))
+                    }
                     Spacer(minLength: 4)
                     moreMenu
                 }

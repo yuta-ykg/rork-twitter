@@ -53,6 +53,7 @@ func formatDate(_ date: Date, includeTime: Bool = true) -> String {
 }
 
 private let englishMessages: [String: String] = [
+    "読み上げ中": "Reading aloud",
     "読み上げ速度": "Reading speed",
     "遅い": "Slow",
     "速い": "Fast",
