@@ -3,6 +3,8 @@ import { useLayoutEffect, useSyncExternalStore } from "react";
 export type Language = "ja" | "en" | "ko" | "zh-CN" | "zh-TW";
 const key = "iruka-language";
 const english: Record<string, string> = {
+  "次の投稿": "Next post",
+  "次の投稿はありません": "No next post",
   "読み上げ中": "Reading aloud",
   "読み上げ速度": "Reading speed",
   "遅い": "Slow",

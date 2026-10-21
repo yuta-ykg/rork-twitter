@@ -9,7 +9,7 @@ import { PollView } from "@/components/PollView";
 import { toast } from "sonner";
 import { useOwnProfile } from "@/hooks/useOwnProfile";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Volume2, CircleStop, Ban, Bell, Ellipsis, Link2, Pencil, Trash2, VolumeX, Heart, House, Mail, MessageCircle, Quote, Repeat2, Search, Settings, Share, SquarePen } from "lucide-react";
+import { SkipForward, Volume2, CircleStop, Ban, Bell, Ellipsis, Link2, Pencil, Trash2, VolumeX, Heart, House, Mail, MessageCircle, Quote, Repeat2, Search, Settings, Share, SquarePen } from "lucide-react";
 import type { ReactNode, TouchEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
@@ -163,16 +163,16 @@ export function TweetList({ posts, empty, searching = false }: { posts: Post[]; 
   }
   return (
     <ul>
-      {posts.map((post) => (
+      {posts.map((post, index) => (
         <li key={post.id} className="border-b border-border">
-          <TweetRow post={post} />
+          <TweetRow post={post} nextPost={posts.slice(index + 1).find((item) => item.body.trim())} />
         </li>
       ))}
     </ul>
   );
 }
 
-export function TweetRow({ post }: { post: Post }) {
+export function TweetRow({ post, nextPost }: { post: Post; nextPost?: Post }) {
   const speakingId = usePostSpeech();
   const isSpeaking = speakingId === post.id;
   const speakingRef = useRef(isSpeaking);
@@ -330,7 +330,16 @@ export function TweetRow({ post }: { post: Post }) {
         <Avatar initial={post.initial} index={post.avatarIndex} url={post.avatarUrl} size={40} />
       </Link>
       <div className="min-w-0 flex-1">
-        {isSpeaking ? <button type="button" onClick={stopPostSpeech} className="flex min-h-11 items-center gap-2 text-sm text-[#1D9BF0]"><CircleStop className="h-4 w-4" aria-hidden />{t("読み上げを停止")}</button> : null}
+        {isSpeaking ? (
+          <div className="flex flex-wrap items-center gap-x-4 text-sm text-[#1D9BF0]">
+            <button type="button" onClick={stopPostSpeech} className="flex min-h-11 items-center gap-2"><CircleStop className="h-4 w-4" aria-hidden />{t("読み上げを停止")}</button>
+            <button type="button" disabled={!nextPost} onClick={() => {
+              if (nextPost) togglePostSpeech(nextPost.id, nextPost.body, language);
+            }} className="flex min-h-11 items-center gap-2 disabled:cursor-not-allowed disabled:opacity-40" title={!nextPost ? t("次の投稿はありません") : undefined}>
+              <SkipForward className="h-4 w-4" aria-hidden />{t("次の投稿")}
+            </button>
+          </div>
+        ) : null}
         <div className="flex items-baseline gap-1 text-[15px]">
           <Link to={post.isMine ? "/mine" : post.userId ? `/u/${post.userId}` : "#"} className="flex min-w-0 items-baseline gap-1">
             <span className="truncate font-bold">{post.authorName}</span>
