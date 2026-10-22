@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/authContext";
 import { t, useLanguage } from "@/lib/language";
-import { openBilling, type BillingTerm } from "@/lib/billing";
+import { openBilling, BillingRequestError, billingErrorMessage, type BillingTerm } from "@/lib/billing";
 
 /** 契約表示はサーバーで確認。決済の公開準備完了までは購入を有効化しない。 */
 export default function PlansPage() {
@@ -21,8 +21,8 @@ export default function PlansPage() {
   const [accepted, setAccepted] = useState(false);
   useEffect(() => { setAccepted(false); }, [selection, user?.id]);
   const [busy, setBusy] = useState(false);
-  const [billingError, setBillingError] = useState(false);
-  useEffect(() => { setSelection(null); setBillingError(false); }, [user?.id]);
+  const [billingError, setBillingError] = useState<BillingRequestError | null>(null);
+  useEffect(() => { setSelection(null); setBillingError(null); }, [user?.id]);
   useEffect(() => {
     if (hash === "#plus") document.getElementById("plus")?.scrollIntoView({ block: "center" });
   }, [hash]);
@@ -57,9 +57,9 @@ export default function PlansPage() {
   });
   async function proceed(action: "checkout" | "portal") {
     if (!accountId || busy || (action === "checkout" && (!selection || !accepted))) return;
-    setBusy(true); setBillingError(false);
+    setBusy(true); setBillingError(null);
     try { await openBilling(action, accountId, selection?.plan, selection?.term); }
-    catch { setBillingError(true); setBusy(false); }
+    catch (error) { setBillingError(error instanceof BillingRequestError ? error : new BillingRequestError("network_error")); setBusy(false); }
   }
   const canPurchase = options.isSuccess && !options.isError && options.data.checkout_enabled && !options.data.purchase_blocked && profile.isSuccess && !profile.isError && subscription.isSuccess && !subscription.isError && !busy;
   const current = subscription.isSuccess && !subscription.isError ? subscription.data.plan : null;
@@ -84,7 +84,8 @@ export default function PlansPage() {
         {options.isSuccess && !options.isError && !options.data.checkout_enabled && <p className="rounded-xl border border-border bg-muted p-4 text-sm">{t("決済は準備中です。現在は購入できません。")}</p>}
         {search.includes("billing=success") && <p role="status" className="text-sm text-[#1D9BF0]">{text("決済結果を確認中です。支払い確認後に契約表示が更新されます。画面に戻っただけでは有料化されません。", "Checking payment. Your plan updates only after verified payment, not just by returning here.")}</p>}
         {search.includes("billing=canceled") && <p role="status" className="text-sm">{text("購入を中断しました。再開すると同じ決済画面に戻ります。別のプランを選ぶ場合は最大35分お待ちください。", "Checkout canceled. Resume the same checkout, or wait up to 35 minutes to choose another plan.")}</p>}
-        {(billingError || options.isError) && <div role="alert" className="text-sm text-red-600"><p>{text("決済情報を取得できませんでした。時間をおいて再試行してください。", "Billing is unavailable. Please try again shortly.")}</p><button className="min-h-11 text-[#1D9BF0]" onClick={() => { void options.refetch(); setBillingError(false); }}>{t("再読み込み")}</button></div>}
+        {options.isError && <div role="alert" className="text-sm text-red-600"><p>{text("決済情報を取得できませんでした。時間をおいて再試行してください。", "Billing is unavailable. Please try again shortly.")}</p><button className="min-h-11 text-[#1D9BF0]" onClick={() => { void options.refetch(); setBillingError(null); }}>{t("再読み込み")}</button></div>}
+        {billingError && !selection && <div role="alert" className="space-y-2 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"><p className="font-bold">{text("決済画面を開けませんでした", "Could not open billing")}</p><p>{billingErrorMessage(billingError.code, language === "en")}</p><p className="break-all text-xs">{text("エラーコード", "Error code")}: {billingError.code}{billingError.status ? ` (HTTP ${billingError.status})` : ""}</p></div>}
         {options.data?.has_customer && <button disabled={busy} onClick={() => void proceed("portal")} className="min-h-11 w-full rounded-full border border-[#1D9BF0] px-4 font-bold text-[#1D9BF0] disabled:opacity-50">{text("支払方法・解約を管理", "Manage payment method / cancellation")}</button>}
         {subscription.data?.paid_through && <p className="text-sm">{subscription.data.cancel_at_period_end ? text("利用終了予定", "Access ends") : text("支払済み期間の終了", "Paid through")}: {new Date(subscription.data.paid_through).toLocaleDateString(language === "en" ? "en-US" : "ja-JP")}</p>}
         {options.data?.purchase_blocked && <p className="text-sm text-muted-foreground">{text("契約中の重複購入・プラン変更はできません。解約や支払方法の変更は契約管理をご利用ください。", "Duplicate purchases and plan changes are unavailable. Use billing management to cancel or update payment details.")}</p>}
@@ -113,7 +114,7 @@ export default function PlansPage() {
                   text("投稿・返信・引用・編集に対応", "For posts, replies, quotes and edits"),
                   text("同じアカウントならWeb・iOSで利用", "Use on web and iOS with the same account"),
                 ].map(feature => <li key={feature} className="flex items-start gap-3"><Check className="h-5 w-5 shrink-0 text-[#1D9BF0]" /><span>{feature}</span></li>)}</ul>
-                <button disabled={!canPurchase} onClick={() => { setSelection({ plan: plus ? "plus" : "premium", term }); setBillingError(false); }} className={`flex min-h-12 w-full items-center justify-center gap-2 rounded-full px-4 font-bold transition-transform active:scale-[0.98] disabled:opacity-40 ${plus ? "bg-[#1D9BF0] text-white" : "border border-[#1D9BF0] text-[#1D9BF0]"}`}>{current === plan.name.toLowerCase() ? t("現在のプラン") : text(`${plan.name}で、もっと伝える`, `Make room with ${plan.name}`)}<ArrowRight className="h-4 w-4" /></button>
+                <button disabled={!canPurchase} onClick={() => { setSelection({ plan: plus ? "plus" : "premium", term }); setBillingError(null); }} className={`flex min-h-12 w-full items-center justify-center gap-2 rounded-full px-4 font-bold transition-transform active:scale-[0.98] disabled:opacity-40 ${plus ? "bg-[#1D9BF0] text-white" : "border border-[#1D9BF0] text-[#1D9BF0]"}`}>{current === plan.name.toLowerCase() ? t("現在のプラン") : text(`${plan.name}で、もっと伝える`, `Make room with ${plan.name}`)}<ArrowRight className="h-4 w-4" /></button>
               </div>
             </section>;
           })}
@@ -132,7 +133,7 @@ export default function PlansPage() {
           })()}
           <p className="text-sm">{text("続けるとStripeの決済画面に移動します。最終金額と規約を確認してお支払いください。", "Continue to Stripe to review the final amount and terms before paying.")}</p>
           <label className="flex min-h-11 items-start gap-3 py-2 text-sm"><input type="checkbox" checked={accepted} onChange={event => setAccepted(event.target.checked)} disabled={busy} className="mt-1 h-5 w-5 shrink-0 accent-[#1D9BF0]" /><span>{text("表示された金額・自動更新・解約条件と、利用規約・特商法表記を確認しました。", "I have reviewed the amount, renewal and cancellation conditions, Terms and commerce notice.")} <Link to="/terms" className="text-[#1D9BF0] underline">{t("利用規約")}</Link> · <Link to="/commerce" className="text-[#1D9BF0] underline">{t("特定商取引法に基づく表記")}</Link></span></label>
-          {billingError && <p role="alert" className="text-sm text-red-600">{text("決済画面を開けませんでした。時間をおいて、もう一度お試しください。繰り返す場合は接続状況の確認が必要です。", "Could not open checkout. Please try again shortly. If this continues, the billing connection needs review.")}</p>}
+          {billingError && <div role="alert" className="space-y-2 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"><p className="font-bold">{text("決済画面を開けませんでした", "Could not open checkout")}</p><p>{billingErrorMessage(billingError.code, language === "en")}</p><p className="break-all text-xs">{text("エラーコード", "Error code")}: {billingError.code}{billingError.status ? ` (HTTP ${billingError.status})` : ""}</p></div>}
           {!accepted && <p className="text-xs text-muted-foreground">{text("上の確認欄にチェックを入れると進めます。", "Check the agreement above to continue.")}</p>}
           <button disabled={!canPurchase || !accepted} onClick={() => void proceed("checkout")} className="min-h-11 w-full rounded-full bg-[#1D9BF0] px-4 font-bold text-white disabled:opacity-40">{busy ? text("処理中…", "Processing…") : text("Stripeの決済画面へ", "Continue to Stripe")}</button>
           <button disabled={busy} onClick={() => setSelection(null)} className="min-h-11 w-full text-sm">{text("戻る", "Back")}</button>

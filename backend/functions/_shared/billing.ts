@@ -61,7 +61,9 @@ export async function stripe(path: string, params?: Record<string, string>, idem
     const detail = await response.json().catch(() => null);
     // Never log credentials, customer data, request bodies or Stripe messages.
     console.error("stripe_request_failed", JSON.stringify({ endpoint: path.split("?")[0].replace(/cus_[A-Za-z0-9]+|sub_[A-Za-z0-9]+|cs_[A-Za-z0-9_]+/g, "[id]"), status: response.status, type: detail?.error?.type, code: detail?.error?.code, param: detail?.error?.param, request_id: response.headers.get("request-id") }));
-    throw new BillingError("stripe_unavailable", 502);
+    const stripeCode = detail?.error?.code;
+    const safeCode = typeof stripeCode === "string" && /^[a-z0-9_]{1,70}$/.test(stripeCode) ? `stripe_${stripeCode}` : "stripe_unavailable";
+    throw new BillingError(safeCode, 502);
   }
   return await response.json();
 }
