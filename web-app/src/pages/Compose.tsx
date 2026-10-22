@@ -7,6 +7,7 @@ import { Avatar, QuoteCard, useTimeline } from "@/components/TweetFeed";
 import { useAuth } from "@/hooks/authContext";
 import { useOwnProfile } from "@/hooks/useOwnProfile";
 import { t, useLanguage } from "@/lib/language";
+import { PostBodyInput } from "@/components/PostBodyInput";
 import { usePostLimit } from "@/lib/accountPlan";
 import { insertPost, type PollDraft } from "@/lib/posts";
 import { MAX_POLL_OPTIONS, MAX_POLL_OPTION_CHARS } from "@/lib/polls";
@@ -100,7 +101,9 @@ export default function ComposePage() {
         {!entitlement.ready && <div className="px-4 py-2 text-sm" role="status">{t(entitlement.isError ? "契約情報を取得できませんでした。" : "読み込み中…")}<button type="button" onClick={() => void entitlement.refetch()} className="min-h-11 px-3 text-[#1D9BF0]">{t("再読み込み")}</button></div>}
         <div className="flex gap-3 px-4 pt-2">
           <Avatar initial={own?.initial ?? "あ"} index={0} url={own?.avatar} size={40} />
-          <textarea
+          <PostBodyInput
+            characterLimit={MAX_CHARACTERS}
+            limitReady={entitlement.ready}
             value={draft}
             onChange={(event) => change(event.target.value)}
             placeholder={replyId ? t("返信を投稿") : `${t("今の気持ちを。")} (${MAX_CHARACTERS})`}

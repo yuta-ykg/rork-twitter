@@ -14,6 +14,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { SkipForward, Volume2, CircleStop, Ban, Bell, Ellipsis, Link2, Pencil, Trash2, VolumeX, Heart, House, Mail, MessageCircle, Quote, Repeat2, Search, Settings, Share, SquarePen } from "lucide-react";
 import type { ReactNode, TouchEvent } from "react";
 import { useEffect, useRef, useState } from "react";
+import { PostBodyInput } from "@/components/PostBodyInput";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 
 export function useTimeline() {
@@ -438,7 +439,9 @@ export function TweetRow({ post, nextPost }: { post: Post; nextPost?: Post }) {
         {editing ? (
           <div className="mt-1 space-y-2">
             {!entitlement.ready && <div role="status" className="text-sm">{t(entitlement.isError ? "契約情報を取得できませんでした。" : "読み込み中…")}<button type="button" onClick={() => void entitlement.refetch()} className="min-h-11 px-3 text-[#1D9BF0]">{t("再読み込み")}</button></div>}
-            <textarea
+            <PostBodyInput
+              characterLimit={limit}
+              limitReady={entitlement.ready}
               value={draftBody}
               onChange={(event) => setDraftBody(event.target.value)}
               rows={3}
