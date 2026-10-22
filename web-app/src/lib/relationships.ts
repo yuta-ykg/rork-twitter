@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { prepareBillingDeletion } from "@/lib/billing";
 
 export type RelationKind = "mute" | "block";
 
@@ -22,6 +23,7 @@ export async function setRelationship(targetId: string, kind: RelationKind, acti
 
 /** 自分の投稿・いいね・プロフィールなどをサーバーから削除する。 */
 export async function deleteAccount(userId: string): Promise<void> {
+  await prepareBillingDeletion(userId);
   const { error } = await supabase.rpc("delete_account", { expected_user_id: userId });
   if (error) throw error;
 }

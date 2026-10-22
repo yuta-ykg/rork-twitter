@@ -21,11 +21,14 @@ export type Database = {
       billing_accounts: {
         Row: {
           cancel_at_period_end: boolean
+          deletion_pending: boolean
+          deletion_verified: boolean
           introductory_discount_used: boolean
           paid_through: string | null
           plan: string
           status: string
           stripe_customer_id: string | null
+          stripe_state_created: number
           stripe_subscription_id: string | null
           term: string | null
           updated_at: string
@@ -33,11 +36,14 @@ export type Database = {
         }
         Insert: {
           cancel_at_period_end?: boolean
+          deletion_pending?: boolean
+          deletion_verified?: boolean
           introductory_discount_used?: boolean
           paid_through?: string | null
           plan?: string
           status?: string
           stripe_customer_id?: string | null
+          stripe_state_created?: number
           stripe_subscription_id?: string | null
           term?: string | null
           updated_at?: string
@@ -45,11 +51,14 @@ export type Database = {
         }
         Update: {
           cancel_at_period_end?: boolean
+          deletion_pending?: boolean
+          deletion_verified?: boolean
           introductory_discount_used?: boolean
           paid_through?: string | null
           plan?: string
           status?: string
           stripe_customer_id?: string | null
+          stripe_state_created?: number
           stripe_subscription_id?: string | null
           term?: string | null
           updated_at?: string
@@ -64,6 +73,99 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      billing_checkouts: {
+        Row: {
+          completed: boolean
+          created_at: string
+          expires_at: string
+          id: string
+          introductory: boolean
+          plan: string
+          session_id: string | null
+          session_url: string | null
+          term: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          created_at?: string
+          expires_at?: string
+          id?: string
+          introductory: boolean
+          plan: string
+          session_id?: string | null
+          session_url?: string | null
+          term: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          created_at?: string
+          expires_at?: string
+          id?: string
+          introductory?: boolean
+          plan?: string
+          session_id?: string | null
+          session_url?: string | null
+          term?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      billing_events: {
+        Row: {
+          event_id: string
+          processed_at: string
+        }
+        Insert: {
+          event_id: string
+          processed_at?: string
+        }
+        Update: {
+          event_id?: string
+          processed_at?: string
+        }
+        Relationships: []
+      }
+      billing_payments: {
+        Row: {
+          grant_created: number
+          paid: boolean
+          paid_through: string | null
+          payment_id: string
+          plan: string | null
+          refunded: boolean
+          subscription_id: string | null
+          term: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          grant_created?: number
+          paid?: boolean
+          paid_through?: string | null
+          payment_id: string
+          plan?: string | null
+          refunded?: boolean
+          subscription_id?: string | null
+          term?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          grant_created?: number
+          paid?: boolean
+          paid_through?: string | null
+          payment_id?: string
+          plan?: string | null
+          refunded?: boolean
+          subscription_id?: string | null
+          term?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       dm_messages: {
         Row: {
@@ -443,9 +545,58 @@ export type Database = {
     }
     Functions: {
       acting_user_id: { Args: never; Returns: string }
+      apply_billing_event: {
+        Args: { event_key: string; payload: Json; target: string }
+        Returns: undefined
+      }
+      begin_billing_deletion: {
+        Args: { target: string }
+        Returns: {
+          cancel_at_period_end: boolean
+          deletion_pending: boolean
+          deletion_verified: boolean
+          introductory_discount_used: boolean
+          paid_through: string | null
+          plan: string
+          status: string
+          stripe_customer_id: string | null
+          stripe_state_created: number
+          stripe_subscription_id: string | null
+          term: string | null
+          updated_at: string
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "billing_accounts"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       can_view_account: {
         Args: { author_id: string; viewer_id: string }
         Returns: boolean
+      }
+      claim_billing_checkout: {
+        Args: { selected_plan: string; selected_term: string; target: string }
+        Returns: {
+          completed: boolean
+          created_at: string
+          expires_at: string
+          id: string
+          introductory: boolean
+          plan: string
+          session_id: string | null
+          session_url: string | null
+          term: string
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "billing_checkouts"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       create_poll: {
         Args: {

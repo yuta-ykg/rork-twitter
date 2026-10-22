@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { prepareBillingDeletion } from "@/lib/billing";
 
 export const MAX_SUB_ACCOUNTS = 5;
 
@@ -37,6 +38,7 @@ export async function createSubAccount(name: string, handle: string): Promise<Su
 
 /** サブアカウントとその投稿・いいね等を削除する。 */
 export async function deleteSubAccount(id: string): Promise<void> {
+  await prepareBillingDeletion(id);
   const { error } = await supabase.rpc("delete_sub_account", { sub_id: id });
   if (error) throw error;
 }

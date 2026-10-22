@@ -53,6 +53,7 @@ enum SubAccountService {
     }
 
     static func delete(id: String) async throws {
+        try await BillingDeletionService.prepare(userId: id)
         try await IrukaDatabase.client.rpc("delete_sub_account", params: DeleteSubParams(sub_id: id)).execute()
     }
 }

@@ -5,6 +5,7 @@ import { t, useLanguage } from "@/lib/language";
 type Clause = [string, string];
 
 const JA: Clause[] = [
+  ["決済情報の取り扱い", "決済処理はStripeに委託します。Stripeはカード情報や請求に必要な情報を取り扱います。本サービスではカード番号全体やセキュリティコードを保存しません。アカウントとStripeの顧客・契約・決済の識別子、購入プラン、支払済み期間、返金・解約状態、通知の処理記録を、契約提供、本人確認、不正防止、会計・法令対応のため保持します。決済情報は他の利用者には公開しません。アカウント削除後も、会計・法令上必要な決済記録は必要な期間保持し、不要になった情報は適切に削除します。"],
   [
     "運営者情報",
     "運営者: 山崎裕太\n所在地: 岡山県\n問い合わせ先: yuta1102orenge@icloud.com"
@@ -52,6 +53,7 @@ const JA: Clause[] = [
 ];
 
 const EN: Clause[] = [
+  ["Billing information", "Stripe processes payments and handles card and billing information. We do not store full card numbers or security codes. We retain account-linked Stripe customer, subscription and payment identifiers, plan, paid period, refund/cancellation status and notification processing records to provide benefits, verify identity, prevent fraud and meet accounting/legal obligations. Billing information is not public. After account deletion, legally required billing records are retained for the necessary period and information no longer needed is appropriately deleted."],
   [
     "Operator",
     "Operator: Yuta Yamazaki\nLocation: Okayama, Japan\nContact: yuta1102orenge@icloud.com"
@@ -98,8 +100,8 @@ const EN: Clause[] = [
   ]
 ];
 
-const UPDATED_JA = "最終更新日: 2026年10月13日";
-const UPDATED_EN = "Last updated: October 13, 2026";
+const UPDATED_JA = "最終更新日: 2026年10月22日";
+const UPDATED_EN = "Last updated: October 22, 2026";
 
 /** プライバシーポリシー。ログインなしでも読める。 */
 export default function PrivacyPage() {

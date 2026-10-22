@@ -22,7 +22,7 @@ const actingFetch: typeof fetch = (input, init) => {
   const id = actingId();
   if (!id) return fetch(input, init);
   const headers = new Headers(init?.headers ?? (input instanceof Request ? input.headers : undefined));
-  headers.set("x-acting-as", id);
+  if (!headers.has("x-acting-as")) headers.set("x-acting-as", id);
   return fetch(input, { ...init, headers });
 };
 

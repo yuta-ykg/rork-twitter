@@ -297,6 +297,7 @@ final class PostStore {
     func deleteAccount() async -> Bool {
         guard let userId = currentUserId else { return false }
         do {
+            try await BillingDeletionService.prepare(userId: userId)
             try await IrukaDatabase.client
                 .rpc("delete_account", params: DeleteAccountParams(expected_user_id: userId))
                 .execute()

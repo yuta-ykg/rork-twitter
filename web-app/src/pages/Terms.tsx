@@ -5,6 +5,7 @@ import { t, useLanguage } from "@/lib/language";
 type Clause = [string, string];
 
 const JA: Clause[] = [
+  ["有料プラン・決済", "Plus・PremiumはWebのStripe決済で購入します。対象アカウントにのみ適用し、メイン・サブ間では共有しません。同じアカウントではWeb・iOSで特典を利用できます。月額・年額は自動更新し、初回割引は対象アカウントの最初の月額・年額契約に一度限りです。以後は通常価格になります。永久は本サービスの提供期間中の利用権で、自動更新はありません。契約中の重複購入・プラン変更はできません。支払方法、金額、更新・解約・返金条件は特定商取引法に基づく表記と購入確認画面に記載します。通常の解約は期間末に適用し、全額返金では該当期間の特典を終了、一部返金では維持します。契約終了後も既存の長文投稿は残ります。アカウント削除時は先に更新を停止し、確認に失敗した場合は削除せず再試行をお願いする場合があります。法令上必要な決済記録は削除後も必要な期間保持します。"],
   ["運営者情報", "運営者: 山崎裕太\n所在地: 岡山県\n問い合わせ先: yuta1102orenge@icloud.com"],
   [
     "第1条（適用）",
@@ -49,6 +50,7 @@ const JA: Clause[] = [
 ];
 
 const EN: Clause[] = [
+  ["Paid plans and billing", "Plus and Premium are purchased on the web through Stripe and apply only to the selected account, not to other main/sub-accounts. Benefits for that same account work on web and iOS. Monthly/yearly plans renew automatically. An introductory discount applies once to the account's first monthly/yearly contract; regular prices apply thereafter. Lifetime means the operating lifetime of this service, with no renewal. Duplicate purchases and plan changes are unavailable during a contract. Prices, payment, renewal, cancellation and refund conditions are shown in the commerce notice and purchase review. Normal cancellation takes effect at period end. Full refunds end the affected period's benefits; partial refunds preserve them. Existing long posts remain after expiry. Account deletion first stops renewal and may require a retry if cancellation cannot be confirmed. Legally required billing records are retained for the necessary period after deletion."],
   ["Operator", "Operator: Yuta Yamazaki\nLocation: Okayama, Japan\nContact: yuta1102orenge@icloud.com"],
   [
     "Article 1 (Scope)",
@@ -92,8 +94,8 @@ const EN: Clause[] = [
   ]
 ];
 
-const UPDATED_JA = "最終更新日: 2026年10月13日";
-const UPDATED_EN = "Last updated: October 13, 2026";
+const UPDATED_JA = "最終更新日: 2026年10月22日";
+const UPDATED_EN = "Last updated: October 22, 2026";
 
 /** 利用規約。ログインなしでも読める。 */
 export default function TermsPage() {

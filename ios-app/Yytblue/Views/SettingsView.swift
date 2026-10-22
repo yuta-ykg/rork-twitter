@@ -166,7 +166,13 @@ struct SettingsView: View {
             Button(L("削除する"), role: .destructive) {
                 Task {
                     isDeleting = true
-                    for sub in auth.subAccounts { try? await SubAccountService.delete(id: sub.id) }
+                    do {
+                        for sub in auth.subAccounts { try await SubAccountService.delete(id: sub.id) }
+                    } catch {
+                        isDeleting = false
+                        deleteFailed = true
+                        return
+                    }
                     auth.switchPersona(nil)
                     let ok = await store.deleteAccount()
                     isDeleting = false

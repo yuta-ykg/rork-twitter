@@ -1,3 +1,4 @@
+import { checkoutEnabled, siteURL } from "../_shared/billing.ts";
 // Read-only readiness endpoint. Never creates a payment or returns Stripe secrets/account data.
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -24,6 +25,9 @@ Deno.serve(async (req: Request) => {
       if (response.ok) {
         const balance = await response.json();
         value.connected = typeof balance.livemode === "boolean";
+        if (value.connected && checkoutEnabled()) {
+          try { siteURL(); value.checkout_enabled = true; } catch { /* Keep disabled for invalid return URLs. */ }
+        }
         value.mode = balance.livemode === true ? "live" : balance.livemode === false ? "test" : "unknown";
       }
     } catch {
