@@ -3,6 +3,7 @@ import { useLayoutEffect, useSyncExternalStore } from "react";
 export type Language = "ja" | "en" | "ko" | "zh-CN" | "zh-TW";
 const key = "iruka-language";
 const english: Record<string, string> = {
+  "無料プランは280字までです。Plusなら500字まで投稿できます。": "The free plan allows up to 280 characters. With Plus, you can post up to 500 characters.",
   "今の気持ちを。": "Share how you feel.",
   "今の気持ちを投稿しましょう。": "Share how you feel in a post.",
   "280字から、書こう。": "Start with 280 characters.",

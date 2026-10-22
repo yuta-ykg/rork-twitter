@@ -446,6 +446,11 @@ export function TweetRow({ post, nextPost }: { post: Post; nextPost?: Post }) {
               autoFocus
               className="w-full resize-none rounded-2xl border border-border bg-background px-3 py-2 text-[15px] leading-5 outline-none focus:border-[#1D9BF0]"
             />
+            {entitlement.ready && entitlement.data?.plan === "free" && Array.from(draftBody).length > 280 && (
+              <p role="status" className="rounded-xl bg-[#1D9BF0]/10 px-3 py-2 text-sm text-foreground">
+                {t("無料プランは280字までです。Plusなら500字まで投稿できます。")}
+              </p>
+            )}
             <div className="flex items-center justify-between gap-2">
               <span className={`text-[13px] ${draftLength > limit ? "text-destructive" : draftLength >= limit - 10 ? "text-orange-500" : "text-muted-foreground"}`}>{draftLength}/{limit}</span>
               <div className="flex gap-2">

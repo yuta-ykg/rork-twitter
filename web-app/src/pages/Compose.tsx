@@ -108,6 +108,11 @@ export default function ComposePage() {
             autoFocus
           />
         </div>
+        {entitlement.ready && entitlement.data?.plan === "free" && count > 280 && (
+          <p role="status" className="mx-4 ml-[68px] mt-2 rounded-xl bg-[#1D9BF0]/10 px-3 py-2 text-sm text-foreground">
+            {t("無料プランは280字までです。Plusなら500字まで投稿できます。")}
+          </p>
+        )}
         {preview ? (
           <div className="relative mx-4 ml-[68px] mt-2 overflow-hidden rounded-2xl border border-border">
             <img src={preview} alt={t("選んだ画像")} className="max-h-80 w-full object-cover" />
