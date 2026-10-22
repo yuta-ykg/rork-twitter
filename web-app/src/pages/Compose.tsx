@@ -80,6 +80,7 @@ export default function ComposePage() {
       const poll: PollDraft | null = pollOn ? { options: filledOptions, durationMinutes: effectiveDuration } : null;
       if (editId) {
         await updatePostBody(editId, trimmed, user.id);
+        await queryClient.invalidateQueries({ queryKey: ["post-edit-history", user.id, editId] });
         toast.success(t("投稿を更新しました"));
       } else {
         await insertPost(trimmed, user, image, quoteId, replyId, poll);

@@ -22,14 +22,20 @@ export function PostEditHistory({ post }: { post: Post }) {
   });
   if (!post.editedAt) return null;
   return <>
-    <button type="button" className="min-h-11 text-[13px] text-muted-foreground underline-offset-4 hover:underline" onClick={() => { setOpen(true); dialog.current?.showModal(); }}>{t("編集済み")}</button>
+    <button type="button" className="min-h-11 text-[13px] text-[#1D9BF0] underline underline-offset-4" onClick={() => { setOpen(true); dialog.current?.showModal(); }}>{t("編集済み")}</button>
     <dialog ref={dialog} aria-label={t("編集履歴")} onClose={() => setOpen(false)} className="m-auto max-h-[80dvh] w-[calc(100%-32px)] max-w-lg space-y-3 overflow-y-auto rounded-2xl bg-background p-5 text-foreground shadow-lg backdrop:bg-black/40">
         <h2 className="text-[17px] font-bold">{t("編集履歴")}</h2>
         <p className="text-[13px] text-muted-foreground">{t("編集前の本文と、変更された日時を表示します。")}</p>
         {history.isPending ? <p>{t("読み込み中…")}</p> : null}
         {history.isError ? <div><p>{t("履歴を読み込めませんでした。")}</p><button type="button" className="min-h-11 text-[#1D9BF0]" onClick={() => void history.refetch()}>{t("再読み込み")}</button></div> : null}
+        <section className="rounded-xl border border-border p-3">
+          <h3 className="text-sm font-bold">{t("現在の本文")}</h3>
+          <p className="mt-2 whitespace-pre-wrap break-words text-[15px]">{post.body}</p>
+        </section>
+        {history.isSuccess && history.data.length === 0 && <p className="text-sm text-muted-foreground">{t("表示できる編集履歴はありません。")}</p>}
         <ol className="divide-y divide-border">
           {history.data?.map((entry) => <li key={entry.id} className="py-4">
+            <p className="mb-1 text-sm font-bold">{t("編集前の本文")}</p>
             <time dateTime={entry.edited_at} className="text-[13px] text-muted-foreground">{new Date(entry.edited_at).toLocaleString(language, { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit" })}</time>
             <p className="mt-2 whitespace-pre-wrap break-words text-[15px]">{entry.body}</p>
           </li>)}
