@@ -7,6 +7,7 @@ import { Avatar, QuoteCard, useTimeline } from "@/components/TweetFeed";
 import { useAuth } from "@/hooks/authContext";
 import { useOwnProfile } from "@/hooks/useOwnProfile";
 import { t, useLanguage } from "@/lib/language";
+import { PostLimitLabel } from "@/components/PostLimitLabel";
 import { PostBodyInput } from "@/components/PostBodyInput";
 import { usePostLimit } from "@/lib/accountPlan";
 import { insertPost, type PollDraft } from "@/lib/posts";
@@ -90,6 +91,9 @@ export default function ComposePage() {
             {replyId ? t("返信する") : t("投稿する")}
           </button>
         </header>
+        <div className="px-4 pb-2">
+          <PostLimitLabel limit={MAX_CHARACTERS} ready={entitlement.ready} plan={entitlement.data?.plan} />
+        </div>
         {replyId ? (
           <div className="px-4 pt-1">
             <QuoteCard post={replyTarget} />
@@ -106,7 +110,7 @@ export default function ComposePage() {
             limitReady={entitlement.ready}
             value={draft}
             onChange={(event) => change(event.target.value)}
-            placeholder={replyId ? t("返信を投稿") : `${t("今の気持ちを。")} (${MAX_CHARACTERS})`}
+            placeholder={replyId ? t("返信を投稿") : t("今の気持ちを。")}
             className="h-40 w-full resize-none overflow-y-auto bg-transparent text-lg outline-none placeholder:text-muted-foreground"
             autoFocus
           />
@@ -270,7 +274,7 @@ export default function ComposePage() {
             </button>
           ) : null}
           </div>
-          <p className="font-mono text-[15px] text-muted-foreground">{count} / {MAX_CHARACTERS}</p>
+          <PostLimitLabel count={count} limit={MAX_CHARACTERS} ready={entitlement.ready} />
         </div>
       </div>
     </div>

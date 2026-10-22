@@ -14,6 +14,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { SkipForward, Volume2, CircleStop, Ban, Bell, Ellipsis, Link2, Pencil, Trash2, VolumeX, Heart, House, Mail, MessageCircle, Quote, Repeat2, Search, Settings, Share, SquarePen } from "lucide-react";
 import type { ReactNode, TouchEvent } from "react";
 import { useEffect, useRef, useState } from "react";
+import { PostLimitLabel } from "@/components/PostLimitLabel";
 import { PostBodyInput } from "@/components/PostBodyInput";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 
@@ -438,6 +439,10 @@ export function TweetRow({ post, nextPost }: { post: Post; nextPost?: Post }) {
         ) : null}
         {editing ? (
           <div className="mt-1 space-y-2">
+            <div>
+              <h3 className="text-sm font-bold">{t("投稿を編集")}</h3>
+              <PostLimitLabel limit={limit} ready={entitlement.ready} plan={entitlement.data?.plan} />
+            </div>
             {!entitlement.ready && <div role="status" className="text-sm">{t(entitlement.isError ? "契約情報を取得できませんでした。" : "読み込み中…")}<button type="button" onClick={() => void entitlement.refetch()} className="min-h-11 px-3 text-[#1D9BF0]">{t("再読み込み")}</button></div>}
             <PostBodyInput
               characterLimit={limit}
@@ -457,7 +462,7 @@ export function TweetRow({ post, nextPost }: { post: Post; nextPost?: Post }) {
               </p>
             )}
             <div className="flex items-center justify-between gap-2">
-              <span className={`text-[13px] ${draftLength > limit ? "text-destructive" : draftLength >= limit - 10 ? "text-orange-500" : "text-muted-foreground"}`}>{draftLength}/{limit}</span>
+              <PostLimitLabel count={Array.from(draftBody).length} limit={limit} ready={entitlement.ready} />
               <div className="flex gap-2">
                 <button
                   type="button"
