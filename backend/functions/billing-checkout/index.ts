@@ -55,7 +55,9 @@ Deno.serve(async (req: Request) => {
       "line_items[0][price]": price.id, "line_items[0][quantity]": "1",
       "payment_method_types[0]": "card", client_reference_id: id,
       success_url: `${site}/plans?billing=success`, cancel_url: `${site}/plans?billing=canceled`,
-      expires_at: String(Math.floor(new Date(checkout.created_at).getTime() / 1000) + 1800),
+      // Stripe requires at least 30 minutes from receipt, not reservation creation.
+      // Keep a stable timestamp for idempotent retries and a generous creation margin.
+      expires_at: String(Math.floor(new Date(checkout.created_at).getTime() / 1000) + 3600),
       "metadata[account_id]": id, "metadata[checkout_id]": checkout.id,
       "metadata[plan]": plan, "metadata[term]": term,
       "custom_text[submit][message]": "Benefits apply only to the selected Yytblue account. Monthly/yearly plans renew at the regular price. Cancel from Plans before renewal.",
