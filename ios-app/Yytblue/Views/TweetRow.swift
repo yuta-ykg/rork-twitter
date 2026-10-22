@@ -5,6 +5,7 @@ struct TweetRow: View {
     @AppStorage("iruka-language") private var language = AppLanguage.ja.rawValue
     @Environment(PostStore.self) private var store
     @State private var speech = PostSpeech.shared
+    @State private var showsGemini = false
     @State private var notice: String?
     @State private var confirmDelete = false
     @State private var showsQuoteExplanation: Bool = false
@@ -116,6 +117,7 @@ struct TweetRow: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .onDisappear { if speech.activeId == post.id { speech.stop() } }
+        .sheet(isPresented: $showsGemini) { AskGeminiView(post: post) }
         .alert(L("引用元の投稿について"), isPresented: $showsQuoteExplanation) {
             Button(L("閉じる"), role: .cancel) {}
         } message: {
@@ -136,6 +138,9 @@ struct TweetRow: View {
 
     private var moreMenu: some View {
         Menu {
+            Button { showsGemini = true } label: {
+                Label(L("Geminiに聞く"), systemImage: "sparkles")
+            }
             Button { speech.toggle(id: post.id, body: post.body, language: language) } label: {
                 Label(L(speech.activeId == post.id ? "読み上げを停止" : "投稿を読み上げ"), systemImage: speech.activeId == post.id ? "stop.circle" : "speaker.wave.2")
             }

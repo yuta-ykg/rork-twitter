@@ -53,6 +53,11 @@ func formatDate(_ date: Date, includeTime: Bool = true) -> String {
 }
 
 private let englishMessages: [String: String] = [
+    "Geminiに聞く": "Ask Gemini",
+    "質問": "Question",
+    "回答を生成中…": "Generating answer…",
+    "回答を取得できませんでした。もう一度お試しください。": "Couldn't get an answer. Please try again.",
+    "送信すると投稿本文と質問がAIサービスに送られます。回答は不正確な場合があります。": "Sending shares the post text and your question with the AI service. Answers may be inaccurate.",
     "読み上げ中": "Reading aloud",
     "読み上げ速度": "Reading speed",
     "遅い": "Slow",

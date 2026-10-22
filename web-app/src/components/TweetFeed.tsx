@@ -1,3 +1,4 @@
+import { AskGemini } from "@/components/AskGemini";
 import { usePostSpeech, togglePostSpeech, stopPostSpeech } from "@/lib/postSpeech";
 import { avatarFills, deletePost, fetchPosts, setPostLike, setPostRepost, sortTimeline, updatePostBody, type Post } from "@/lib/posts";
 import { t, useLanguage } from "@/lib/language";
@@ -173,6 +174,7 @@ export function TweetList({ posts, empty, searching = false }: { posts: Post[]; 
 }
 
 export function TweetRow({ post, nextPost }: { post: Post; nextPost?: Post }) {
+  const [askGemini, setAskGemini] = useState(false);
   const speakingId = usePostSpeech();
   const isSpeaking = speakingId === post.id;
   const speakingRef = useRef(isSpeaking);
@@ -329,6 +331,7 @@ export function TweetRow({ post, nextPost }: { post: Post; nextPost?: Post }) {
       <Link to={post.isMine ? "/mine" : post.userId ? `/u/${post.userId}` : "#"} className="h-fit shrink-0" aria-label={post.authorName}>
         <Avatar initial={post.initial} index={post.avatarIndex} url={post.avatarUrl} size={40} />
       </Link>
+      {askGemini && <AskGemini post={post} open={askGemini} onClose={() => setAskGemini(false)} />}
       <div className="min-w-0 flex-1">
         {isSpeaking ? (
           <div className="flex flex-wrap items-center gap-x-4 text-sm text-[#1D9BF0]">
@@ -369,6 +372,7 @@ export function TweetRow({ post, nextPost }: { post: Post; nextPost?: Post }) {
                 <>
                   <button type="button" aria-label={t("閉じる")} className="fixed inset-0 z-20 cursor-default" onClick={() => setMoreOpen(false)} />
                   <div role="menu" className="absolute right-0 top-9 z-30 w-56 overflow-hidden rounded-2xl border border-border bg-background py-1 text-[15px] font-bold text-foreground shadow-[0_4px_20px_rgba(0,0,0,0.15)]">
+                    <button type="button" role="menuitem" onClick={() => { setMoreOpen(false); setAskGemini(true); }} className="flex min-h-11 w-full items-center gap-3 px-4 py-2 text-left active:bg-muted">{t("Geminiに聞く")}</button>
                     <button type="button" role="menuitem" onClick={() => { setMoreOpen(false); togglePostSpeech(post.id, post.body, language); }} className="flex min-h-11 w-full items-center gap-3 px-4 py-2 text-left active:bg-muted">
                       {isSpeaking ? <CircleStop className="h-[18px] w-[18px]" aria-hidden /> : <Volume2 className="h-[18px] w-[18px]" aria-hidden />}
                       <span>{t(isSpeaking ? "読み上げを停止" : "投稿を読み上げ")}</span>

@@ -3,6 +3,10 @@ import { useLayoutEffect, useSyncExternalStore } from "react";
 export type Language = "ja" | "en" | "ko" | "zh-CN" | "zh-TW";
 const key = "iruka-language";
 const english: Record<string, string> = {
+  "Geminiに聞く": "Ask Gemini",
+  "回答を生成中…": "Generating answer…",
+  "回答を取得できませんでした。もう一度お試しください。": "Couldn't get an answer. Please try again.",
+  "送信すると投稿本文と質問がAIサービスに送られます。回答は不正確な場合があります。": "Sending shares the post text and your question with the AI service. Answers may be inaccurate.",
   "次の投稿": "Next post",
   "次の投稿はありません": "No next post",
   "読み上げ中": "Reading aloud",
