@@ -1,3 +1,7 @@
+import { QuoteCard } from "@/components/TweetFeed";
+import { useOwnProfile } from "@/hooks/useOwnProfile";
+import { fetchProfile } from "@/lib/profiles";
+import { userHandle } from "@/hooks/authUser";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/authContext";
@@ -42,6 +46,13 @@ export default function SettingsPage() {
   const { speechSpeed, setSpeechSpeed } = useSpeechSpeed();
   const { user, owner, signOut, accounts, switchAccount, removeAccount: forgetAccount, signIn, isSigningIn, subAccounts, switchPersona, reloadSubAccounts } = useAuth();
   const onSub = Boolean(owner && user && owner.id !== user.id);
+  const ownProfile = useOwnProfile();
+  const ownerProfile = useQuery({
+    queryKey: ["ownProfile", owner?.id],
+    queryFn: () => fetchProfile(owner!.id),
+    enabled: !!owner?.id,
+  });
+  const ownerHandle = ownerProfile.data?.handle ? `@${ownerProfile.data.handle}` : owner ? userHandle(owner) : "";
   const [showCreate, setShowCreate] = useState<boolean>(false);
   const [subName, setSubName] = useState<string>("");
   const [subHandle, setSubHandle] = useState<string>("");
@@ -180,7 +191,6 @@ export default function SettingsPage() {
               { id: "system", label: t("システム") },
             ]}
           />
-          <p className="text-[13px] text-muted-foreground">{t("システムを選ぶと端末の外観設定に合わせて切り替わります。")}</p>
         </section>
         <section className="space-y-2 px-4 pt-8" aria-label={t("文字サイズ")}>
           <h2 className="text-[13px] font-bold text-muted-foreground">{t("文字サイズ")}</h2>
@@ -189,8 +199,19 @@ export default function SettingsPage() {
             { id: "large", label: t("大") },
             { id: "extra-large", label: t("特大") },
           ]} />
-          <p className="rounded-xl bg-muted p-4 text-[15px] leading-relaxed" aria-live="polite">{t("この大きさで投稿やメニューを表示します。")}</p>
-          <p className="text-[13px] text-muted-foreground">{t("文字サイズはこのブラウザに保存されます。")}</p>
+          <div aria-live="polite">
+            <QuoteCard post={{
+              id: "text-size-preview",
+              authorName: ownProfile?.name ?? t("投稿"),
+              handle: ownProfile?.handle ?? "@iruka",
+              initial: ownProfile?.initial ?? "い",
+              avatarUrl: ownProfile?.avatar,
+              avatarIndex: 0,
+              body: t("今の気持ちを投稿しましょう。"),
+              createdAt: "",
+              isMine: true,
+            }} />
+          </div>
         </section>
         <section className="space-y-2 px-4 pt-8">
           <h2 className="text-[13px] font-bold text-muted-foreground" id="speech-speed-label">{t("読み上げ速度")}</h2>
@@ -201,7 +222,6 @@ export default function SettingsPage() {
               { id: "fast", label: t("速い") },
             ]} />
           </div>
-          <p className="text-[13px] text-muted-foreground">{t("読み上げ速度はこのブラウザに保存され、次の読み上げから適用されます。")}</p>
         </section>
         <section className="space-y-2 px-4 pt-8">
           <h2 className="text-[13px] font-bold text-muted-foreground">{t("言語")}</h2>
@@ -218,7 +238,7 @@ export default function SettingsPage() {
           <section className="space-y-2 px-4 pt-8">
             <h2 className="text-[13px] font-bold text-muted-foreground">{t("サブアカウント")}</h2>
             <ul className="divide-y divide-border rounded-2xl border border-border">
-              {personaRow(owner.id, owner.name?.trim() || owner.email, t("メインアカウント"), owner.picture, !onSub, () => switchPersona(null))}
+              {personaRow(owner.id, owner.name?.trim() || owner.email, ownerHandle, owner.picture, !onSub, () => switchPersona(null))}
               {subAccounts.map((sub) =>
                 personaRow(sub.id, sub.name, sub.handle ? `@${sub.handle}` : "", sub.avatarUrl ?? undefined, user?.id === sub.id, () => switchPersona(sub), () => setSubDelete(sub)),
               )}
@@ -249,7 +269,6 @@ export default function SettingsPage() {
             ) : (
               <p className="text-[13px] text-muted-foreground">{t("サブアカウントは最大5つまでです。")}</p>
             )}
-            <p className="text-[13px] text-muted-foreground">{t("サブアカウントは投稿・フォロー・通知・いいねがすべて別になり、他のユーザーには別人として表示されます。")}</p>
           </section>
         ) : null}
         {enabled ? (
