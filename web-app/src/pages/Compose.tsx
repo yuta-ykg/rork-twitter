@@ -7,7 +7,8 @@ import { Avatar, QuoteCard, useTimeline } from "@/components/TweetFeed";
 import { useAuth } from "@/hooks/authContext";
 import { useOwnProfile } from "@/hooks/useOwnProfile";
 import { t, useLanguage } from "@/lib/language";
-import { insertPost, MAX_CHARACTERS, type PollDraft } from "@/lib/posts";
+import { usePostLimit } from "@/lib/accountPlan";
+import { insertPost, type PollDraft } from "@/lib/posts";
 import { MAX_POLL_OPTIONS, MAX_POLL_OPTION_CHARS } from "@/lib/polls";
 
 const DURATIONS: { minutes: number; label: string }[] = [
@@ -22,6 +23,8 @@ const MAX_DURATION = 10080;
 export default function ComposePage() {
   useLanguage();
   const { user } = useAuth();
+  const entitlement = usePostLimit();
+  const MAX_CHARACTERS = entitlement.limit;
   const own = useOwnProfile();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -52,11 +55,10 @@ export default function ComposePage() {
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
   const count = Array.from(draft).length;
   const trimmed = draft.trim();
-  const canPost = trimmed.length > 0 && Array.from(trimmed).length <= MAX_CHARACTERS && !sending && pollValid;
+  const canPost = entitlement.ready && trimmed.length > 0 && Array.from(trimmed).length <= MAX_CHARACTERS && !sending && pollValid;
 
   function change(value: string) {
-    const chars = Array.from(value);
-    setDraft(chars.length > MAX_CHARACTERS ? chars.slice(0, MAX_CHARACTERS).join("") : value);
+    setDraft(value);
   }
 
   async function submit() {
@@ -95,12 +97,13 @@ export default function ComposePage() {
             </p>
           </div>
         ) : null}
+        {!entitlement.ready && <div className="px-4 py-2 text-sm" role="status">{t(entitlement.isError ? "契約情報を取得できませんでした。" : "読み込み中…")}<button type="button" onClick={() => void entitlement.refetch()} className="min-h-11 px-3 text-[#1D9BF0]">{t("再読み込み")}</button></div>}
         <div className="flex gap-3 px-4 pt-2">
           <Avatar initial={own?.initial ?? "あ"} index={0} url={own?.avatar} size={40} />
           <textarea
             value={draft}
             onChange={(event) => change(event.target.value)}
-            placeholder={replyId ? t("返信を投稿") : t("今の気持ちを、70字まで。")}
+            placeholder={replyId ? t("返信を投稿") : `${t("今の気持ちを。")} (${MAX_CHARACTERS})`}
             className="h-40 w-full resize-none overflow-y-auto bg-transparent text-lg outline-none placeholder:text-muted-foreground"
             autoFocus
           />

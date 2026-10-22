@@ -157,6 +157,7 @@ struct TweetRow: View {
                 Button {
                     draft = post.body
                     editing = true
+                    Task { await store.loadPostLimit(userId: post.userId) }
                 } label: {
                     Label(L("投稿を編集"), systemImage: "pencil")
                 }
@@ -190,9 +191,14 @@ struct TweetRow: View {
 
     private var editField: some View {
         let trimmed = draft.trimmingCharacters(in: .whitespacesAndNewlines)
-        let count = trimmed.count
-        let canSave = count >= 1 && count <= 70
+        let count = trimmed.unicodeScalars.count
+        let canSave = count >= 1 && count <= store.characterLimit && store.limitReady
         return VStack(alignment: .leading, spacing: 8) {
+            if !store.limitReady {
+                Text(L(store.limitFailed ? "契約情報を取得できませんでした。" : "読み込み中…"))
+                Button(L("再読み込み")) { Task { await store.loadPostLimit(userId: post.userId) } }
+                    .frame(minHeight: 44)
+            }
             TextField(L("投稿本文"), text: $draft, axis: .vertical)
                 .appTextFont(size: 15)
                 .lineLimit(1...4)
@@ -201,11 +207,11 @@ struct TweetRow: View {
                 .clipShape(.rect(cornerRadius: 16))
                 .overlay { RoundedRectangle(cornerRadius: 16).stroke(Color.irukaHairline, lineWidth: 1) }
             HStack(spacing: 8) {
-                Text("\(count) / 70")
+                Text("\(count) / \(store.characterLimit)")
                     .appTextFont(size: 13)
                     .monospacedDigit()
-                    .foregroundStyle(count > 70 ? Color.red : count >= 60 ? Color.orange : Color.irukaSecondary)
-                    .accessibilityLabel("\(count) / 70")
+                    .foregroundStyle(count > store.characterLimit ? Color.red : count >= store.characterLimit - 10 ? Color.orange : Color.irukaSecondary)
+                    .accessibilityLabel("\(count) / \(store.characterLimit)")
                 Spacer(minLength: 8)
                 Button(L("キャンセル")) {
                     editing = false

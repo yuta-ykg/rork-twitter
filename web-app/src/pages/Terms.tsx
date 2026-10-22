@@ -16,7 +16,7 @@ const JA: Clause[] = [
   ],
   [
     "第3条（投稿とコンテンツ）",
-    "1. 投稿の本文は70字以内、画像は1投稿につき1枚までです。\n2. 投稿したコンテンツの権利はユーザーに帰属します。ただし、ユーザーは本サービスの運営・表示・共有に必要な範囲で、当該コンテンツを無償で利用する権利を運営者に許諾するものとします。\n3. 投稿は他のユーザーに公開され、共有リンクを知る人はログインなしで閲覧できる場合があります。公開したくない情報は投稿しないでください。"
+    "1. 投稿の本文は無料プラン280字、Plus500字、Premium2000字以内、画像は1投稿につき1枚までです。\n2. 投稿したコンテンツの権利はユーザーに帰属します。ただし、ユーザーは本サービスの運営・表示・共有に必要な範囲で、当該コンテンツを無償で利用する権利を運営者に許諾するものとします。\n3. 投稿は他のユーザーに公開され、共有リンクを知る人はログインなしで閲覧できる場合があります。公開したくない情報は投稿しないでください。"
   ],
   [
     "第4条（禁止事項）",
@@ -60,7 +60,7 @@ const EN: Clause[] = [
   ],
   [
     "Article 3 (Content)",
-    "1. Posts are limited to 70 characters and one image each.\n2. You retain rights to your content, and grant the operator a free license to use it as needed to run, display and share it in the Service.\n3. Posts are visible to other users, and anyone with a share link may view a post without signing in. Do not post information you want to keep private."
+    "1. Posts are limited to 280 characters on Free, 500 on Plus, and 2000 on Premium, with one image each.\n2. You retain rights to your content, and grant the operator a free license to use it as needed to run, display and share it in the Service.\n3. Posts are visible to other users, and anyone with a share link may view a post without signing in. Do not post information you want to keep private."
   ],
   [
     "Article 4 (Prohibited conduct)",

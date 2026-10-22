@@ -33,10 +33,10 @@ struct ComposeView: View {
         pollOptions.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
     }
 
-    private var count: Int { draft.count }
+    private var count: Int { draft.unicodeScalars.count }
     private var canPost: Bool {
         let trimmed = draft.trimmingCharacters(in: .whitespacesAndNewlines)
-        return !trimmed.isEmpty && count <= PostLimits.maxCharacters && (!pollOn || (filledOptions.count >= 2 && durationValid))
+        return store.limitReady && !trimmed.isEmpty && count <= store.characterLimit && (!pollOn || (filledOptions.count >= 2 && durationValid))
     }
 
     var body: some View {
@@ -72,7 +72,7 @@ struct ComposeView: View {
                 AvatarView(initial: auth.user?.initial ?? "あ", index: 0, url: auth.user?.picture, size: 40)
                 ZStack(alignment: .topLeading) {
                     if draft.isEmpty {
-                        Text(L(replying == nil ? "今の気持ちを、70字まで。" : "返信を投稿"))
+                        Text(replying == nil ? L("今の気持ちを。") + " (\(store.characterLimit))" : L("返信を投稿"))
                             .appTextFont(size: 18)
                             .foregroundStyle(Color.irukaSecondary)
                             .padding(.top, 8)
@@ -84,11 +84,7 @@ struct ComposeView: View {
                         .scrollContentBackground(.hidden)
                         .focused($isFocused)
                         .frame(minHeight: 160)
-                        .onChange(of: draft) { _, newValue in
-                            if newValue.count > PostLimits.maxCharacters {
-                                draft = String(newValue.prefix(PostLimits.maxCharacters))
-                            }
-                        }
+
                 }
             }
             if let imageData, let preview = UIImage(data: imageData) {
@@ -127,6 +123,12 @@ struct ComposeView: View {
                 .overlay { RoundedRectangle(cornerRadius: 16).stroke(Color.irukaHairline, lineWidth: 1) }
                 .padding(.leading, 52)
             }
+            if !store.limitReady {
+                Text(L(store.limitFailed ? "契約情報を取得できませんでした。" : "読み込み中…"))
+                    .appTextFont(size: 13)
+                Button(L("再読み込み")) { Task { await store.loadPostLimit(userId: auth.user?.id) } }
+                    .frame(minHeight: 44)
+            }
             Spacer(minLength: 0)
             HStack {
                 PhotosPicker(selection: $pickerItem, matching: .images) {
@@ -151,10 +153,10 @@ struct ComposeView: View {
                     .accessibilityAddTraits(pollOn ? .isSelected : [])
                 }
                 Spacer()
-                Text("\(count) / \(PostLimits.maxCharacters)")
+                Text("\(count) / \(store.characterLimit)")
                     .font(.system(size: 15, weight: .medium, design: .monospaced))
-                    .foregroundStyle(count >= PostLimits.maxCharacters ? Color.red : Color.irukaSecondary)
-                    .accessibilityLabel("\(count) / \(PostLimits.maxCharacters)")
+                    .foregroundStyle(count >= store.characterLimit ? Color.red : Color.irukaSecondary)
+                    .accessibilityLabel("\(count) / \(store.characterLimit)")
             }
         }
         .padding(.horizontal, 16)
@@ -180,6 +182,7 @@ struct ComposeView: View {
             }
         }
         .onAppear { isFocused = true }
+        .task(id: auth.user?.id) { await store.loadPostLimit(userId: auth.user?.id) }
         .onChange(of: pickerItem) { _, item in
             guard let item else { return }
             Task {

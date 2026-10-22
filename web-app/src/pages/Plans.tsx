@@ -23,8 +23,8 @@ export default function PlansPage() {
   });
   const current = subscription.isSuccess && !subscription.isError ? subscription.data.plan : null;
   const plans = [
-    { name: "Plus", limit: 140, monthly: "600", firstMonth: "300", yearly: "6,600", firstYear: "5,280", lifetime: "19,800" },
-    { name: "Premium", limit: 280, monthly: "8,000", firstMonth: "4,000", yearly: "88,000", firstYear: "70,400", lifetime: "264,000" },
+    { name: "Plus", limit: 500, monthly: "600", firstMonth: "300", yearly: "6,600", firstYear: "5,280", lifetime: "19,800" },
+    { name: "Premium", limit: 2000, monthly: "8,000", firstMonth: "4,000", yearly: "88,000", firstYear: "70,400", lifetime: "264,000" },
   ];
   return (
     <main className="mx-auto min-h-dvh w-full max-w-[480px] bg-background pb-10">
@@ -38,7 +38,7 @@ export default function PlansPage() {
         <div aria-live="polite" className="text-sm">
           {subscription.isPending ? <p>{t("読み込み中…")}</p> : subscription.isError ? <div role="alert"><p>{t("契約情報を取得できませんでした。")}</p><button onClick={() => void subscription.refetch()} className="min-h-11 text-[#1D9BF0]">{t("再読み込み")}</button></div> : <p>{t("現在のプラン")}: {current === "free" ? t("無料プラン") : current === "plus" ? "Plus" : "Premium"}</p>}
         </div>
-        <section className={`rounded-xl border p-4 ${current === "free" ? "border-[#1D9BF0] ring-1 ring-[#1D9BF0]" : "border-border"}`}><h2 className="font-bold">{t("無料プラン")}</h2>{current === "free" && <p className="text-sm text-[#1D9BF0]">{t("現在のプラン")}</p>}<p className="text-sm text-muted-foreground">{t("投稿文字数上限")}: 70</p></section>
+        <section className={`rounded-xl border p-4 ${current === "free" ? "border-[#1D9BF0] ring-1 ring-[#1D9BF0]" : "border-border"}`}><h2 className="font-bold">{t("無料プラン")}</h2>{current === "free" && <p className="text-sm text-[#1D9BF0]">{t("現在のプラン")}</p>}<p className="text-sm text-muted-foreground">{t("投稿文字数上限")}: 280</p></section>
         <div className="grid grid-cols-2 gap-3">
           {plans.map((plan) => <section key={plan.name} className={`min-w-0 rounded-xl border p-3 ${current === plan.name.toLowerCase() ? "border-[#1D9BF0] ring-1 ring-[#1D9BF0]" : "border-border"}`}>
             <h2 className="text-xl font-bold text-[#1D9BF0]">{plan.name}</h2>

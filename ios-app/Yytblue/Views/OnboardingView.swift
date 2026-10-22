@@ -14,7 +14,7 @@ struct OnboardingView: View {
     }
 
     private let slides: [Slide] = [
-        Slide(icon: "text.cursor", color: .irukaBlue, title: "70字だけ、書こう。", body: "長文はいらない。いまの気持ちを、ひと言で残せます。"),
+        Slide(icon: "text.cursor", color: .irukaBlue, title: "280字から、書こう。", body: "長文はいらない。いまの気持ちを、ひと言で残せます。"),
         Slide(icon: "heart.fill", color: Color(red: 0.98, green: 0.09, blue: 0.5), title: "ゆるく、つながる。", body: "返信・リポスト・いいねで、誰かの一言にそっと反応できます。"),
         Slide(icon: "person.crop.circle.badge.checkmark", color: Color(red: 0, green: 0.73, blue: 0.49), title: "ログインは、ワンタップ。", body: "GoogleかAppleのアカウントだけで、すぐ始められます。名前やアイコンはあとから変えられます。"),
     ]

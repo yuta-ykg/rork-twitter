@@ -1,8 +1,9 @@
 import { createPoll, fetchPolls, type Poll } from "@/lib/polls";
 import { ensureProfile, fetchProfiles, type Profile } from "@/lib/profiles";
+import { fetchAccountPlan } from "@/lib/accountPlan";
 import { supabase } from "@/lib/supabase";
 
-export const MAX_CHARACTERS = 70;
+export const MAX_CHARACTERS = 280;
 
 export const avatarFills = ["#8ECAE6", "#CDB4DB", "#F4A6A6", "#95D5B2", "#E9C46A"] as const;
 
@@ -199,7 +200,8 @@ export async function setPostRepost(postId: string, reposted: boolean, userId: s
 /** 本文（70字まで）と任意の画像1枚で投稿を作る。quoteOf を渡すと引用投稿になる。 */
 export async function insertPost(body: string, author: Author, image?: File | null, quoteOf?: string | null, replyTo?: string | null, poll?: PollDraft | null): Promise<Post> {
   const trimmed = body.trim();
-  if (!trimmed || Array.from(trimmed).length > MAX_CHARACTERS) throw new Error("投稿は1〜70文字で入力してください。");
+  const { character_limit: limit } = await fetchAccountPlan(author.id);
+  if (!trimmed || Array.from(trimmed).length > limit) throw new Error("投稿文字数上限を超えています。");
   const blob = image ? await shrinkImage(image) : null;
   await ensureProfile(author);
   let imageUrl: string | undefined;
@@ -240,6 +242,8 @@ export async function insertPost(body: string, author: Author, image?: File | nu
 
 /** 自分の投稿の本文を修正する（1〜70字）。 */
 export async function updatePostBody(postId: string, body: string, userId: string): Promise<void> {
+  const { character_limit: limit } = await fetchAccountPlan(userId);
+  if (!body.trim() || Array.from(body.trim()).length > limit) throw new Error("投稿文字数上限を超えています。");
   const { error } = await supabase.rpc("edit_post", {
     target_post_id: postId,
     new_body: body,

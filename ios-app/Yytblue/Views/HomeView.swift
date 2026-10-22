@@ -44,7 +44,7 @@ struct HomeView: View {
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(Color.irukaInk)
             if !isSearching {
-                Text(L("70字以内で、いまの気持ちを残しましょう。"))
+                Text(L("今の気持ちを投稿しましょう。"))
                     .font(.system(size: 14))
                     .foregroundStyle(Color.irukaSecondary)
                     .multilineTextAlignment(.center)

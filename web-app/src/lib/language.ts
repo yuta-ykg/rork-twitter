@@ -3,6 +3,9 @@ import { useLayoutEffect, useSyncExternalStore } from "react";
 export type Language = "ja" | "en" | "ko" | "zh-CN" | "zh-TW";
 const key = "iruka-language";
 const english: Record<string, string> = {
+  "今の気持ちを。": "Share how you feel.",
+  "今の気持ちを投稿しましょう。": "Share how you feel in a post.",
+  "280字から、書こう。": "Start with 280 characters.",
   "Geminiに聞く": "Ask Gemini",
   "回答を生成中…": "Generating answer…",
   "回答を取得できませんでした。もう一度お試しください。": "Couldn't get an answer. Please try again.",

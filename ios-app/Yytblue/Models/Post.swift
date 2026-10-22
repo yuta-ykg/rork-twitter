@@ -26,7 +26,7 @@ nonisolated struct Post: Identifiable, Codable, Hashable, Sendable {
 }
 
 enum PostLimits {
-    static let maxCharacters = 70
+    static let maxCharacters = 280
 }
 
 enum AvatarPalette {

@@ -1,3 +1,4 @@
+import { usePostLimit } from "@/lib/accountPlan";
 import { AskGemini } from "@/components/AskGemini";
 import { usePostSpeech, togglePostSpeech, stopPostSpeech } from "@/lib/postSpeech";
 import { avatarFills, deletePost, fetchPosts, setPostLike, setPostRepost, sortTimeline, updatePostBody, type Post } from "@/lib/posts";
@@ -158,7 +159,7 @@ export function TweetList({ posts, empty, searching = false }: { posts: Post[]; 
     return (
       <div className="px-7 pt-16 text-center">
         <p className="text-base font-semibold">{t(empty)}</p>
-        {searching ? null : <p className="mt-2 text-sm text-muted-foreground">{t("70字以内で、いまの気持ちを残しましょう。")}</p>}
+        {searching ? null : <p className="mt-2 text-sm text-muted-foreground">{t("今の気持ちを投稿しましょう。")}</p>}
       </div>
     );
   }
@@ -214,9 +215,11 @@ export function TweetRow({ post, nextPost }: { post: Post; nextPost?: Post }) {
   const [moreOpen, setMoreOpen] = useState<boolean>(false);
   const [confirmDelete, setConfirmDelete] = useState<boolean>(false);
   const [editing, setEditing] = useState<boolean>(false);
+  const entitlement = usePostLimit(editing);
+  const limit = entitlement.limit;
   const [draftBody, setDraftBody] = useState<string>("");
   const canModerate = Boolean(post.userId) && !post.isMine;
-  const draftLength = Array.from(draftBody).length;
+  const draftLength = Array.from(draftBody.trim()).length;
   const saveEdit = useMutation({
     mutationFn: () => updatePostBody(post.id, draftBody, user?.id ?? ""),
     onSuccess: async () => {
@@ -434,17 +437,17 @@ export function TweetRow({ post, nextPost }: { post: Post; nextPost?: Post }) {
         ) : null}
         {editing ? (
           <div className="mt-1 space-y-2">
+            {!entitlement.ready && <div role="status" className="text-sm">{t(entitlement.isError ? "契約情報を取得できませんでした。" : "読み込み中…")}<button type="button" onClick={() => void entitlement.refetch()} className="min-h-11 px-3 text-[#1D9BF0]">{t("再読み込み")}</button></div>}
             <textarea
               value={draftBody}
               onChange={(event) => setDraftBody(event.target.value)}
-              maxLength={400}
               rows={3}
               aria-label={t("投稿を編集")}
               autoFocus
               className="w-full resize-none rounded-2xl border border-border bg-background px-3 py-2 text-[15px] leading-5 outline-none focus:border-[#1D9BF0]"
             />
             <div className="flex items-center justify-between gap-2">
-              <span className={`text-[13px] ${draftLength > 70 ? "text-destructive" : draftLength >= 60 ? "text-orange-500" : "text-muted-foreground"}`}>{draftLength}/70</span>
+              <span className={`text-[13px] ${draftLength > limit ? "text-destructive" : draftLength >= limit - 10 ? "text-orange-500" : "text-muted-foreground"}`}>{draftLength}/{limit}</span>
               <div className="flex gap-2">
                 <button
                   type="button"
@@ -455,7 +458,7 @@ export function TweetRow({ post, nextPost }: { post: Post; nextPost?: Post }) {
                 </button>
                 <button
                   type="button"
-                  disabled={saveEdit.isPending || draftLength === 0 || draftLength > 70}
+                  disabled={!entitlement.ready || saveEdit.isPending || draftLength === 0 || draftLength > limit}
                   onClick={() => saveEdit.mutate()}
                   className="h-9 rounded-full bg-[#1D9BF0] px-4 text-[14px] font-bold text-white disabled:opacity-50"
                 >

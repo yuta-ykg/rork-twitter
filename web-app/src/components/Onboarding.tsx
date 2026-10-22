@@ -21,9 +21,9 @@ function PostMock() {
       <p className="mt-3 text-[19px] font-bold leading-snug">{t("今日の海は、いつもより少しだけ青かった。")}</p>
       <div className="mt-4 flex items-center justify-between">
         <div className="h-1.5 w-32 overflow-hidden rounded-full bg-border">
-          <div className="h-full w-[60%] rounded-full bg-[hsl(var(--brand))]" />
+          <div className="h-full w-[15%] rounded-full bg-[hsl(var(--brand))]" />
         </div>
-        <span className="font-mono text-[13px] tabular-nums text-muted-foreground">42 / 70</span>
+        <span className="font-mono text-[13px] tabular-nums text-muted-foreground">42 / 280</span>
       </div>
     </div>
   );
@@ -62,7 +62,7 @@ function ProviderMock() {
 }
 
 const SLIDES: Slide[] = [
-  { title: "70字だけ、書こう。", body: "長文はいらない。いまの気持ちを、ひと言で残せます。", visual: <PostMock /> },
+  { title: "280字から、書こう。", body: "長文はいらない。いまの気持ちを、ひと言で残せます。", visual: <PostMock /> },
   { title: "ゆるく、つながる。", body: "返信・リポスト・いいねで、誰かの一言にそっと反応できます。", visual: <ReactMock /> },
   { title: "ログインは、ワンタップ。", body: "GoogleかAppleのアカウントだけで、すぐ始められます。名前やアイコンはあとから変えられます。", visual: <ProviderMock /> },
 ];

@@ -53,6 +53,9 @@ func formatDate(_ date: Date, includeTime: Bool = true) -> String {
 }
 
 private let englishMessages: [String: String] = [
+    "今の気持ちを。": "Share how you feel.",
+    "今の気持ちを投稿しましょう。": "Share how you feel in a post.",
+    "280字から、書こう。": "Start with 280 characters.",
     "Geminiに聞く": "Ask Gemini",
     "質問": "Question",
     "回答を生成中…": "Generating answer…",

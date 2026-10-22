@@ -9,6 +9,21 @@ import UIKit
 final class PostStore {
     private(set) var posts: [Post] = []
     var composeError: String?
+    private(set) var characterLimit = 280
+    private(set) var limitReady = false
+    private(set) var limitFailed = false
+
+    func loadPostLimit(userId: String?) async {
+        limitReady = false
+        limitFailed = false
+        guard let userId else { characterLimit = 280; return }
+        do {
+            let rows: [PostPlanLimit] = try await IrukaDatabase.client.rpc("get_account_plan", params: ["expected_user_id": userId]).execute().value
+            guard currentUserId == userId, !Task.isCancelled, let row = rows.first else { return }
+            characterLimit = row.character_limit
+            limitReady = true
+        } catch { if currentUserId == userId { limitFailed = true } }
+    }
     private(set) var followingIds: Set<String> = []
     /// アバターがタップされたユーザーID。ContentViewがプロフィールを開く。
     var profileRequest: String?
@@ -39,7 +54,7 @@ final class PostStore {
 
     func add(body: String, image: Data?, user: AuthManager.User, quoteOf: UUID? = nil, replyTo: UUID? = nil, poll: PollDraft? = nil) {
         let trimmed = body.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty, trimmed.count <= PostLimits.maxCharacters else { return }
+        guard !trimmed.isEmpty, limitReady, currentUserId == user.id, trimmed.unicodeScalars.count <= characterLimit else { return }
         Task { await insert(trimmed, image: image, user: user, quoteOf: quoteOf, replyTo: replyTo, poll: poll) }
     }
 
@@ -60,7 +75,9 @@ final class PostStore {
     }
 
     func refresh(userId: String?) async {
+        if currentUserId != userId { characterLimit = 280; limitReady = false }
         currentUserId = userId
+        await loadPostLimit(userId: userId)
         do {
             let rows: [PostRow] = try await IrukaDatabase.client
                 .rpc("get_visible_posts", params: VisiblePostsParams(expected_user_id: userId))
@@ -146,8 +163,8 @@ final class PostStore {
     /// 自分の投稿の本文を修正する（1〜70字）。先に画面を更新し、失敗したら元に戻す。
     func edit(_ post: Post, body: String) {
         let trimmed = body.trimmingCharacters(in: .whitespacesAndNewlines)
-        let length = trimmed.count
-        guard post.isMine, length >= 1, length <= 70, currentUserId != nil else { return }
+        let length = trimmed.unicodeScalars.count
+        guard post.isMine, length >= 1, length <= characterLimit, limitReady, currentUserId != nil else { return }
         guard let index = posts.firstIndex(where: { $0.id == post.id }) else { return }
         let original = posts[index]
         posts[index].body = trimmed
