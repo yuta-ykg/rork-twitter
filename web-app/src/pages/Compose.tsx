@@ -10,7 +10,7 @@ import { t, useLanguage } from "@/lib/language";
 import { PostLimitLabel } from "@/components/PostLimitLabel";
 import { PostBodyInput } from "@/components/PostBodyInput";
 import { usePostLimit } from "@/lib/accountPlan";
-import { insertPost, type PollDraft } from "@/lib/posts";
+import { insertPost, updatePostBody, type PollDraft } from "@/lib/posts";
 import { MAX_POLL_OPTIONS, MAX_POLL_OPTION_CHARS } from "@/lib/polls";
 
 const DURATIONS: { minutes: number; label: string }[] = [
@@ -31,13 +31,23 @@ export default function ComposePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [params] = useSearchParams();
-  const quoteId = params.get("quote");
-  const replyId = params.get("reply");
+  const editId = params.get("edit");
+  const quoteId = editId ? null : params.get("quote");
+  const replyId = editId ? null : params.get("reply");
   const timeline = useTimeline();
   const quoted = quoteId ? timeline.data?.find((item) => item.id === quoteId) : undefined;
   const replyTarget = replyId ? timeline.data?.find((item) => item.id === replyId) : undefined;
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
+  const editTarget = editId ? timeline.data?.find((item) => item.id === editId && item.userId === user?.id) : undefined;
+  const initializedEdit = useRef<string | null>(null);
+  useEffect(() => {
+    const key = `${user?.id}:${editId}`;
+    if (editTarget && initializedEdit.current !== key) {
+      setDraft(editTarget.body);
+      initializedEdit.current = key;
+    }
+  }, [editTarget, editId, user?.id]);
   const [image, setImage] = useState<File | null>(null);
   const [pollOn, setPollOn] = useState<boolean>(false);
   const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
@@ -57,7 +67,7 @@ export default function ComposePage() {
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
   const count = Array.from(draft).length;
   const trimmed = draft.trim();
-  const canPost = entitlement.ready && trimmed.length > 0 && Array.from(trimmed).length <= MAX_CHARACTERS && !sending && pollValid;
+  const canPost = (!editId || !!editTarget) && entitlement.ready && trimmed.length > 0 && Array.from(trimmed).length <= MAX_CHARACTERS && !sending && pollValid;
 
   function change(value: string) {
     setDraft(value);
@@ -68,11 +78,16 @@ export default function ComposePage() {
     setSending(true);
     try {
       const poll: PollDraft | null = pollOn ? { options: filledOptions, durationMinutes: effectiveDuration } : null;
-      await insertPost(trimmed, user, image, quoteId, replyId, poll);
+      if (editId) {
+        await updatePostBody(editId, trimmed, user.id);
+        toast.success(t("投稿を更新しました"));
+      } else {
+        await insertPost(trimmed, user, image, quoteId, replyId, poll);
+      }
       await queryClient.invalidateQueries({ queryKey: ["timeline", user.id] });
-      navigate(replyId ? `/post/${replyId}` : "/", { replace: true });
+      navigate(editId ? `/post/${editId}` : replyId ? `/post/${replyId}` : "/", { replace: true });
     } catch {
-      toast.error(t("投稿できませんでした。もう一度試してください。"));
+      toast.error(t(editId ? "投稿を更新できませんでした。" : "投稿できませんでした。もう一度試してください。"));
       setSending(false);
     }
   }
@@ -88,10 +103,12 @@ export default function ComposePage() {
             disabled={!canPost}
             className="h-8 rounded-full bg-[#1D9BF0] px-4 text-[15px] font-bold text-white disabled:opacity-40"
           >
-            {replyId ? t("返信する") : t("投稿する")}
+            {editId ? t(sending ? "保存中…" : "保存") : replyId ? t("返信する") : t("投稿する")}
           </button>
         </header>
         <div className="px-4 pb-2">
+          {editId && <h1 className="text-[17px] font-bold">{t("投稿を編集")}</h1>}
+          {editId && !editTarget && <p role="status" className="py-2 text-sm text-muted-foreground">{t(timeline.isPending ? "読み込み中…" : "投稿を取得できませんでした。")}</p>}
           <PostLimitLabel limit={MAX_CHARACTERS} ready={entitlement.ready} plan={entitlement.data?.plan} />
         </div>
         {replyId ? (
@@ -254,15 +271,16 @@ export default function ComposePage() {
             onChange={(event) => { setImage(event.target.files?.[0] ?? null); event.target.value = ""; }}
           />
           <div className="flex items-center">
-          <button
+          {!editId && <button
             type="button"
             onClick={() => fileInput.current?.click()}
             aria-label={t("画像を追加")}
             className="grid h-11 w-11 place-items-center rounded-full text-[#1D9BF0] active:bg-[#1D9BF0]/10"
           >
             <ImagePlus className="h-[22px] w-[22px]" />
-          </button>
-          {!replyId && !quoteId ? (
+          </button>}
+          {editTarget?.imageUrl && <img src={editTarget.imageUrl} alt="" className="h-11 w-11 rounded-lg object-cover" />}
+          {!editId && !replyId && !quoteId ? (
             <button
               type="button"
               onClick={() => setPollOn((on) => !on)}
