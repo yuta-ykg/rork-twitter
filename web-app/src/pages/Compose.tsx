@@ -40,11 +40,13 @@ export default function ComposePage() {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const editTarget = editId ? timeline.data?.find((item) => item.id === editId && item.userId === user?.id) : undefined;
+  const [originalBody, setOriginalBody] = useState("");
   const initializedEdit = useRef<string | null>(null);
   useEffect(() => {
     const key = `${user?.id}:${editId}`;
     if (editTarget && initializedEdit.current !== key) {
       setDraft(editTarget.body);
+      setOriginalBody(editTarget.body);
       initializedEdit.current = key;
     }
   }, [editTarget, editId, user?.id]);
@@ -139,6 +141,20 @@ export default function ComposePage() {
               {t("無料プランは280字までです。Plusなら500字まで投稿できます。")}
             </Link>
           </p>
+        )}
+        {editTarget && (
+          <section aria-label={t("編集前の本文")} className="mx-4 ml-[68px] my-4 border-t border-border pt-4">
+            <h2 className="mb-3 text-sm font-bold text-muted-foreground">{t("編集前の本文")}</h2>
+            <div className="flex items-center gap-2">
+              <Avatar initial={editTarget.initial} index={editTarget.avatarIndex} url={editTarget.avatarUrl} size={32} />
+              <div className="min-w-0">
+                <p className="truncate text-sm font-bold">{editTarget.authorName}</p>
+                <p className="truncate text-[13px] text-muted-foreground">{editTarget.handle}</p>
+              </div>
+            </div>
+            <p className="mt-3 whitespace-pre-wrap break-words text-[15px] leading-relaxed">{originalBody}</p>
+            {editTarget.imageUrl && <img src={editTarget.imageUrl} alt="" className="mt-3 max-h-80 w-full rounded-2xl border border-border object-cover" />}
+          </section>
         )}
         {preview ? (
           <div className="relative mx-4 ml-[68px] mt-2 overflow-hidden rounded-2xl border border-border">
