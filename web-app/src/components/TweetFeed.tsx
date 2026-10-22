@@ -447,8 +447,10 @@ export function TweetRow({ post, nextPost }: { post: Post; nextPost?: Post }) {
               className="w-full resize-none rounded-2xl border border-border bg-background px-3 py-2 text-[15px] leading-5 outline-none focus:border-[#1D9BF0]"
             />
             {entitlement.ready && entitlement.data?.plan === "free" && Array.from(draftBody).length > 280 && (
-              <p role="status" className="rounded-xl bg-[#1D9BF0]/10 px-3 py-2 text-sm text-foreground">
-                {t("無料プランは280字までです。Plusなら500字まで投稿できます。")}
+              <p role="status">
+                <Link to="/plans#plus" className="flex min-h-11 items-center rounded-xl bg-[#1D9BF0]/10 px-3 py-2 text-sm text-[#1D9BF0] underline underline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1D9BF0]">
+                  {t("無料プランは280字までです。Plusなら500字まで投稿できます。")}
+                </Link>
               </p>
             )}
             <div className="flex items-center justify-between gap-2">

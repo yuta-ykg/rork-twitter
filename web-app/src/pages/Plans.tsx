@@ -1,4 +1,5 @@
-import { Link } from "react-router-dom";
+import { useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -8,6 +9,10 @@ import { t } from "@/lib/language";
 /** 契約表示はサーバーで確認。決済の公開準備完了までは購入を有効化しない。 */
 export default function PlansPage() {
   const { user } = useAuth();
+  const { hash } = useLocation();
+  useEffect(() => {
+    if (hash === "#plus") document.getElementById("plus")?.scrollIntoView({ block: "center" });
+  }, [hash]);
   const accountId = user?.id;
   const subscription = useQuery({
     queryKey: ["account-plan", accountId],
@@ -40,7 +45,7 @@ export default function PlansPage() {
         </div>
         <section className={`rounded-xl border p-4 ${current === "free" ? "border-[#1D9BF0] ring-1 ring-[#1D9BF0]" : "border-border"}`}><h2 className="font-bold">{t("無料プラン")}</h2>{current === "free" && <p className="text-sm text-[#1D9BF0]">{t("現在のプラン")}</p>}<p className="text-sm text-muted-foreground">{t("投稿文字数上限")}: 280</p></section>
         <div className="grid grid-cols-2 gap-3">
-          {plans.map((plan) => <section key={plan.name} className={`min-w-0 rounded-xl border p-3 ${current === plan.name.toLowerCase() ? "border-[#1D9BF0] ring-1 ring-[#1D9BF0]" : "border-border"}`}>
+          {plans.map((plan) => <section key={plan.name} id={plan.name.toLowerCase()} className={`min-w-0 rounded-xl border p-3 ${current === plan.name.toLowerCase() ? "border-[#1D9BF0] ring-1 ring-[#1D9BF0]" : "border-border"}`}>
             <h2 className="text-xl font-bold text-[#1D9BF0]">{plan.name}</h2>
             {current === plan.name.toLowerCase() && <p className="text-sm text-[#1D9BF0]">{t("現在のプラン")}</p>}
             <p className="mt-2 text-sm">{t("投稿文字数上限")}: {plan.limit}</p>

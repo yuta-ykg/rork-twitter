@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChartBar, ImagePlus, Plus, X } from "lucide-react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Avatar, QuoteCard, useTimeline } from "@/components/TweetFeed";
@@ -109,8 +109,10 @@ export default function ComposePage() {
           />
         </div>
         {entitlement.ready && entitlement.data?.plan === "free" && count > 280 && (
-          <p role="status" className="mx-4 ml-[68px] mt-2 rounded-xl bg-[#1D9BF0]/10 px-3 py-2 text-sm text-foreground">
-            {t("無料プランは280字までです。Plusなら500字まで投稿できます。")}
+          <p role="status" className="mx-4 ml-[68px] mt-2">
+            <Link to="/plans#plus" className="flex min-h-11 items-center rounded-xl bg-[#1D9BF0]/10 px-3 py-2 text-sm text-[#1D9BF0] underline underline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1D9BF0]">
+              {t("無料プランは280字までです。Plusなら500字まで投稿できます。")}
+            </Link>
           </p>
         )}
         {preview ? (
