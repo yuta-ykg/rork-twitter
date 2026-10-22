@@ -14,7 +14,13 @@ Deno.serve(async (req: Request) => {
     if (!(plan === "plus" || plan === "premium") || !["monthly", "yearly", "lifetime"].includes(term)) throw new BillingError("invalid_plan");
     const db = admin();
     const { data, error } = await db.rpc("claim_billing_checkout", { target: id, selected_plan: plan, selected_term: term });
-    if (error || !data?.[0]) throw new BillingError("existing_contract_or_checkout", 409);
+    if (error) {
+      if (error.message === "existing_contract") throw new BillingError("existing_contract", 409);
+      if (error.message === "checkout_in_progress") throw new BillingError("checkout_in_progress", 409);
+      console.error("checkout_claim_failed", JSON.stringify({ code: error.code }));
+      throw new BillingError("billing_unavailable", 503);
+    }
+    if (!data?.[0]) throw new BillingError("billing_unavailable", 503);
     const checkout = data[0];
     if (checkout.session_url) return json({ url: checkout.session_url });
     // A fixed customer idempotency key prevents concurrent customer duplication.

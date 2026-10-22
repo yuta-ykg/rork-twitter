@@ -14,6 +14,7 @@ export function billingErrorMessage(code: string, english: boolean): string {
     unauthorized: ["ログインの有効期限が切れた可能性があります。再ログインしてお試しください。", "Your session may have expired. Sign in again and retry."],
     account_mismatch: ["購入対象アカウントを確認できません。アカウントを選び直してください。", "Could not verify the account. Select your account again."],
     existing_contract_or_checkout: ["契約中、または別の購入手続きが進行中です。同じプランで再開するか、最大35分後にお試しください。", "An existing plan or checkout is in progress. Resume the same plan or retry after up to 35 minutes."],
+    checkout_in_progress: ["このアカウントでは別のプラン・期間の購入手続きが進行中です。最初に選んだプラン・期間に戻して再開するか、購入手続き開始から最大35分後に選び直してください。", "Another plan or billing period is reserved for this account. Resume the original selection, or choose again up to 35 minutes after starting checkout."],
     existing_contract: ["すでに契約があります。支払方法・解約の管理をご利用ください。", "A subscription already exists. Use billing management."],
     payment_processing: ["以前のお支払いを確認中です。再購入せず、時間をおいて契約状況を確認してください。", "A previous payment is processing. Wait and check your plan instead of purchasing again."],
     checkout_not_ready: ["現在、購入受付を利用できません。時間をおいてお試しください。", "Checkout is currently unavailable. Please retry later."],
