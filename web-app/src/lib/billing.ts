@@ -6,6 +6,11 @@ export class BillingRequestError extends Error {
 
 export function billingErrorMessage(code: string, english: boolean): string {
   const messages: Record<string, [string, string]> = {
+    stripe_live_payments_disabled: ["Stripe側で本番決済が有効になっていません。運営によるStripeアカウントの有効化・審査状況の確認が必要です。", "Live payments are not enabled in Stripe. The operator must review account activation and verification."],
+    stripe_business_profile_required: ["Stripeの事業者情報の設定が不足しています。運営側で設定を完了する必要があります。", "Stripe business details are incomplete. The operator must complete setup."],
+    stripe_capability_required: ["Stripeアカウントの決済機能が利用可能になっていません。運営側で利用資格の確認が必要です。", "The Stripe account lacks a required payment capability. The operator must review eligibility."],
+    stripe_checkout_expiry_invalid: ["決済画面の有効期限がStripeの条件を満たしていません。運営にこのコードをお知らせください。", "The checkout expiry does not meet Stripe requirements. Contact support with this code."],
+    stripe_idempotency_conflict: ["以前の購入リクエストと内容が一致しません。繰り返し購入せず、運営にこのコードをお知らせください。", "The request conflicts with a previous checkout attempt. Contact support rather than making repeated purchases."],
     unauthorized: ["ログインの有効期限が切れた可能性があります。再ログインしてお試しください。", "Your session may have expired. Sign in again and retry."],
     account_mismatch: ["購入対象アカウントを確認できません。アカウントを選び直してください。", "Could not verify the account. Select your account again."],
     existing_contract_or_checkout: ["契約中、または別の購入手続きが進行中です。同じプランで再開するか、最大35分後にお試しください。", "An existing plan or checkout is in progress. Resume the same plan or retry after up to 35 minutes."],

@@ -59,10 +59,18 @@ export async function stripe(path: string, params?: Record<string, string>, idem
   });
   if (!response.ok) {
     const detail = await response.json().catch(() => null);
-    // Never log credentials, customer data, request bodies or Stripe messages.
-    console.error("stripe_request_failed", JSON.stringify({ endpoint: path.split("?")[0].replace(/cus_[A-Za-z0-9]+|sub_[A-Za-z0-9]+|cs_[A-Za-z0-9_]+/g, "[id]"), status: response.status, type: detail?.error?.type, code: detail?.error?.code, param: detail?.error?.param, request_id: response.headers.get("request-id") }));
+    // Keep only redacted diagnostic text server-side; never return Stripe's raw message.
+    const message = typeof detail?.error?.message === "string" ? detail.error.message : "";
+    const diagnostic = message.replace(/(?:sk|rk|pk)_(?:live|test)_\S+/gi, "[key]").replace(/https?:\/\/\S+/gi, "[url]").replace(/[\w.+-]+@[\w.-]+\.[a-z]+/gi, "[email]").replace(/\b(?:cus|sub|cs|pi|price|prod|acct|usr|sub)_[A-Za-z0-9_]+/g, "[id]").replace(/'[^']*'|"[^"]*"/g, "[value]").slice(0, 600);
+    console.error("stripe_request_failed", JSON.stringify({ endpoint: path.split("?")[0].replace(/cus_[A-Za-z0-9]+|sub_[A-Za-z0-9]+|cs_[A-Za-z0-9_]+/g, "[id]"), status: response.status, type: detail?.error?.type, code: detail?.error?.code, param: detail?.error?.param, diagnostic, request_id: response.headers.get("request-id") }));
     const stripeCode = detail?.error?.code;
-    const safeCode = typeof stripeCode === "string" && /^[a-z0-9_]{1,70}$/.test(stripeCode) ? `stripe_${stripeCode}` : "stripe_unavailable";
+    const reason = /expires_at/i.test(message) ? "stripe_checkout_expiry_invalid"
+      : /activate|activation|cannot currently make live|live charges|live payments/i.test(message) ? "stripe_live_payments_disabled"
+      : /business.*(?:name|address|profile)|account.*(?:name|profile)/i.test(message) ? "stripe_business_profile_required"
+      : /idempotent|idempotency/i.test(message) ? "stripe_idempotency_conflict"
+      : /capabilit/i.test(message) ? "stripe_capability_required"
+      : null;
+    const safeCode = reason || (typeof stripeCode === "string" && /^[a-z0-9_]{1,70}$/.test(stripeCode) ? `stripe_${stripeCode}` : "stripe_unavailable");
     throw new BillingError(safeCode, 502);
   }
   return await response.json();
