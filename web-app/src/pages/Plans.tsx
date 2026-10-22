@@ -132,6 +132,8 @@ export default function PlansPage() {
           })()}
           <p className="text-sm">{text("続けるとStripeの決済画面に移動します。最終金額と規約を確認してお支払いください。", "Continue to Stripe to review the final amount and terms before paying.")}</p>
           <label className="flex min-h-11 items-start gap-3 py-2 text-sm"><input type="checkbox" checked={accepted} onChange={event => setAccepted(event.target.checked)} disabled={busy} className="mt-1 h-5 w-5 shrink-0 accent-[#1D9BF0]" /><span>{text("表示された金額・自動更新・解約条件と、利用規約・特商法表記を確認しました。", "I have reviewed the amount, renewal and cancellation conditions, Terms and commerce notice.")} <Link to="/terms" className="text-[#1D9BF0] underline">{t("利用規約")}</Link> · <Link to="/commerce" className="text-[#1D9BF0] underline">{t("特定商取引法に基づく表記")}</Link></span></label>
+          {billingError && <p role="alert" className="text-sm text-red-600">{text("決済画面を開けませんでした。時間をおいて、もう一度お試しください。繰り返す場合は接続状況の確認が必要です。", "Could not open checkout. Please try again shortly. If this continues, the billing connection needs review.")}</p>}
+          {!accepted && <p className="text-xs text-muted-foreground">{text("上の確認欄にチェックを入れると進めます。", "Check the agreement above to continue.")}</p>}
           <button disabled={!canPurchase || !accepted} onClick={() => void proceed("checkout")} className="min-h-11 w-full rounded-full bg-[#1D9BF0] px-4 font-bold text-white disabled:opacity-40">{busy ? text("処理中…", "Processing…") : text("Stripeの決済画面へ", "Continue to Stripe")}</button>
           <button disabled={busy} onClick={() => setSelection(null)} className="min-h-11 w-full text-sm">{text("戻る", "Back")}</button>
         </section>}

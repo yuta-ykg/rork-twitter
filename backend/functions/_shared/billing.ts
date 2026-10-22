@@ -57,7 +57,12 @@ export async function stripe(path: string, params?: Record<string, string>, idem
     body: params ? new URLSearchParams(params) : undefined,
     signal: AbortSignal.timeout(15000),
   });
-  if (!response.ok) throw new BillingError("stripe_unavailable", 502);
+  if (!response.ok) {
+    const detail = await response.json().catch(() => null);
+    // Never log credentials, customer data, request bodies or Stripe messages.
+    console.error("stripe_request_failed", JSON.stringify({ endpoint: path.split("?")[0].replace(/cus_[A-Za-z0-9]+|sub_[A-Za-z0-9]+|cs_[A-Za-z0-9_]+/g, "[id]"), status: response.status, type: detail?.error?.type, code: detail?.error?.code, param: detail?.error?.param, request_id: response.headers.get("request-id") }));
+    throw new BillingError("stripe_unavailable", 502);
+  }
   return await response.json();
 }
 export function failure(error: unknown): Response {
