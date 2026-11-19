@@ -17,6 +17,7 @@ struct ContentView: View {
     @State private var pendingPostId: UUID?
     @State private var profileId: String?
     @State private var homeFeed: HomeFeed = .forYou
+    private let connector = WatchConnector.shared
     private var didLoad: Bool { auth.user != nil && loadedUserId == auth.user?.id }
     @AppStorage("iruka-onboarded") private var onboarded = false
     @AppStorage("yytblue-terms-accepted-v1") private var acceptedTermsRaw = ""
@@ -63,6 +64,14 @@ struct ContentView: View {
             await store.refresh(userId: auth.user?.id)
             loadedUserId = auth.user?.id
             await notifications.refresh(userId: auth.user?.id)
+            connector.activate()
+            connector.onPull = { Task { await store.refresh(userId: auth.user?.id) } }
+            connector.onCompose = { body, done in
+                guard let user = auth.user else { done(false); return }
+                store.add(body: body, image: nil, user: user)
+                done(true)
+            }
+            connector.push(store: store, auth: auth)
         }
         .alert(L("投稿"), isPresented: Binding(
             get: { store.composeError != nil },
@@ -88,6 +97,8 @@ struct ContentView: View {
         }
         .onChange(of: pendingPostId) { _, _ in openPendingPost() }
         .onChange(of: didLoad) { _, _ in openPendingPost() }
+        .onChange(of: store.posts) { _, _ in connector.push(store: store, auth: auth) }
+        .onChange(of: store.characterLimit) { _, _ in connector.push(store: store, auth: auth) }
     }
 
     /// https://yytblue.com/post/<UUID> から投稿 ID を取り出す。
